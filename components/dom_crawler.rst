@@ -195,7 +195,7 @@ Get all the direct child nodes matching a CSS selector::
 
     $crawler->filter('body')->children('p.lorem');
 
-Get the first parents (heading toward the document root) of the element that matches the provided selector::
+Get the first parent (heading toward the document root) of the element that matches the provided selector::
 
     $crawler->closest('p.lorem');
 
@@ -219,6 +219,10 @@ Access the value of the first node of the current selection::
 
     // avoid the exception passing an argument that text() returns when node does not exist
     $message = $crawler->filterXPath('//body/p')->text('Default text content');
+
+    // pass TRUE as the second argument of text() to remove all extra white spaces, including
+    // the internal ones (e.g. "  foo\n  bar    baz \n " is returned as "foo bar baz")
+    $crawler->filterXPath('//body/p')->text('Default text content', true);
 
 Access the attribute value of the first node of the current selection::
 
@@ -396,16 +400,26 @@ This behavior is best illustrated with examples::
 Links
 ~~~~~
 
-To find a link by name (or a clickable image by its ``alt`` attribute), use
-the ``selectLink()`` method on an existing crawler. This returns a ``Crawler``
-instance with just the selected link(s). Calling ``link()`` gives you a special
-:class:`Symfony\\Component\\DomCrawler\\Link` object::
+Use the ``filter()`` method to find links by their ``id`` or ``class``
+attributes and use the ``selectLink()`` method to find links by their content
+(it also finds clickable images with that content in its ``alt`` attribute).
 
-    $linksCrawler = $crawler->selectLink('Go elsewhere...');
-    $link = $linksCrawler->link();
+Both methods return a ``Crawler`` instance with just the selected link. Use the
+``link()`` method to get the :class:`Symfony\\Component\\DomCrawler\\Link` object
+that represents the link::
 
-    // or do this all at once
-    $link = $crawler->selectLink('Go elsewhere...')->link();
+    // first, select the link by id, class or content...
+    $linkCrawler = $crawler->filter('#sign-up');
+    $linkCrawler = $crawler->filter('.user-profile');
+    $linkCrawler = $crawler->selectLink('Log in');
+
+    // ...then, get the Link object:
+    $link = $linkCrawler->link();
+
+    // or do all this at once:
+    $link = $crawler->filter('#sign-up')->link();
+    $link = $crawler->filter('.user-profile')->link();
+    $link = $crawler->selectLink('Log in')->link();
 
 The :class:`Symfony\\Component\\DomCrawler\\Link` object has several useful
 methods to get more information about the selected link itself::
@@ -472,8 +486,8 @@ The :class:`Symfony\\Component\\DomCrawler\\Form` object has lots of very
 useful methods for working with forms::
 
     $uri = $form->getUri();
-
     $method = $form->getMethod();
+    $name = $form->getName();
 
 The :method:`Symfony\\Component\\DomCrawler\\Form::getUri` method does more
 than just return the ``action`` attribute of the form. If the form method

@@ -23,8 +23,9 @@ photos).
 |             | - `prototype_data`_                                                         |
 |             | - `prototype_name`_                                                         |
 +-------------+-----------------------------------------------------------------------------+
-| Inherited   | - `by_reference`_                                                           |
-| options     | - `empty_data`_                                                             |
+| Inherited   | - `attr`_                                                                   |
+| options     | - `by_reference`_                                                           |
+|             | - `empty_data`_                                                             |
 |             | - `error_bubbling`_                                                         |
 |             | - `error_mapping`_                                                          |
 |             | - `help`_                                                                   |
@@ -35,6 +36,7 @@ photos).
 |             | - `label_format`_                                                           |
 |             | - `mapped`_                                                                 |
 |             | - `required`_                                                               |
+|             | - `row_attr`_                                                               |
 +-------------+-----------------------------------------------------------------------------+
 | Parent type | :doc:`FormType </reference/forms/types/form>`                               |
 +-------------+-----------------------------------------------------------------------------+
@@ -182,7 +184,7 @@ And update the template as follows:
         <ul id="email-fields-list"
             data-prototype="{{ form_widget(form.emails.vars.prototype)|e }}"
             data-widget-tags="{{ '<li></li>'|e }}"
-            data-widget-counter="{{ form.children|length }}">
+            data-widget-counter="{{ form.emails|length }}">
         {% for emailField in form.emails %}
             <li>
                 {{ form_errors(emailField) }}
@@ -400,6 +402,8 @@ Inherited Options
 These options inherit from the :doc:`FormType </reference/forms/types/form>`.
 Not all options are listed here - only the most applicable to this type:
 
+.. include:: /reference/forms/types/options/attr.rst.inc
+
 .. _reference-form-types-by-reference:
 
 .. include:: /reference/forms/types/options/by_reference.rst.inc
@@ -436,6 +440,8 @@ error_bubbling
 .. include:: /reference/forms/types/options/mapped.rst.inc
 
 .. include:: /reference/forms/types/options/required.rst.inc
+
+.. include:: /reference/forms/types/options/row_attr.rst.inc
 
 Field Variables
 ---------------

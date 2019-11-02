@@ -189,10 +189,10 @@ Subscribing to updates in JavaScript is straightforward:
 
 .. code-block:: javascript
 
-    const es = new EventSource('http://localhost:3000/hub?topic=' + encodeURIComponent('http://example.com/books/1'));
-    es.onmessage = e => {
+    const eventSource = new EventSource('http://localhost:3000/hub?topic=' + encodeURIComponent('http://example.com/books/1'));
+    eventSource.onmessage = event => {
         // Will be called every time an update is published by the server
-        console.log(JSON.parse(e.data));
+        console.log(JSON.parse(event.data));
     }
 
 Mercure also allows to subscribe to several topics,
@@ -201,16 +201,16 @@ and to use URI Templates as patterns:
 .. code-block:: javascript
 
     // URL is a built-in JavaScript class to manipulate URLs
-    const u = new URL('http://localhost:3000/hub');
-    u.searchParams.append('topic', 'http://example.com/books/1');
+    const url = new URL('http://localhost:3000/hub');
+    url.searchParams.append('topic', 'http://example.com/books/1');
     // Subscribe to updates of several Book resources
-    u.searchParams.append('topic', 'http://example.com/books/2');
+    url.searchParams.append('topic', 'http://example.com/books/2');
     // All Review resources will match this pattern
-    u.searchParams.append('topic', 'http://example.com/reviews/{id}');
+    url.searchParams.append('topic', 'http://example.com/reviews/{id}');
 
-    const es = new EventSource(u);
-    es.onmessage = e => {
-        console.log(JSON.parse(e.data));
+    const eventSource = new EventSource(url);
+    eventSource.onmessage = event => {
+        console.log(JSON.parse(event.data));
     }
 
 .. tip::
@@ -317,12 +317,12 @@ and to subscribe to it:
             const hubUrl = response.headers.get('Link').match(/<([^>]+)>;\s+rel=(?:mercure|"[^"]*mercure[^"]*")/)[1];
 
             // Append the topic(s) to subscribe as query parameter
-            const h = new URL(hubUrl);
-            h.searchParams.append('topic', 'http://example.com/books/{id}');
+            const hub = new URL(hubUrl);
+            hub.searchParams.append('topic', 'http://example.com/books/{id}');
 
             // Subscribe to updates
-            const es = new EventSource(h);
-            es.onmessage = e => console.log(e.data);
+            const eventSource = new EventSource(hub);
+            eventSource.onmessage = event => console.log(event.data);
         });
 
 Authorization
@@ -363,8 +363,21 @@ a JWT containing at least one target marking the update to the Hub.
 To provide this JWT, the subscriber can use a cookie,
 or a ``Authorization`` HTTP header.
 Cookies are automatically sent by the browsers when opening an ``EventSource`` connection.
-They are the most secure and preferred way when the client is a web browser.
+Using cookies is the most secure and preferred way when the client is a web browser.
 If the client is not a web browser, then using an authorization header is the way to go.
+
+.. tip::
+
+    The native implementation of EventSource doesn't allow specifying headers.
+    For example, authorization using Bearer token. In order to achieve that, use `a polyfill`_
+
+    .. code-block:: javascript
+
+        const es = new EventSourcePolyfill(url, {
+            headers: {
+                'Authorization': 'Bearer ' + token,
+            }
+        });
 
 In the following example controller,
 the generated cookie contains a JWT, itself containing the appropriate targets.
@@ -528,6 +541,32 @@ These applications will render the content of Mercure updates in real-time.
 
 Checkout `the dedicated API Platform documentation`_ to learn more about
 its Mercure support.
+
+Testing
+--------
+
+During functional testing there is no need to send updates to Mercure. They will
+be handled by a stub publisher::
+
+    // tests/Functional/Fixtures/PublisherStub.php
+    namespace App\Tests\Functional\Fixtures;
+
+    use Symfony\Component\Mercure\Update;
+
+    class PublisherStub
+    {
+        public function __invoke(Update $update): string
+        {
+            return '';
+        }
+    }
+
+PublisherStub decorates the default publisher service so no updates are actually
+sent. Here is the PublisherStub implementation::
+
+    # config/services_test.yaml
+    App\Tests\Functional\Fixtures\PublisherStub:
+        decorates: mercure.hub.default.publisher
 
 .. _`the Mercure protocol`: https://github.com/dunglas/mercure#protocol-specification
 .. _`Server-Sent Events (SSE)`: https://developer.mozilla.org/docs/Server-sent_events

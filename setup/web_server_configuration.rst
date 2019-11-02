@@ -35,13 +35,14 @@ to use PHP :ref:`with Nginx <web-server-nginx>`.
 Adding Rewrite Rules
 --------------------
 
-The easiest way is to install the Apache recipe by executing the following command:
+The easiest way is to install the ``apache`` :ref:`Symfony pack <symfony-packs>`
+by executing the following command:
 
 .. code-block:: terminal
 
     $ composer require symfony/apache-pack
 
-This recipe installs a ``.htaccess`` file in the ``public/`` directory that contains
+This pack installs a ``.htaccess`` file in the ``public/`` directory that contains
 the rewrite rules.
 
 .. tip::
@@ -123,6 +124,11 @@ and increase web server performance:
         #SetEnv APP_SECRET <app-secret-id>
         #SetEnv DATABASE_URL "mysql://db_user:db_pass@host:3306/db_name"
     </VirtualHost>
+
+.. caution::
+
+    Use ``FallbackResource`` on Apache 2.4.25 or higher, due to a bug which was
+    fixed on that release causing the root ``/`` to hang.
 
 .. tip::
 
@@ -289,6 +295,13 @@ The **minimum configuration** to get your application running under Nginx is:
             # try to serve file directly, fallback to index.php
             try_files $uri /index.php$is_args$args;
         }
+
+        # optionally disable falling back to PHP script for the asset directories;
+        # nginx will return a 404 error when files are not found instead of passing the
+        # request to Symfony (improves performance but Symfony's 404 page is not displayed)
+        # location /bundles {
+        #     try_files $uri =404;
+        # }
 
         location ~ ^/index\.php(/|$) {
             fastcgi_pass unix:/var/run/php/php7.2-fpm.sock;

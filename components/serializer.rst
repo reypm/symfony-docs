@@ -180,11 +180,13 @@ when constructing the normalizer::
     </person>
     EOF;
 
-    // this will throw a Symfony\Component\Serializer\Exception\ExtraAttributesException
-    // because "city" is not an attribute of the Person class
-    $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+    // $loader is any of the valid loaders explained later in this article
+    $classMetadataFactory = new ClassMetadataFactory($loader);
     $normalizer = new ObjectNormalizer($classMetadataFactory);
     $serializer = new Serializer([$normalizer]);
+
+    // this will throw a Symfony\Component\Serializer\Exception\ExtraAttributesException
+    // because "city" is not an attribute of the Person class
     $person = $serializer->deserialize($data, 'App\Model\Person', 'xml', [
         'allow_extra_attributes' => false,
     ]);
@@ -362,8 +364,6 @@ You are now able to serialize only attributes in the groups you want::
         ['groups' => ['group1', 'group3']]
     );
     // $obj2 = MyObj(foo: 'foo', bar: 'bar')
-
-.. include:: /_includes/_annotation_loader_tip.rst.inc
 
 .. _ignoring-attributes-when-serializing:
 
@@ -714,6 +714,10 @@ There are several types of normalizers available:
     This normalizer converts :phpclass:`DateTimeInterface` objects (e.g.
     :phpclass:`DateTime` and :phpclass:`DateTimeImmutable`) into strings.
     By default, it uses the `RFC3339`_ format.
+
+:class:`Symfony\\Component\\Serializer\\Normalizer\\DateTimeZoneNormalizer`
+    This normalizer converts :phpclass:`DateTimeZone` objects into strings that
+    represent the name of the timezone according to the `list of PHP timezones`_.
 
 :class:`Symfony\\Component\\Serializer\\Normalizer\\DataUriNormalizer`
     This normalizer converts :phpclass:`SplFileInfo` objects into a data URI
@@ -1462,3 +1466,4 @@ Learn more
 .. _`RFC 7807`: https://tools.ietf.org/html/rfc7807
 .. _`Value Objects`: https://en.wikipedia.org/wiki/Value_object
 .. _`API Platform`: https://api-platform.com
+.. _`list of PHP timezones`: https://www.php.net/manual/en/timezones.php

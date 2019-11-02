@@ -554,7 +554,7 @@ below for more details).
     The listener has several goals:
 
     1) The thrown exception is converted into a
-       :class:`Symfony\\Component\\Debug\\Exception\\FlattenException`
+       :class:`Symfony\\Component\\ErrorRenderer\\Exception\\FlattenException`
        object, which contains all the information about the request, but which
        can be printed and serialized.
 
@@ -741,10 +741,6 @@ directory of FooBundle.
 The HttpKernel component provides a method called :method:`Symfony\\Component\\HttpKernel\\Kernel::locateResource`
 which can be used to transform logical paths into physical paths::
 
-    use Symfony\Component\HttpKernel\HttpKernel;
-
-    // ...
-    $kernel = new HttpKernel($dispatcher, $resolver);
     $path = $kernel->locateResource('@FooBundle/Resources/config/services.xml');
 
 Learn more

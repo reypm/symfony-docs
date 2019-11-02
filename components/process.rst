@@ -109,7 +109,8 @@ Using array of arguments is the recommended way to define commands. This
 saves you from any escaping and allows sending signals seamlessly
 (e.g. to stop processes before completion)::
 
-    $process = new Process(['/path/command', '--flag', 'arg 1', 'etc.']);
+    $process = new Process(['/path/command', '--option', 'argument', 'etc.']);
+    $process = new Process(['/path/to/php', '--define', 'memory_limit=1024M', '/path/to/script.php']);
 
 If you need to use stream redirections, conditional execution, or any other
 feature provided by the shell of your operating system, you can also define
@@ -172,6 +173,12 @@ anonymous function to the
             echo 'OUT > '.$buffer;
         }
     });
+
+.. note::
+
+    This feature won't work as expected in servers using PHP output buffering.
+    In those cases, either disable the `output_buffering`_ PHP option or use the
+    :phpfunction:`ob_flush` PHP function to force sending the output buffer.
 
 Running Processes Asynchronously
 --------------------------------
@@ -499,4 +506,5 @@ whether `TTY`_ is supported on the current operating system::
 
 .. _`pid`: https://en.wikipedia.org/wiki/Process_identifier
 .. _`PHP streams`: https://www.php.net/manual/en/book.stream.php
+.. _`output_buffering`: https://www.php.net/manual/en/outcontrol.configuration.php
 .. _`TTY`: https://en.wikipedia.org/wiki/Tty_(unix)

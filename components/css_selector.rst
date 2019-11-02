@@ -91,11 +91,12 @@ Pseudo-elements (``:before``, ``:after``, ``:first-line``,
 ``:first-letter``) are not supported because they select portions of text
 rather than elements.
 
-Several pseudo-classes are not yet supported:
+Pseudo-classes are partially supported:
 
-* ``*:first-of-type``, ``*:last-of-type``, ``*:nth-of-type``,
-  ``*:nth-last-of-type``, ``*:only-of-type``. (These work with an element
-  name (e.g. ``li:first-of-type``) but not with ``*``).
+* Not supported: ``*:first-of-type``, ``*:last-of-type``, ``*:nth-of-type`` and
+  ``*:nth-last-of-type`` (all these work with an element name (e.g.
+  ``li:first-of-type``) but not with the ``*`` selector).
+* Supported: ``*:only-of-type``.
 
 Learn more
 ----------

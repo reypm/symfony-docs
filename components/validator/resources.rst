@@ -147,15 +147,15 @@ can slow down your application because each file needs to be parsed, validated
 and converted into a :class:`Symfony\\Component\\Validator\\Mapping\\ClassMetadata`
 instance.
 
-To solve this problem, call the :method:`Symfony\\Component\\Validator\\ValidatorBuilder::setMetadataCache`
+To solve this problem, call the :method:`Symfony\\Component\\Validator\\ValidatorBuilder::setMappingCache`
 method of the Validator builder and pass your own caching class (which must
-implement :class:`Symfony\\Component\\Validator\\Mapping\\Cache\\CacheInterface`)::
+implement the PSR-6 interface :class:`Psr\\Cache\\CacheItemPoolInterface`)::
 
     use Symfony\Component\Validator\Validation;
 
     $validator = Validation::createValidatorBuilder()
         // ... add loaders
-        ->setMetadataCache(new SomeImplementCacheInterface());
+        ->setMappingCache(new SomePsr6Cache());
         ->getValidator();
 
 .. note::

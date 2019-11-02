@@ -3,7 +3,7 @@ Workflow
 
 Using the Workflow component inside a Symfony application requires to know first
 some basic theory and concepts about workflows and state machines.
-:doc:`Read this article </workflow/introduction>` for a quick overview.
+:doc:`Read this article </workflow/workflow-and-state-machine>` for a quick overview.
 
 Installation
 ------------
@@ -55,8 +55,7 @@ like this:
                         enabled: true
                     marking_store:
                         type: 'method'
-                        property:
-                            - 'currentPlace'
+                        property: 'currentPlace'
                     supports:
                         - App\Entity\BlogPost
                     initial_marking: draft
@@ -128,7 +127,7 @@ like this:
                     ],
                     'marking_store' => [
                         'type' => 'method'
-                        'property' => ['currentPlace']
+                        'property' => 'currentPlace'
                     ],
                     'supports' => ['App\Entity\BlogPost'],
                     'initial_marking' => 'draft',
@@ -170,6 +169,25 @@ As configured, the following property is used by the marking store::
         public $title;
         public $content;
     }
+
+.. note::
+
+    The marking store type could be "multiple_state" or "single_state". A single
+    state marking store does not support a model being on multiple places at the
+    same time. This means a "workflow" must use a "multiple_state" marking store
+    and a "state_machine" must use a "single_state" marking store. Symfony
+    configures the marking store according to the "type" by default, so it's
+    preferable to not configure it.
+
+    A single state marking store uses a string to store the data. A multiple
+    state marking store uses an array to store the data.
+
+.. tip::
+
+    The ``marking_store.type`` (the default value depends on the ``type`` value)
+    and ``property`` (default value ``['marking']``) attributes of the
+    ``marking_store`` option are optional. If omitted, their default values will
+    be used. It's highly recommenced to use the default value.
 
 .. tip::
 
@@ -257,8 +275,7 @@ order:
     * ``workflow.[workflow name].enter.[place name]``
 
 ``workflow.entered``
-    The subject has entered in the places and the marking is updated (making it a good
-    place to flush data in Doctrine).
+    The subject has entered in the places and the marking is updated.
 
     The three events being dispatched are:
 
@@ -666,18 +683,28 @@ Then you can access this metadata in your controller as follows::
             ->getWorkflowMetadata()['title'] ?? 'Default title'
         ;
 
-        // or
+        $maxNumOfWords = $workflow
+            ->getMetadataStore()
+            ->getPlaceMetadata('draft')['max_num_of_words'] ?? 500
+        ;
+
         $aTransition = $workflow->getDefinition()->getTransitions()[0];
-        $transitionTitle = $workflow
+        $priority = $workflow
             ->getMetadataStore()
             ->getTransitionMetadata($aTransition)['priority'] ?? 0
         ;
     }
 
-There is a shortcut that works with every metadata level::
+There is a ``getMetadata()`` method that works with all kinds of metadata::
 
-    $title = $workflow->getMetadataStore()->getMetadata('title');
-    $priority = $workflow->getMetadataStore()->getMetadata('priority');
+    // pass no arguments to getMetadata() to get "workflow metadata"
+    $title = $workflow->getMetadataStore()->getMetadata()['title'];
+
+    // pass a string (the place name) to getMetadata() to get "place metadata"
+    $maxNumOfWords = $workflow->getMetadataStore()->getMetadata('draft')['max_num_of_words'];
+
+    // pass a Transition object to getMetadata() to get "transition metadata"
+    $priority = $workflow->getMetadataStore()->getMetadata($aTransition)['priority'];
 
 In a :ref:`flash message <flash-messages>` in your controller::
 
@@ -727,5 +754,5 @@ Learn more
 .. toctree::
    :maxdepth: 1
 
-   workflow/introduction
-   workflow/dumping-workflows
+   /workflow/workflow-and-state-machine
+   /workflow/dumping-workflows

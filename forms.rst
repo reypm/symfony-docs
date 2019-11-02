@@ -157,10 +157,10 @@ added a submit button with a custom label for submitting the form to the server.
 Creating Form Classes
 ~~~~~~~~~~~~~~~~~~~~~
 
-Symfony recommends to :doc:`create thin controllers </best_practices/controllers>`.
-That's why it's better to move complex forms to dedicated classes instead of
-defining them in controller actions. Besides, forms defined in classes can be
-reused in multiple actions and services.
+Symfony recommends to put as little logic as possible in controllers. That's why
+it's better to move complex forms to dedicated classes instead of defining them
+in controller actions. Besides, forms defined in classes can be reused in
+multiple actions and services.
 
 Form classes are :ref:`form types <form-types>` that implement
 :class:`Symfony\\Component\\Form\\FormTypeInterface`. However, it's better to
@@ -188,12 +188,19 @@ implements the interface and provides some utilities::
         }
     }
 
+.. tip::
+
+    Install the `MakerBundle`_ in your project to generate form classes using
+    the ``make:form`` and ``make:registration-form`` commands.
+
 The form class contains all the directions needed to create the task form. In
 controllers extending from the :ref:`AbstractController <the-base-controller-class-services>`,
 use the ``createForm()`` helper (otherwise, use the ``create()`` method of the
 ``form.factory`` service)::
 
     // src/Controller/TaskController.php
+    namespace App\Controller;
+
     use App\Form\Type\TaskType;
     // ...
 
@@ -224,6 +231,8 @@ So, while not always necessary, it's generally a good idea to explicitly specify
 the ``data_class`` option by adding the following to your form type class::
 
     // src/Form/Type/TaskType.php
+    namespace App\Form\Type;
+
     use App\Entity\Task;
     use Symfony\Component\OptionsResolver\OptionsResolver;
     // ...
@@ -239,6 +248,8 @@ the ``data_class`` option by adding the following to your form type class::
             ]);
         }
     }
+
+.. _rendering-forms:
 
 Rendering Forms
 ---------------
@@ -512,6 +523,8 @@ object.
     .. code-block:: php
 
         // src/Entity/Task.php
+        namespace App\Entity;
+
         use Symfony\Component\Validator\Constraints\NotBlank;
         use Symfony\Component\Validator\Constraints\Type;
         use Symfony\Component\Validator\Mapping\ClassMetadata;
@@ -539,6 +552,86 @@ powerful feature.
 
 Other Common Form Features
 --------------------------
+
+Passing Options to Forms
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you :ref:`create forms in classes <creating-forms-in-classes>`, when building
+the form in the controller you can pass custom options to it as the third optional
+argument of ``createForm()``::
+
+    // src/Controller/TaskController.php
+    namespace App\Controller;
+
+    use App\Form\Type\TaskType;
+    // ...
+
+    class TaskController extends AbstractController
+    {
+        public function new()
+        {
+            $task = new Task();
+            // use some PHP logic to decide if this form field is required or not
+            $dueDateIsRequired = ...
+
+            $form = $this->createForm(TaskType::class, $task, [
+                'require_due_date' => $dueDateIsRequired,
+            ]);
+
+            // ...
+        }
+    }
+
+If you try to use the form now, you'll see an error message: *The option
+"require_due_date" does not exist.* That's because forms must declare all the
+options they accept using the ``configureOptions()`` method::
+
+    // src/Form/Type/TaskType.php
+    namespace App\Form\Type;
+
+    use Symfony\Component\OptionsResolver\OptionsResolver;
+    // ...
+
+    class TaskType extends AbstractType
+    {
+        // ...
+
+        public function configureOptions(OptionsResolver $resolver)
+        {
+            $resolver->setDefaults([
+                // ...,
+                'require_due_date' => false,
+            ]);
+
+            // you can also define the allowed types, allowed values and
+            // any other feature supported by the OptionsResolver component
+            $resolver->setAllowedTypes('require_due_date', 'bool');
+        }
+    }
+
+Now you can use this new form option inside the ``buildForm()`` method::
+
+    // src/Form/Type/TaskType.php
+    namespace App\Form\Type;
+
+    use Symfony\Component\Form\AbstractType;
+    use Symfony\Component\Form\Extension\Core\Type\DateType;
+    use Symfony\Component\Form\FormBuilderInterface;
+
+    class TaskType extends AbstractType
+    {
+        public function buildForm(FormBuilderInterface $builder, array $options)
+        {
+            $builder
+                // ...
+                ->add('dueDate', DateType::class, [
+                    'required' => $options['require_due_date'],
+                ])
+            ;
+        }
+
+        // ...
+    }
 
 Form Type Options
 ~~~~~~~~~~~~~~~~~
@@ -675,12 +768,14 @@ If you want to modify this, use the :method:`Symfony\\Component\\Form\\FormFacto
 method::
 
     // src/Controller/TaskController.php
+    namespace App\Controller;
+
     use App\Form\TaskType;
     use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
     class TaskController extends AbstractController
     {
-        public function newAction()
+        public function new()
         {
             $task = ...;
             $form = $this->get('form.factory')->createNamed('my_name', TaskType::class, $task);
@@ -893,3 +988,4 @@ Misc.:
     /form/without_class
 
 .. _`Symfony Forms screencast series`: https://symfonycasts.com/screencast/symfony-forms
+.. _`MakerBundle`: https://symfony.com/doc/current/bundles/SymfonyMakerBundle/index.html

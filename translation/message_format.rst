@@ -88,7 +88,7 @@ typical usage of this is gender:
     .. code-block:: yaml
 
         # translations/messages+intl-icu.en.yaml
-        invitation_title: >
+        invitation_title: >-
             {organizer_gender, select,
                 female {{organizer_name} has invited you for her party!}
                 male   {{organizer_name} has invited you for his party!}
@@ -104,7 +104,11 @@ typical usage of this is gender:
                 <body>
                     <trans-unit id="invitation_title">
                         <source>invitation_title</source>
-                        <target>{organizer_gender, select, female {{organizer_name} has invited you for her party!} male {{organizer_name} has invited you for his party!} other {{organizer_name} have invited you for their party!}}</target>
+                        <target>{organizer_gender, select, 
+                            female {{organizer_name} has invited you for her party!}
+                            male {{organizer_name} has invited you for his party!}
+                            other {{organizer_name} have invited you for their party!}
+                        }</target>
                     </trans-unit>
                 </body>
             </file>
@@ -169,7 +173,7 @@ handle pluralization in your messages (e.g. ``There are 3 apples`` vs
     .. code-block:: yaml
 
         # translations/messages+intl-icu.en.yaml
-        num_of_apples: >
+        num_of_apples: >-
             {apples, plural,
                 =0    {There are no apples}
                 one   {There is one apple...}
@@ -235,7 +239,7 @@ Usage of this string is the same as with variables and select::
 
     .. code-block:: text
 
-		{gender_of_host, select,
+        {gender_of_host, select,
             female {
                 {num_guests, plural, offset:1
                 =0    {{host} does not give a party.}
@@ -274,7 +278,7 @@ Similar to ``plural``, ``selectordinal`` allows you to use numbers as ordinal sc
     .. code-block:: yaml
 
         # translations/messages+intl-icu.en.yaml
-        finish_place: >
+        finish_place: >-
             You finished {place, selectordinal,
                 one   {#st}
                 two   {#nd}

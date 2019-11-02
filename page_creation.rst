@@ -182,8 +182,9 @@ The Web Debug Toolbar: Debugging Dream
 --------------------------------------
 
 One of Symfony's *killer* features is the Web Debug Toolbar: a bar that displays
-a *huge* amount of debugging information along the bottom of your page while developing. This is all
-included out of the box using a package called ``symfony/profiler-pack``.
+a *huge* amount of debugging information along the bottom of your page while
+developing. This is all included out of the box using a :ref:`Symfony pack <symfony-packs>`
+called ``symfony/profiler-pack``.
 
 You will see a black bar along the bottom of the page. You'll learn more about all the information it holds
 along the way, but feel free to experiment: hover over and click
@@ -216,6 +217,7 @@ Now, use the handy ``render()`` function to render a template. Pass it a ``numbe
 variable so you can use it in Twig::
 
     // src/Controller/LuckyController.php
+    namespace App\Controller;
 
     // ...
     class LuckyController extends AbstractController
@@ -251,8 +253,8 @@ Now you may wonder where the Web Debug Toolbar has gone: that's because there is
 no ``</body>`` tag in the current template. You can add the body element yourself,
 or extend ``base.html.twig``, which contains all default HTML elements.
 
-In the :doc:`/templating` article, you'll learn all about Twig: how to loop, render
-other templates and leverage its powerful layout inheritance system.
+In the :doc:`templates </templates>` article, you'll learn all about Twig: how
+to loop, render other templates and leverage its powerful layout inheritance system.
 
 Checking out the Project Structure
 ----------------------------------
@@ -304,7 +306,7 @@ Ok, time to finish mastering the fundamentals by reading these articles:
 
 * :doc:`/routing`
 * :doc:`/controller`
-* :doc:`/templating`
+* :doc:`/templates`
 * :doc:`/configuration`
 
 Then, learn about other important topics like the

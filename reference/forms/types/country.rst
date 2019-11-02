@@ -21,7 +21,8 @@ the option manually, but then you should just use the ``ChoiceType`` directly.
 +-------------+-----------------------------------------------------------------------+
 | Rendered as | can be various tags (see :ref:`forms-reference-choice-tags`)          |
 +-------------+-----------------------------------------------------------------------+
-| Options     | - `choice_translation_locale`_                                        |
+| Options     | - `alpha3`_                                                           |
+|             | - `choice_translation_locale`_                                        |
 +-------------+-----------------------------------------------------------------------+
 | Overridden  | - `choices`_                                                          |
 | options     |                                                                       |
@@ -38,6 +39,7 @@ the option manually, but then you should just use the ``ChoiceType`` directly.
 |             |                                                                       |
 |             | from the :doc:`FormType </reference/forms/types/form>`                |
 |             |                                                                       |
+|             | - `attr`_                                                             |
 |             | - `data`_                                                             |
 |             | - `disabled`_                                                         |
 |             | - `empty_data`_                                                       |
@@ -49,6 +51,7 @@ the option manually, but then you should just use the ``ChoiceType`` directly.
 |             | - `label_format`_                                                     |
 |             | - `mapped`_                                                           |
 |             | - `required`_                                                         |
+|             | - `row_attr`_                                                         |
 +-------------+-----------------------------------------------------------------------+
 | Parent type | :doc:`ChoiceType </reference/forms/types/choice>`                     |
 +-------------+-----------------------------------------------------------------------+
@@ -59,6 +62,15 @@ the option manually, but then you should just use the ``ChoiceType`` directly.
 
 Field Options
 -------------
+
+alpha3
+~~~~~~
+
+**type**: ``boolean`` **default**: ``false``
+
+If this option is ``true``, the choice values use the `ISO 3166-1 alpha-3`_
+three-letter codes (e.g. New Zealand = ``NZL``) instead of the default
+`ISO 3166-1 alpha-2`_ two-letter codes (e.g. New Zealand = ``NZ``).
 
 .. include:: /reference/forms/types/options/choice_translation_locale.rst.inc
 
@@ -99,6 +111,8 @@ These options inherit from the :doc:`ChoiceType </reference/forms/types/choice>`
 
 These options inherit from the :doc:`FormType </reference/forms/types/form>`:
 
+.. include:: /reference/forms/types/options/attr.rst.inc
+
 .. include:: /reference/forms/types/options/data.rst.inc
 
 .. include:: /reference/forms/types/options/disabled.rst.inc
@@ -130,3 +144,8 @@ The actual default value of this option depends on other field options:
 .. include:: /reference/forms/types/options/mapped.rst.inc
 
 .. include:: /reference/forms/types/options/required.rst.inc
+
+.. include:: /reference/forms/types/options/row_attr.rst.inc
+
+.. _`ISO 3166-1 alpha-2`: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+.. _`ISO 3166-1 alpha-3`: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3

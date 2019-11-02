@@ -9,7 +9,7 @@ Symfony provides different means to work with an LDAP server.
 The Security component offers:
 
 * The ``ldap`` :doc:`user provider</security/user_provider>`, using the
-  :class:`Symfony\\Component\\Security\\Core\\User\\LdapUserProvider`
+  :class:`Symfony\\Component\\Ldap\\Security\\LdapUserProvider`
   class. Like all other user providers, it can be used with any
   authentication provider.
 
@@ -482,6 +482,8 @@ Configuration example for form login and query_string
                         service: Symfony\Component\Ldap\Ldap
                         dn_string: 'dc=example,dc=com'
                         query_string: '(&(uid={username})(memberOf=cn=users,ou=Services,dc=example,dc=com))'
+                        search_dn: '...'
+                        search_password: 'the-raw-password'
 
     .. code-block:: xml
 
@@ -498,7 +500,9 @@ Configuration example for form login and query_string
                     <form-login-ldap
                             service="Symfony\Component\Ldap\Ldap"
                             dn-string="dc=example,dc=com"
-                            query-string="(&amp;(uid={username})(memberOf=cn=users,ou=Services,dc=example,dc=com))"/>
+                            query-string="(&amp;(uid={username})(memberOf=cn=users,ou=Services,dc=example,dc=com))"
+                            search-dn="..."
+                            search-password="the-raw-password"/>
                 </firewall>
             </config>
         </srv:container>
@@ -515,6 +519,8 @@ Configuration example for form login and query_string
                         'service' => Ldap::class,
                         'dn_string' => 'dc=example,dc=com',
                         'query_string' => '(&(uid={username})(memberOf=cn=users,ou=Services,dc=example,dc=com))',
+                        'search_dn' => '...',
+                        'search_password' => 'the-raw-password',
                         // ...
                     ],
                 ],

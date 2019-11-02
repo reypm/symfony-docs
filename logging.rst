@@ -308,7 +308,7 @@ option of your handler to ``rotating_file``:
                 https://symfony.com/schema/dic/monolog/monolog-1.0.xsd">
 
             <monolog:config>
-                <!-- "max_files": max number of log files to keep
+                <!-- "max-files": max number of log files to keep
                      defaults to zero, which means infinite files -->
                 <monolog:handler name="main"
                     type="rotating_file"
@@ -344,8 +344,8 @@ receive a call to its method ``setLogger()`` with the default logger service
 passed as a service.
 
 If you want to use in your own services a pre-configured logger which uses a
-specific channel (``app`` by default), use the ``monolog.logger`` tag  with the
-``channel`` property as explained in the
+specific channel (``app`` by default), you can either :ref:`autowire monolog channels <monolog-autowire-channels>`
+or use the ``monolog.logger`` tag  with the ``channel`` property as explained in the
 :ref:`Dependency Injection reference <dic_tags-monolog>`.
 
 Adding extra Data to each Log (e.g. a unique request token)
@@ -366,6 +366,7 @@ Learn more
     logging/channels_handlers
     logging/formatter
     logging/processors
+    logging/handlers
     logging/monolog_exclude_http_codes
     logging/monolog_console
 

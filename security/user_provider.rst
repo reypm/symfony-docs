@@ -137,8 +137,12 @@ interface only requires one method: ``loadUserByUsername($username)``::
 
         public function loadUserByUsername($usernameOrEmail)
         {
-            return $this->createQueryBuilder('u')
-                ->where('u.username = :query OR u.email = :query')
+            return $this->createQuery(
+                    'SELECT u
+                    FROM App\Entity\User u
+                    WHERE u.username = :query
+                    OR u.email = :query'
+                )
                 ->setParameter('query', $usernameOrEmail)
                 ->getQuery()
                 ->getOneOrNullResult();
@@ -224,7 +228,7 @@ users will encode their passwords:
             # ...
             encoders:
                 # this internal class is used by Symfony to represent in-memory users
-                Symfony\Component\Security\Core\User\User: 'bcrypt'
+                Symfony\Component\Security\Core\User\User: 'auto'
 
     .. code-block:: xml
 
@@ -241,7 +245,7 @@ users will encode their passwords:
 
                 <!-- this internal class is used by Symfony to represent in-memory users -->
                 <encoder class="Symfony\Component\Security\Core\User\User"
-                    algorithm="bcrypt"
+                    algorithm="auto"
                 />
             </config>
         </srv:container>
@@ -257,7 +261,7 @@ users will encode their passwords:
             // ...
             'encoders' => [
                 User::class => [
-                    'algorithm' => 'bcrypt',
+                    'algorithm' => 'auto',
                 ],
             ],
         ]);

@@ -23,8 +23,9 @@ how the input and output of the data is handled.
 | Overridden  | - `compound`_                                                       |
 | options     |                                                                     |
 +-------------+---------------------------------------------------------------------+
-| Inherited   | - `data`_                                                           |
-| options     | - `disabled`_                                                       |
+| Inherited   | - `attr`_                                                           |
+| options     | - `data`_                                                           |
+|             | - `disabled`_                                                       |
 |             | - `empty_data`_                                                     |
 |             | - `error_bubbling`_                                                 |
 |             | - `error_mapping`_                                                  |
@@ -38,6 +39,7 @@ how the input and output of the data is handled.
 |             | - `label_format`_                                                   |
 |             | - `mapped`_                                                         |
 |             | - `required`_                                                       |
+|             | - `row_attr`_                                                       |
 +-------------+---------------------------------------------------------------------+
 | Parent type | :doc:`FormType </reference/forms/types/form>`                       |
 +-------------+---------------------------------------------------------------------+
@@ -67,9 +69,10 @@ divisor
 
 **type**: ``integer`` **default**: ``1``
 
-If, for some reason, you need to divide your starting value by a number
+If you need to divide your starting value by a number
 before rendering it to the user, you can use the ``divisor`` option.
-For example::
+For example if you store prices as integer in order to avoid `rounding errors`_,
+you can transform values in cents automatically::
 
     use Symfony\Component\Form\Extension\Core\Type\MoneyType;
     // ...
@@ -107,6 +110,8 @@ Inherited Options
 
 These options inherit from the :doc:`FormType </reference/forms/types/form>`:
 
+.. include:: /reference/forms/types/options/attr.rst.inc
+
 .. include:: /reference/forms/types/options/data.rst.inc
 
 .. include:: /reference/forms/types/options/disabled.rst.inc
@@ -143,6 +148,8 @@ The default value is ``''`` (the empty string).
 
 .. include:: /reference/forms/types/options/required.rst.inc
 
+.. include:: /reference/forms/types/options/row_attr.rst.inc
+
 Form Variables
 --------------
 
@@ -153,3 +160,4 @@ money_pattern  ``string``  The format to use to display the money, including the
 =============  ==========  ===============================================================
 
 .. _`3 letter ISO 4217 code`: https://en.wikipedia.org/wiki/ISO_4217
+.. _`rounding errors`: https://0.30000000000000004.com/

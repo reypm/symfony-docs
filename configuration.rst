@@ -320,8 +320,8 @@ a new ``locale`` parameter is added to the ``config/services.yaml`` file).
 
 .. seealso::
 
-    Read the `Accessing Configuration Values`_ section of this article to learn
-    about how to use these configuration parameters in services and controllers.
+    Later in this article you can read how to
+    ref:`get configuration parameters in controllers and services <configuration-accessing-parameters>`.
 
 .. index::
    single: Environments; Introduction
@@ -505,7 +505,7 @@ In order to define the actual values of env vars, Symfony proposes different
 solutions depending if the application is running in production or in your local
 development machine.
 
-Independent from the way you set environmnet variables, you may need to run the
+Independent from the way you set environment variables, you may need to run the
 ``debug:container`` command with the ``--env-vars`` option to verify that they
 are defined and have the expected values:
 
@@ -598,6 +598,8 @@ operating systems.
     :doc:`Symfony profiler </profiler>`. In practice this shouldn't be a
     problem because the web profiler must **never** be enabled in production.
 
+.. _configuration-multiple-env-files:
+
 Managing Multiple .env Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -638,8 +640,10 @@ the env files ending in ``.local`` (``.env.local`` and ``.env.<environment>.loca
     involving a ``.env.dist`` file. For information about upgrading, see:
     :doc:`configuration/dot-env-changes`.
 
-Accessing Configuration Values
-------------------------------
+.. _configuration-accessing-parameters:
+
+Accessing Configuration Parameters
+----------------------------------
 
 Controllers and services can access all the configuration parameters. This
 includes both the :ref:`parameters defined by yourself <configuration-parameters>`
@@ -650,9 +654,31 @@ all the parameters that exist in your application:
 
     $ php bin/console debug:container --parameters
 
-Parameters are injected in services as arguments to their constructors.
-:doc:`Service autowiring </service_container/autowiring>` doesn't work for
-parameters. Instead, inject them explicitly:
+In controllers extending from the :ref:`AbstractController <the-base-controller-class-services>`,
+use the ``getParameter()`` helper::
+
+    // src/Controller/UserController.php
+    namespace App\Controller;
+
+    use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+
+    class UserController extends AbstractController
+    {
+        // ...
+
+        public function index()
+        {
+            $projectDir = $this->getParameter('kernel.project_dir');
+            $adminEmail = $this->getParameter('app.admin_email');
+
+            // ...
+        }
+    }
+
+In services and controllers not extending from ``AbstractController``, inject
+the parameters as arguments of their constructors. You must inject them
+explicitly because :doc:`service autowiring </service_container/autowiring>`
+doesn't work for parameters:
 
 .. configuration-block::
 
@@ -766,6 +792,8 @@ parameters at once by type-hinting any of its constructor arguments with the
 :class:`Symfony\\Component\\DependencyInjection\\ParameterBag\\ContainerBagInterface`::
 
     // src/Service/MessageGenerator.php
+    namespace App\Service;
+    
     // ...
 
     use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;

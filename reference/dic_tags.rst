@@ -204,7 +204,7 @@ doctrine.event_listener
 **Purpose**: Add a Doctrine event listener
 
 For details on creating Doctrine event listeners, read the
-:doc:`/doctrine/event_listeners_subscribers` article.
+:doc:`Doctrine events </doctrine/events>` article.
 
 doctrine.event_subscriber
 -------------------------
@@ -212,7 +212,7 @@ doctrine.event_subscriber
 **Purpose**: Add a Doctrine event subscriber
 
 For details on creating Doctrine event subscribers, read the
-:doc:`/doctrine/event_listeners_subscribers` article.
+:doc:`Doctrine events </doctrine/events>` article.
 
 .. _dic-tags-form-type:
 
@@ -525,9 +525,8 @@ channel when injecting the logger in a service.
 
 .. tip::
 
-    You can also configure custom channels in the configuration and retrieve
-    the corresponding logger service from the service container directly (see
-    :ref:`monolog-channels-config`).
+    You can create :doc:`custom channels </logging/channels_handlers>` and
+    even :ref:`autowire logging channels <monolog-autowire-channels>`.
 
 .. _dic_tags-monolog-processor:
 
@@ -876,7 +875,7 @@ file
 When executing the ``translation:update`` command, it uses extractors to
 extract translation messages from a file. By default, the Symfony Framework
 has a :class:`Symfony\\Bridge\\Twig\\Translation\\TwigExtractor` and a
-:class:`Symfony\\Bundle\\FrameworkBundle\\Translation\\PhpExtractor`, which
+:class:`Symfony\\Component\\Translation\\Extractor\\PhpExtractor`, which
 help to find and extract translation keys from Twig templates and PHP files.
 
 You can create your own extractor by creating a class that implements

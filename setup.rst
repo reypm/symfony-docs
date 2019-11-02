@@ -17,7 +17,7 @@ Technical Requirements
 
 Before creating your first Symfony application you must:
 
-* Install PHP 7.1 or higher and these PHP extensions (which are installed and
+* Install PHP 7.2.9 or higher and these PHP extensions (which are installed and
   enabled by default in most PHP 7 installations): `Ctype`_, `iconv`_, `JSON`_,
   `PCRE`_, `Session`_, `SimpleXML`_, and `Tokenizer`_;
 * `Install Composer`_, which is used to install PHP packages;
@@ -42,7 +42,7 @@ application:
 .. code-block:: terminal
 
     # run this if you are building a traditional web application
-    $ symfony new --full my_project_name
+    $ symfony new my_project_name --full
 
     # run this if you are building a microservice, console application or API
     $ symfony new my_project_name
@@ -179,6 +179,27 @@ two public repositories:
 Read the `Symfony Recipes documentation`_ to learn everything about how to
 create recipes for your own packages.
 
+.. _symfony-packs:
+
+Symfony Packs
+~~~~~~~~~~~~~
+
+Sometimes a single feature requires installing several packages and bundles.
+Instead of installing them individually, Symfony provides **packs**, which are
+Composer metapackages that include several dependencies.
+
+For example, to add debugging features in your application, you can run the
+``composer require --dev debug`` command. This installs the ``symfony/debug-pack``,
+which in turn installs several packages like ``symfony/debug-bundle``,
+``symfony/monolog-bundle``, ``symfony/var-dumper``, etc.
+
+By default, when installing Symfony packs, your ``composer.json`` file shows the
+pack dependency (e.g. ``"symfony/debug-pack": "^1.0"``) instead of the actual
+packages installed. To show the packages, add the ``--unpack`` option when
+installing a pack (e.g. ``composer require debug --dev --unpack``) or run this
+command to unpack the already installed packs: ``composer unpack PACK_NAME``
+(e.g. ``composer unpack debug``).
+
 .. _security-checker:
 
 Checking Security Vulnerabilities
@@ -216,12 +237,15 @@ stable version. If you want to use an LTS version, add the ``--version`` option:
 
 .. code-block:: terminal
 
-    # find the latest LTS version at https://symfony.com/roadmap
-    $ symfony new --version=3.4 my_project_name_name
+    # use the most recent 'lts' version
+    $ symfony new my_project_name --version=lts
 
-    # you can also base your project on development versions
-    $ symfony new --version=4.4.x-dev my_project_name
-    $ symfony new --version=dev-master my_project_name
+    # use the 'next' Symfony version to be released (still in development)
+    $ symfony new my_project_name --version=next
+
+    #  use a specific Symfony version
+    $ symfony new my_project_name --version=3.3.10
+    $ symfony new my_project_name --version=4.3.1
 
 The Symfony Demo application
 ----------------------------
@@ -234,7 +258,7 @@ Run this command to create a new project based on the Symfony Demo application:
 
 .. code-block:: terminal
 
-    $ symfony new --demo my_project_name
+    $ symfony new my_project_name --demo
 
 Start Coding!
 -------------
@@ -257,7 +281,7 @@ Learn More
     setup/web_server_configuration
     setup/*
 
-.. _`Stellar Development with Symfony`: http://symfonycasts.com/screencast/symfony
+.. _`Stellar Development with Symfony`: https://symfonycasts.com/screencast/symfony
 .. _`Install Composer`: https://getcomposer.org/download/
 .. _`Install Symfony`: https://symfony.com/download
 .. _`install Symfony`: https://symfony.com/download

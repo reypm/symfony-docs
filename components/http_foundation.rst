@@ -57,6 +57,8 @@ which is almost equivalent to the more verbose, but also more flexible,
         $_SERVER
     );
 
+.. _accessing-request-data:
+
 Accessing Request Data
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -463,6 +465,7 @@ call::
         's_maxage'      => 600,
         'private'       => false,
         'public'        => true,
+        'immutable'     => true,
     ]);
 
 To check if the Response validators (``ETag``, ``Last-Modified``) match a

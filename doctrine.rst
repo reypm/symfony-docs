@@ -9,22 +9,24 @@ Databases and the Doctrine ORM
 
     Do you prefer video tutorials? Check out the `Doctrine screencast series`_.
 
-Symfony doesn't provide a component to work with the database, but it *does* provide
-tight integration with a third-party library called `Doctrine`_.
+Symfony provides all the tools you need to use databases in your applications
+thanks to `Doctrine`_, the best set of PHP libraries to work with databases.
+These tools support relational databases like MySQL and PostgreSQL and also
+NoSQL databases like MongoDB.
 
-.. note::
+Databases are a broad topic, so the documentation is divided in three articles:
 
-    This article is all about using the Doctrine ORM. If you prefer to use raw
-    database queries, see the ":doc:`/doctrine/dbal`" article instead.
-
-    You can also persist data to `MongoDB`_ using Doctrine ODM library. See the
-    "`DoctrineMongoDBBundle`_" documentation.
+* This article explains the recommended way to work with **relational databases**
+  in Symfony applications;
+* Read :doc:`this other article </doctrine/dbal>` if you need **low-level access**
+  to perform raw SQL queries to relational databases (similar to PHP's `PDO`_);
+* Read `DoctrineMongoDBBundle docs`_ if you are working with **MongoDB databases**.
 
 Installing Doctrine
 -------------------
 
-First, install Doctrine support via the ORM pack, as well as the MakerBundle,
-which will help generate some code:
+First, install Doctrine support via the ``orm`` :ref:`Symfony pack <symfony-packs>`,
+as well as the MakerBundle, which will help generate some code:
 
 .. code-block:: terminal
 
@@ -564,8 +566,8 @@ the :ref:`doctrine-queries` section.
     If the number of database queries is too high, the icon will turn yellow to
     indicate that something may not be correct. Click on the icon to open the
     Symfony Profiler and see the exact queries that were executed. If you don't
-    see the web debug toolbar, try running ``composer require --dev symfony/profiler-pack``
-    to install it.
+    see the web debug toolbar, install the ``profiler`` :ref:`Symfony pack <symfony-packs>`
+    by running this command: ``composer require --dev symfony/profiler-pack``.
 
 Automatically Fetching Objects (ParamConverter)
 -----------------------------------------------
@@ -695,28 +697,30 @@ a new method for this to your repository::
         }
 
         /**
-         * @param $price
          * @return Product[]
          */
         public function findAllGreaterThanPrice($price): array
         {
-            // automatically knows to select Products
-            // the "p" is an alias you'll use in the rest of the query
-            $qb = $this->createQueryBuilder('p')
-                ->andWhere('p.price > :price')
-                ->setParameter('price', $price)
-                ->orderBy('p.price', 'ASC')
-                ->getQuery();
+            $entityManager = $this->getEntityManager();
 
-            return $qb->execute();
+            $query = $entityManager->createQuery(
+                'SELECT p
+                FROM App\Entity\Product p
+                WHERE p.price > :price
+                ORDER BY p.price ASC'
+            )->setParameter('price', $price);
 
-            // to get just one result:
-            // $product = $qb->setMaxResults(1)->getOneOrNullResult();
+            // returns an array of Product objects
+            return $query->getResult();
         }
     }
 
-This uses Doctrine's `Query Builder`_: a very powerful and user-friendly way to
-write custom queries. Now, you can call this method on the repository::
+The string passed to ``createQuery()`` might look like SQL, but it is
+`Doctrine Query Language`_. This allows you to type queries using commonly
+known query language, but referencing PHP objects instead (i.e. in the ``FROM``
+statement).
+
+Now, you can call this method on the repository::
 
     // from inside a controller
     $minPrice = 1000;
@@ -730,36 +734,45 @@ write custom queries. Now, you can call this method on the repository::
 If you're in a :ref:`services-constructor-injection`, you can type-hint the
 ``ProductRepository`` class and inject it like normal.
 
-For more details, see the `Query Builder`_ Documentation from Doctrine.
+Querying with the Query Builder
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Querying with DQL or SQL
-------------------------
-
-In addition to the query builder, you can also query with `Doctrine Query Language`_::
+Doctrine also provides a `Query Builder`_, an object-oriented way to write
+queries. It is recommended to use this when queries and build dynamically (i.e.
+based on PHP conditions)::
 
     // src/Repository/ProductRepository.php
+
     // ...
-
-    public function findAllGreaterThanPrice($price): array
+    public function findAllGreaterThanPrice($price, $includeUnavailableProducts = false): array
     {
-        $entityManager = $this->getEntityManager();
+        // automatically knows to select Products
+        // the "p" is an alias you'll use in the rest of the query
+        $qb = $this->createQueryBuilder('p')
+            ->where('p.price > :price')
+            ->setParameter('price', $price)
+            ->orderBy('p.price', 'ASC')
 
-        $query = $entityManager->createQuery(
-            'SELECT p
-            FROM App\Entity\Product p
-            WHERE p.price > :price
-            ORDER BY p.price ASC'
-        )->setParameter('price', $price);
+        if (!$includeUnavailableProducts) {
+            $qb->andWhere('p.available = TRUE')
+        }
 
-        // returns an array of Product objects
+        $query = $qb->getQuery();
+
         return $query->execute();
+
+        // to get just one result:
+        // $product = $query->setMaxResults(1)->getOneOrNullResult();
     }
 
-Or directly with SQL if you need to::
+Querying with SQL
+~~~~~~~~~~~~~~~~~
+
+In addition, you can query directly with SQL if you need to::
 
     // src/Repository/ProductRepository.php
-    // ...
 
+    // ...
     public function findAllGreaterThanPrice($price): array
     {
         $conn = $this->getEntityManager()->getConnection();
@@ -793,58 +806,18 @@ relationships.
 
 For info, see :doc:`/doctrine/associations`.
 
-.. _doctrine-fixtures:
+Database Testing
+----------------
 
-Dummy Data Fixtures
--------------------
+Read the article about :doc:`testing code that interacts with the database </testing/database>`.
 
-Doctrine provides a library that allows you to programmatically load testing
-data into your project (i.e. "fixture data"). Install it with:
+Doctrine Extensions (Timestampable, Translatable, etc.)
+-------------------------------------------------------
 
-.. code-block:: terminal
-
-    $ composer require --dev doctrine/doctrine-fixtures-bundle
-
-Then, use the ``make:fixtures`` command to generate an empty fixture class:
-
-.. code-block:: terminal
-
-    $ php bin/console make:fixtures
-
-    The class name of the fixtures to create (e.g. AppFixtures):
-    > ProductFixture
-
-Customize the new class to load ``Product`` objects into Doctrine::
-
-    // src/DataFixtures/ProductFixture.php
-    namespace App\DataFixtures;
-
-    use Doctrine\Bundle\FixturesBundle\Fixture;
-    use Doctrine\Common\Persistence\ObjectManager;
-
-    class ProductFixture extends Fixture
-    {
-        public function load(ObjectManager $manager)
-        {
-            $product = new Product();
-            $product->setName('Priceless widget!');
-            $product->setPrice(14.50);
-            $product->setDescription('Ok, I guess it *does* have a price');
-            $manager->persist($product);
-
-            // add more products
-
-            $manager->flush();
-        }
-    }
-
-Empty the database and reload *all* the fixture classes with:
-
-.. code-block:: terminal
-
-    $ php bin/console doctrine:fixtures:load
-
-For information, see the "`DoctrineFixturesBundle`_" documentation.
+Doctrine community has created some extensions to implement common needs such as
+*"set the value of the createdAt property automatically when creating an entity"*.
+Read more about the `available Doctrine extensions`_ and use the
+`StofDoctrineExtensionsBundle`_ to integrate them in your application.
 
 Learn more
 ----------
@@ -853,9 +826,7 @@ Learn more
     :maxdepth: 1
 
     doctrine/associations
-    doctrine/common_extensions
-    doctrine/lifecycle_callbacks
-    doctrine/event_listeners_subscribers
+    doctrine/events
     doctrine/registration_form
     doctrine/custom_dql_functions
     doctrine/dbal
@@ -864,18 +835,15 @@ Learn more
     doctrine/mongodb_session_storage
     doctrine/resolve_target_entity
     doctrine/reverse_engineering
-
-* `DoctrineFixturesBundle`_
+    testing/database
 
 .. _`Doctrine`: http://www.doctrine-project.org/
 .. _`RFC 3986`: https://www.ietf.org/rfc/rfc3986.txt
-.. _`MongoDB`: https://www.mongodb.org/
 .. _`Doctrine's Mapping Types documentation`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html
 .. _`Query Builder`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/query-builder.html
 .. _`Doctrine Query Language`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/dql-doctrine-query-language.html
 .. _`Reserved SQL keywords documentation`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#quoting-reserved-words
-.. _`DoctrineMongoDBBundle`: https://symfony.com/doc/current/bundles/DoctrineMongoDBBundle/index.html
-.. _`DoctrineFixturesBundle`: https://symfony.com/doc/current/bundles/DoctrineFixturesBundle/index.html
+.. _`DoctrineMongoDBBundle docs`: https://symfony.com/doc/current/bundles/DoctrineMongoDBBundle/index.html
 .. _`Transactions and Concurrency`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/transactions-and-concurrency.html
 .. _`DoctrineMigrationsBundle`: https://github.com/doctrine/DoctrineMigrationsBundle
 .. _`NativeQuery`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/native-sql.html
@@ -884,3 +852,6 @@ Learn more
 .. _`limit of 767 bytes for the index key prefix`: https://dev.mysql.com/doc/refman/5.6/en/innodb-restrictions.html
 .. _`Doctrine screencast series`: https://symfonycasts.com/screencast/symfony-doctrine
 .. _`API Platform`: https://api-platform.com/docs/core/validation/
+.. _`PDO`: https://php.net/pdo
+.. _`available Doctrine extensions`: https://github.com/Atlantic18/DoctrineExtensions
+.. _`StofDoctrineExtensionsBundle`: https://github.com/antishov/StofDoctrineExtensionsBundle

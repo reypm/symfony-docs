@@ -496,8 +496,14 @@ different messages to them. For example:
                         dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
                         options:
                             # queue_name is specific to the doctrine transport
-                            # try "exchange" for amqp or "group1" for redis
                             queue_name: high
+
+                            # for amqp send to a separate exchange then queue
+                            #exchange:
+                            #    name: high
+                            #queues:
+                            #    messages_high: ~
+                            # or redis try "group"
                     async_priority_low:
                         dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
                         options:
@@ -877,7 +883,7 @@ The Redis transport uses `streams`_ to queue messages.
     # .env
     MESSENGER_TRANSPORT_DSN=redis://localhost:6379/messages
     # Full DSN Example
-    MESSENGER_TRANSPORT_DSN=redis://password@localhost:6379/messages/symfony/consumer?auto_setup=true&serializer=1&stream_max_entries=0
+    MESSENGER_TRANSPORT_DSN=redis://password@localhost:6379/messages/symfony/consumer?auto_setup=true&serializer=1&stream_max_entries=0&dbindex=0
 
 To use the Redis transport, you will need the Redis PHP extension (^4.3) and
 a running Redis server (^5.0).
@@ -1337,6 +1343,10 @@ middleware and *only* include your own:
 Middleware for Doctrine
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 1.11
+
+    The following Doctrine middleware were introduced in DoctrineBundle 1.11.
+
 If you use Doctrine in your app, a number of optional middleware exist that you
 may want to use:
 
@@ -1350,11 +1360,6 @@ may want to use:
                 buses:
                     command_bus:
                         middleware:
-                            # wraps all handlers in a single Doctrine transaction
-                            # handlers do not need to call flush() and an error
-                            # in any handler will cause a rollback
-                            - doctrine_transaction
-
                             # each time a message is handled, the Doctrine connection
                             # is "pinged" and reconnected if it's closed. Useful
                             # if your workers run for a long time and the database
@@ -1365,6 +1370,11 @@ may want to use:
                             # which can free up database connections in a worker,
                             # instead of keeping them open forever
                             - doctrine_close_connection
+
+                            # wraps all handlers in a single Doctrine transaction
+                            # handlers do not need to call flush() and an error
+                            # in any handler will cause a rollback
+                            - doctrine_transaction
 
                             # or pass a different entity manager to any
                             #- doctrine_transaction: ['custom']

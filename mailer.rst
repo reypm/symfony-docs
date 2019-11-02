@@ -59,21 +59,28 @@ You'll now have a new line in your ``.env`` file that you can uncomment:
 
     # .env
     SENDGRID_KEY=
-    MAILER_DSN=smtp://$SENDGRID_KEY@sendgrid
+    MAILER_DSN=sendgrid://$SENDGRID_KEY@default
 
-The ``MAILER_DSN`` isn't a *real* SMTP address: it's a simple format that offloads
-most of the configuration work to mailer. The ``@sendgrid`` part of the address
-activates the SendGrid mailer library that you just installed, which knows all
-about how to deliver messages to SendGrid.
+The ``MAILER_DSN`` isn't a *real* address: it's a simple format that offloads
+most of the configuration work to mailer. The ``sendgrid`` scheme activates the
+SendGrid provider that you just installed, which knows all about how to deliver
+messages to SendGrid.
 
 The *only* part you need to change is to set ``SENDGRID_KEY`` to your key (in
 ``.env`` or ``.env.local``).
 
-Each transport will have different environment variables that the library will use
-to configure the *actual* address and authentication for delivery. Some also have
-options that can be configured with query parameters on end of the ``MAILER_DSN`` -
-like ``?region=`` for Amazon SES. Some transports support sending via ``http``
-or ``smtp`` - both work the same, but ``http`` is recommended when available.
+Each provider has different environment variables that the Mailer uses to
+configure the *actual* protocol, address and authentication for delivery. Some
+also have options that can be configured with query parameters at the end of the
+``MAILER_DSN`` - like ``?region=`` for Amazon SES. Some providers support
+sending via ``http``, ``api`` or ``smtp``. Symfony chooses the best available
+transport, but you can force to use one:
+
+.. code-block:: bash
+
+    # .env
+    # force to use SMTP instead of HTTP (which is the default)
+    MAILER_DSN=sendgrid+smtp://$SENDGRID_KEY@default
 
 .. tip::
 
@@ -135,12 +142,22 @@ both strings or address objects::
         // email address as an object
         ->from(new Address('fabien@example.com'))
 
-        // email address as an object (email clients will display the name
-        // instead of the email address)
+        // defining the email address and name as an object
+        // (email clients will display the name)
         ->from(new Address('fabien@example.com', 'Fabien'))
+
+        // defining the email address and name as a string
+        // (the format must match: 'Name <email@example.com>')
+        ->from(Address::fromString('Fabien Potencier <fabien@example.com>'))
 
         // ...
     ;
+
+.. tip::
+
+    Instead of calling ``->from()`` *every* time you create a new email, you can
+    create an :doc:`event subscriber </event_dispatcher>` and listen to the
+    ``MessageEvent::class`` event to set the same ``From`` email to all messages.
 
 Multiple addresses are defined with the ``addXXX()`` methods::
 
@@ -241,46 +258,25 @@ images inside the HTML contents::
         ->html('<img src="cid:logo"> ... <img src="cid:footer-signature"> ...')
     ;
 
-Global from Address
--------------------
+Debugging Emails
+----------------
 
-Instead of calling ``->from()`` *every* time you create a new email, you can
-create an event subscriber to set it automatically::
+The :class:`Symfony\\Component\\Mailer\\SentMessage` object returned by the
+``send()`` method of the :class:`Symfony\\Component\\Mailer\\Transport\\TransportInterface`
+provides access to the original message (``getOriginalMessage()``) and to some
+debug information (``getDebug()``) such as the HTTP calls done by the HTTP
+transports, which is useful to debug errors.
 
-    // src/EventListener/MailerFromListener.php
-    namespace App\EventListener;
-
-    use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-    use Symfony\Component\Mailer\Event\MessageEvent;
-    use Symfony\Component\Mime\Email;
-
-    class MailerFromListener implements EventSubscriberInterface
-    {
-        public function onMessageSend(MessageEvent $event)
-        {
-            $message = $event->getMessage();
-
-            // make sure it's an Email object
-            if (!$message instanceof Email) {
-                return;
-            }
-
-            // always set the from address
-            $message->from('fabien@example.com');
-        }
-
-        public static function getSubscribedEvents()
-        {
-            return [MessageEvent::class => 'onMessageSend'];
-        }
-    }
+The exceptions related to mailer transports (those which implement
+:class:`Symfony\\Component\\Mailer\\Exception\\TransportException`) also provide
+this debug information via the ``getDebug()`` method.
 
 .. _mailer-twig:
 
 Twig: HTML & CSS
 ----------------
 
-The Mime component integrates with the :doc:`Twig template engine </templating>`
+The Mime component integrates with the :ref:`Twig template engine <twig-language>`
 to provide advanced features such as CSS style inlining and support for HTML/CSS
 frameworks to create complex HTML email messages. First, make sure Twig is installed:
 
@@ -300,7 +296,7 @@ for Twig templates::
 
     $email = (new TemplatedEmail())
         ->from('fabien@example.com')
-        ->to(new Address('ryan@example.com', 'Ryan'))
+        ->to(new Address('ryan@example.com'))
         ->subject('Thanks for signing up!')
 
         // path of the Twig template to render
@@ -408,9 +404,9 @@ it with:
 
 .. code-block:: terminal
 
-    $ composer require twig/cssinliner-extension
+    $ composer require twig/extra-bundle twig/cssinliner-extra
 
-The extension is enabled automatically. To use this, wrap the entire template
+The extension is enabled automatically. To use it, wrap the entire template
 with the ``inline_css`` filter:
 
 .. code-block:: html+twig
@@ -510,14 +506,14 @@ the extension in your application:
 
 .. code-block:: terminal
 
-    $ composer require twig/inky-extension
+    $ composer require twig/extra-bundle twig/inky-extra
 
-The extension adds an ``inky`` filter, which can be used to convert parts or the
-entire email contents from Inky to HTML:
+The extension adds an ``inky_to_html`` filter, which can be used to convert
+parts or the entire email contents from Inky to HTML:
 
 .. code-block:: html+twig
 
-    {% apply inky %}
+    {% apply inky_to_html %}
         <container>
             <row class="header">
                 <columns>
@@ -534,7 +530,7 @@ You can combine all filters to create complex email messages:
 
 .. code-block:: twig
 
-    {% apply inky|inline_css(source('@css/foundation-emails.css')) %}
+    {% apply inky_to_html|inline_css(source('@css/foundation-emails.css')) %}
         {# ... #}
     {% endapply %}
 
@@ -695,6 +691,32 @@ you have a transport called ``async``, you can route the message there:
 Thanks to this, instead of being delivered immediately, messages will be sent to
 the transport to be handled later (see :ref:`messenger-worker`).
 
+Mutliple Email Transports
+-------------------------
+
+You may want to use more than one mailer transport for delivery of your messages.
+This can be configured by replacing the ``dsn`` configuration entry with a
+``transports`` entry, like:
+
+.. code-block:: yaml
+
+    # config/packages/mailer.yaml
+    framework:
+        mailer:
+            transports:
+                main: '%env(MAILER_DSN)%'
+                important: '%env(MAILER_DSN_IMPORTANT)%'
+
+By default the first transport is used. The other transports can be used by
+adding a text header ``X-Transport`` to an email::
+
+    // Send using first "main" transport ...
+    $mailer->send($email);
+
+    // ... or use the "important" one
+    $email->getHeaders()->addTextHeader('X-Transport', 'important');
+    $mailer->send($email);
+
 Development & Debugging
 -----------------------
 
@@ -710,7 +732,7 @@ environment:
     # config/packages/dev/mailer.yaml
     framework:
         mailer:
-            dsn: 'smtp://null'
+            dsn: 'null://null'
 
 .. note::
 

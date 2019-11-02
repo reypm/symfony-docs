@@ -125,7 +125,8 @@ command will pre-configure this for you:
                 # use your user class name here
                 App\Entity\User:
                     # Use native password encoder
-                    # This value auto-selects the best possible hashing algorithm.
+                    # This value auto-selects the best possible hashing algorithm
+                    # (i.e. Sodium when available).
                     algorithm: auto
 
     .. code-block:: xml
@@ -142,7 +143,7 @@ command will pre-configure this for you:
                 <!-- ... -->
 
                 <encoder class="App\Entity\User"
-                    algorithm="bcrypt"
+                    algorithm="auto"
                     cost="12"/>
 
                 <!-- ... -->
@@ -157,7 +158,7 @@ command will pre-configure this for you:
 
             'encoders' => [
                 'App\Entity\User' => [
-                    'algorithm' => 'bcrypt',
+                    'algorithm' => 'auto',
                     'cost' => 12,
                 ]
             ],
@@ -435,7 +436,11 @@ start with ``/admin``, you can:
 
             access_control:
                 # require ROLE_ADMIN for /admin*
-                - { path: ^/admin, roles: ROLE_ADMIN }
+                - { path: '^/admin', roles: ROLE_ADMIN }
+
+                # the 'path' value can be any valid regular expression
+                # (this one will match URLs like /api/post/7298 and /api/comment/528491)
+                - { path: ^/api/(post|comment)/\d+$, roles: ROLE_USER }
 
     .. code-block:: xml
 
@@ -456,6 +461,10 @@ start with ``/admin``, you can:
 
                 <!-- require ROLE_ADMIN for /admin* -->
                 <rule path="^/admin" role="ROLE_ADMIN"/>
+
+                <!-- the 'path' value can be any valid regular expression
+                     (this one will match URLs like /api/post/7298 and /api/comment/528491) -->
+                <rule path="^/api/(post|comment)/\d+$" role="ROLE_USER"/>
             </config>
         </srv:container>
 
@@ -473,7 +482,11 @@ start with ``/admin``, you can:
             ],
             'access_control' => [
                 // require ROLE_ADMIN for /admin*
-                ['path' => '^/admin', 'role' => 'ROLE_ADMIN'],
+                ['path' => '^/admin', 'roles' => 'ROLE_ADMIN'],
+
+                // the 'path' value can be any valid regular expression
+                // (this one will match URLs like /api/post/7298 and /api/comment/528491)
+                ['path' => '^/api/(post|comment)/\d+$', 'roles' => 'ROLE_USER'],
             ],
         ]);
 
@@ -491,10 +504,10 @@ the list and stops when it finds the first match:
 
             access_control:
                 # matches /admin/users/*
-                - { path: ^/admin/users, roles: ROLE_SUPER_ADMIN }
+                - { path: '^/admin/users', roles: ROLE_SUPER_ADMIN }
 
                 # matches /admin/* except for anything matching the above rule
-                - { path: ^/admin, roles: ROLE_ADMIN }
+                - { path: '^/admin', roles: ROLE_ADMIN }
 
     .. code-block:: xml
 
@@ -521,8 +534,8 @@ the list and stops when it finds the first match:
             // ...
 
             'access_control' => [
-                ['path' => '^/admin/users', 'role' => 'ROLE_SUPER_ADMIN'],
-                ['path' => '^/admin', 'role' => 'ROLE_ADMIN'],
+                ['path' => '^/admin/users', 'roles' => 'ROLE_SUPER_ADMIN'],
+                ['path' => '^/admin', 'roles' => 'ROLE_ADMIN'],
             ],
         ]);
 
@@ -723,8 +736,8 @@ If you need to get the logged in user from a service, use the
 Fetch the User in a Template
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In a Twig Template the user object can be accessed via the :ref:`app.user <reference-twig-global-app>`
-key:
+In a Twig Template the user object is available via the ``app.user`` variable
+thanks to the :ref:`Twig global app variable <twig-app-variable>`:
 
 .. code-block:: html+twig
 
@@ -973,6 +986,7 @@ Authentication (Identifying/Logging in the User)
     :maxdepth: 1
 
     security/form_login_setup
+    security/json_login_setup
     security/guard_authentication
     security/auth_providers
     security/user_provider

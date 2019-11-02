@@ -28,6 +28,10 @@ It comes with the following features:
   constraints to apply; 2. running tests in parallel when a test suite is split
   in several phpunit.xml files; 3. recording and replaying skipped tests;
 
+* It allows to create tests that are compatible with multiple PHPUnit versions
+  (because it provides polyfills for missing methods, namespaced aliases for
+  non-namespaced classes, etc.).
+
 Installation
 ------------
 
@@ -251,7 +255,7 @@ deprecations but:
 * forget to mark appropriate tests with the ``@group legacy`` annotations.
 
 By using ``SYMFONY_DEPRECATIONS_HELPER=max[self]=0``, deprecations that are
-triggered outside the ``vendors`` directory will be accounted for seperately,
+triggered outside the ``vendors`` directory will be accounted for separately,
 while deprecations triggered from a library inside it will not (unless you reach
 999999 of these), giving you the best of both worlds.
 
@@ -367,6 +371,71 @@ Running the following command will display the full stack trace:
 
     $ SYMFONY_DEPRECATIONS_HELPER='/Doctrine\\Common\\ClassLoader is deprecated\./' ./vendor/bin/simple-phpunit
 
+Testing with Multiple PHPUnit Versions
+--------------------------------------
+
+When testing a library that has to be compatible with several versions of PHP,
+the test suite cannot use the latest versions of PHPUnit because:
+
+* PHPUnit 8 deprecated several methods in favor of other methods which are not
+  available in older versions (e.g. PHPUnit 4);
+* PHPUnit 8 added the ``void`` return type to the ``setUp()`` method, which is
+  not compatible with PHP 5.5;
+* PHPUnit switched to namespaced classes starting from PHPUnit 6, so tests must
+  work with and without namespaces.
+
+Polyfills for the Unavailable Methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using the ``simple-phpunit`` script, PHPUnit Bridge injects polyfills for
+most methods of the ``TestCase`` and ``Assert`` classes (e.g. ``expectException()``,
+``expectExceptionMessage()``, ``assertContainsEquals()``, etc.). This allows writing
+test cases using the latest best practices while still remaining compatible with
+older PHPUnit versions.
+
+Removing the Void Return Type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When running the ``simple-phpunit`` script with the ``SYMFONY_PHPUNIT_REMOVE_RETURN_TYPEHINT``
+environment variable set to ``1``, the PHPUnit bridge will alter the code of
+PHPUnit to remove the return type (introduced in PHPUnit 8) from ``setUp()``,
+``tearDown()``, ``setUpBeforeClass()`` and ``tearDownAfterClass()`` methods.
+This allows you to write a test compatible with both PHP 5 and PHPUnit 8.
+
+Alternatively, you can use the trait :class:`Symfony\\Bridge\\PhpUnit\\SetUpTearDownTrait`,
+which provides the right signature for the ``setUp()``, ``tearDown()``,
+``setUpBeforeClass()`` and ``tearDownAfterClass()`` methods and delegates the
+call to the ``doSetUp()``, ``doTearDown()``, ``doSetUpBeforeClass()`` and
+``doTearDownAfterClass()`` methods::
+
+    use PHPUnit\Framework\TestCase;
+    use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
+
+    class MyTest extends TestCase
+    {
+        // when using the SetUpTearDownTrait, methods like doSetup() can
+        // be defined with and without the 'void' return type, as you wish
+        use SetUpTearDownTrait;
+
+        private function doSetup()
+        {
+            // ...
+        }
+
+        protected function doSetup(): void
+        {
+            // ...
+        }
+    }
+
+Using Namespaced PHPUnit Classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The PHPUnit bridge adds namespaced class aliases for most of the PHPUnit classes
+declared without namespaces (e.g. ``PHPUnit_Framework_Assert``), allowing you to
+always use the namespaced class declaration even when the test is executed with
+PHPUnit 4.
+
 Time-sensitive Tests
 --------------------
 
@@ -405,11 +474,15 @@ Clock Mocking
 ~~~~~~~~~~~~~
 
 The :class:`Symfony\\Bridge\\PhpUnit\\ClockMock` class provided by this bridge
-allows you to mock the PHP's built-in time functions ``time()``,
-``microtime()``, ``sleep()``, ``usleep()`` and ``gmdate()``. Additionally the function
-``date()`` is mocked so it uses the mocked time if no timestamp is specified.
+allows you to mock the PHP's built-in time functions ``time()``, ``microtime()``,
+``sleep()``, ``usleep()`` and ``gmdate()``. Additionally the function ``date()``
+is mocked so it uses the mocked time if no timestamp is specified.
+
 Other functions with an optional timestamp parameter that defaults to ``time()``
-will still use the system time instead of the mocked time.
+will still use the system time instead of the mocked time. This means that you
+may need to change some code in your tests. For example, instead of ``new DateTime()``,
+you should use ``DateTime::createFromFormat('U', time())`` to use the mocked
+``time()`` function.
 
 To use the ``ClockMock`` class in your test, add the ``@group time-sensitive``
 annotation to its class or methods. This annotation only works when executing
@@ -613,7 +686,7 @@ toggle a behavior::
         public function hello(): string
         {
             if (class_exists(DependencyClass::class)) {
-                return 'The dependency bahavior.';
+                return 'The dependency behavior.';
             }
 
             return 'The default behavior.';
@@ -631,7 +704,7 @@ are installed during tests) would look like::
         public function testHello()
         {
             $class = new MyClass();
-            $result = $class->hello(); // "The dependency bahavior."
+            $result = $class->hello(); // "The dependency behavior."
 
             // ...
         }
@@ -655,7 +728,7 @@ classes, interfaces and/or traits for the code to run::
             ClassExistsMock::withMockedClasses([DependencyClass::class => false]);
 
             $class = new MyClass();
-            $result = $class->hello(); // "The default bahavior."
+            $result = $class->hello(); // "The default behavior."
 
             // ...
         }

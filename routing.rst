@@ -17,39 +17,78 @@ Creating Routes
 
 Routes can be configured in YAML, XML, PHP or using annotations. All formats
 provide the same features and performance, so choose your favorite.
-:doc:`Symfony recommends annotations </best_practices/controllers>`
-because it's convenient to put the route and controller in the
-same place instead of dealing with multiple files.
+:ref:`Symfony recommends annotations <best-practice-controller-annotations>`
+because it's convenient to put the route and controller in the same place.
 
-If you choose annotations, run this command once in your application to add
-support for them:
+Creating Routes as Annotations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run this command once in your application to add support for annotations:
 
 .. code-block:: terminal
 
     $ composer require annotations
 
-Suppose you want to define a route for the ``/blog`` URL in your application:
+In addition to installing the needed dependencies, this command creates the
+following configuration file:
+
+.. code-block:: yaml
+
+    # config/routes.yaml
+    controllers:
+        resource: '../src/Controller/'
+        type:     annotation
+
+This configuration tells Symfony to look for routes defined as annotations in
+any PHP class stored in the ``src/Controller/`` directory.
+
+Suppose you want to define a route for the ``/blog`` URL in your application. To
+do so, create a :doc:`controller class </controller>` like the following::
+
+    // src/Controller/BlogController.php
+    namespace App\Controller;
+
+    use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+    use Symfony\Component\Routing\Annotation\Route;
+
+    class BlogController extends AbstractController
+    {
+        /**
+         * @Route("/blog", name="blog_list")
+         */
+        public function list()
+        {
+            // ...
+        }
+    }
+
+This configuration defines a route called ``blog_list`` that matches when the
+user requests the ``/blog`` URL. When the match occurs, the application runs
+the ``list()`` method of the ``BlogController`` class.
+
+.. note::
+
+    The query string of a URL is not considered when matching routes. In this
+    example, URLs like ``/blog?foo=bar`` and ``/blog?foo=bar&bar=foo`` will
+    also match the ``blog_list`` route.
+
+The route name (``blog_list``) is not important for now, but it will be
+essential later when :ref:`generating URLs <routing-generating-urls>`. You only
+have to keep in mind that each route name must be unique in the application.
+
+Creating Routes in YAML, XML or PHP Files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of defining routes in the controller classes, you can define them in a
+separate YAML, XML or PHP file. The main advantage is that they don't require
+any extra dependency. The main drawback is that you have to work with multiple
+files when checking the routing of some controller action.
+
+The following example shows how to define in YAML/XML/PHP a route called
+``blog_list`` that associates the ``/blog`` URL with the ``list()`` action of
+the ``BlogController``:
 
 .. configuration-block::
-
-    .. code-block:: php-annotations
-
-        // src/Controller/BlogController.php
-        namespace App\Controller;
-
-        use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-        use Symfony\Component\Routing\Annotation\Route;
-
-        class BlogController extends AbstractController
-        {
-            /**
-             * @Route("/blog", name="blog_list")
-             */
-            public function list()
-            {
-                // ...
-            }
-        }
 
     .. code-block:: yaml
 
@@ -97,20 +136,6 @@ Suppose you want to define a route for the ``/blog`` URL in your application:
                 // ->controller([BlogController::class])
             ;
         };
-
-This configuration defines a route called ``blog_list`` that matches when the
-user requests the ``/blog`` URL. When the match occurs, the application runs
-the ``list()`` method of the ``BlogController`` class.
-
-.. note::
-
-    The query string of a URL is not considered when matching routes. In this
-    example, URLs like ``/blog?foo=bar`` and ``/blog?foo=bar&bar=foo`` will
-    also match the ``blog_list`` route.
-
-The route name (``blog_list``) is not important for now, but it will be essential later when
-:ref:`generating URLs <routing-generating-urls>`. You only have to keep in mind
-that each route name must be unique in the application.
 
 .. _routing-matching-http-methods:
 
@@ -406,7 +431,6 @@ defined as ``/blog/{slug}``:
 
             <route id="blog_show" path="/blog/{slug}"
                    controller="App\Controller\BlogController::show"/>
-            </route>
         </routes>
 
     .. code-block:: php
@@ -500,7 +524,6 @@ the ``{page}`` parameter using the ``requirements`` option:
 
             <route id="blog_show" path="/blog/{slug}"
                    controller="App\Controller\BlogController::show"/>
-            </route>
         </routes>
 
     .. code-block:: php
@@ -700,11 +723,6 @@ Now, when the user visits ``/blog``, the ``blog_list`` route will match and
     ``/{page}/blog`` is a valid path, but ``page`` will always be required
     (i.e. ``/blog`` will not match this route).
 
-.. note::
-
-    Routes with optional parameters at the end will not match on requests
-    with a trailing slash (i.e. ``/blog/`` will not match, ``/blog`` will match).
-
 If you want to always include some default value in the generated URL (for
 example to force the generation of ``/blog/1`` instead of ``/blog`` in the
 previous example) add the ``!`` character before the parameter name: ``/blog/{!page}``
@@ -857,6 +875,7 @@ and in route imports. Symfony defines some special attributes with the same name
     .. code-block:: php-annotations
 
         // src/Controller/ArticleController.php
+        namespace App\Controller;
 
         // ...
         class ArticleController extends AbstractController
@@ -940,6 +959,9 @@ the controllers of the routes:
 
     .. code-block:: php-annotations
 
+        // src/Controller/BlogController.php
+        namespace App\Controller;
+
         use Symfony\Component\Routing\Annotation\Route;
 
         class BlogController
@@ -1009,6 +1031,9 @@ A possible solution is to change the parameter requirements to be more permissiv
 .. configuration-block::
 
     .. code-block:: php-annotations
+
+        // src/Controller/DefaultController.php
+        namespace App\Controller;
 
         use Symfony\Component\Routing\Annotation\Route;
 
@@ -1095,10 +1120,13 @@ the common configuration using options when importing the routes.
 
     .. code-block:: php-annotations
 
+        // src/Controller/BlogController.php
+        namespace App\Controller;
+
         use Symfony\Component\Routing\Annotation\Route;
 
         /**
-         * @Route("/blog", requirements={"locale": "en|es|fr"}, name="blog_")
+         * @Route("/blog", requirements={"_locale": "en|es|fr"}, name="blog_")
          */
         class BlogController
         {
@@ -1111,7 +1139,7 @@ the common configuration using options when importing the routes.
             }
 
             /**
-             * @Route("/{_locale}/posts/{slug}", name="post")
+             * @Route("/{_locale}/posts/{slug}", name="show")
              */
             public function show(Post $post)
             {
@@ -1131,7 +1159,7 @@ the common configuration using options when importing the routes.
             name_prefix: 'blog_'
             # these requirements are added to all imported routes
             requirements:
-                locale: 'en|es|fr'
+                _locale: 'en|es|fr'
             # An imported route with an empty URL will become "/blog/"
             # Uncomment this option to make that URL "/blog" instead
             # trailing_slash_on_root: false
@@ -1154,7 +1182,7 @@ the common configuration using options when importing the routes.
                 prefix="/blog"
                 name-prefix="blog_">
                 <!-- these requirements are added to all imported routes -->
-                <requirement key="locale">en|es|fr</requirement>
+                <requirement key="_locale">en|es|fr</requirement>
             </import>
 
             <!-- An imported route with an empty URL will become "/blog/"
@@ -1181,13 +1209,13 @@ the common configuration using options when importing the routes.
                 // this is added to the beginning of all imported route names
                 ->namePrefix('blog_')
                 // these requirements are added to all imported routes
-                ->requirements(['locale' => 'en|es|fr'])
+                ->requirements(['_locale' => 'en|es|fr'])
             ;
         };
 
 In this example, the route of the ``index()`` action will be called ``blog_index``
 and its URL will be ``/blog/``. The route of the ``show()`` action will be called
-``blog_post`` and its URL will be ``/blog/{_locale}/posts/{slug}``. Both routes
+``blog_show`` and its URL will be ``/blog/{_locale}/posts/{slug}``. Both routes
 will also validate that the ``_locale`` parameter matches the regular expression
 defined in the class annotation.
 
@@ -1229,8 +1257,8 @@ information in a controller via the ``Request`` object::
 
 You can get this information in services too injecting the ``request_stack``
 service to :doc:`get the Request object in a service </service_container/request>`.
-In Twig templates, use the :ref:`global app object <reference-twig-global-app>`
-to get the request and its attributes:
+In templates, use the :ref:`Twig global app variable <twig-app-variable>` to get
+the request and its attributes:
 
 .. code-block:: twig
 
@@ -1247,70 +1275,16 @@ Symfony defines some special controllers to render templates and redirect to
 other routes from the route configuration so you don't have to create a
 controller action.
 
-Rendering Templates
-~~~~~~~~~~~~~~~~~~~
+Rendering a Template Directly from a Route
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the ``TemplateController`` to render the template whose path is defined in
-the ``template`` option:
+Read the section about :ref:`rendering a template from a route <templates-render-from-route>`
+in the main article about Symfony templates.
 
-.. configuration-block::
+Redirecting to URLs and Routes Directly from a Route
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    .. code-block:: yaml
-
-        # config/routes.yaml
-        about_us:
-            path: /site/about-us
-            controller: Symfony\Bundle\FrameworkBundle\Controller\TemplateController::templateAction
-            defaults:
-                template: 'static_pages/about_us.html.twig'
-
-                # optionally you can define some arguments passed to the template
-                site_name: 'ACME'
-                theme: 'dark'
-
-    .. code-block:: xml
-
-        <!-- config/routes.xml -->
-        <?xml version="1.0" encoding="UTF-8" ?>
-        <routes xmlns="http://symfony.com/schema/routing"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://symfony.com/schema/routing
-                https://symfony.com/schema/routing/routing-1.0.xsd">
-
-            <route id="about_us" path="/site/about-us"
-                   controller="Symfony\Bundle\FrameworkBundle\Controller\TemplateController::templateAction">
-                <default key="template">static_pages/about_us.html.twig</default>
-
-                <!-- optionally you can define some arguments passed to the template -->
-                <default key="site_name">ACME</default>
-                <default key="theme">dark</default>
-            </route>
-        </routes>
-
-    .. code-block:: php
-
-        // config/routes.php
-        use App\Controller\DefaultController;
-        use Symfony\Bundle\FrameworkBundle\Controller\TemplateController;
-        use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
-
-        return function (RoutingConfigurator $routes) {
-            $routes->add('about_us', '/site/about-us')
-                ->controller([TemplateController::class, 'templateAction'])
-                 ->defaults([
-                    'template' => 'static_pages/about_us.html.twig',
-                    // optionally you can define some arguments passed to the template
-                    'site_name' => 'ACME',
-                    'theme' => 'dark',
-                ])
-            ;
-        };
-
-Redirecting to URLs and Routes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Use the ``RedirectController`` to redirect to other routes (``redirectAction``)
-and URLs (``urlRedirectAction``):
+Use the ``RedirectController`` to redirect to other routes and URLs:
 
 .. configuration-block::
 
@@ -1319,7 +1293,7 @@ and URLs (``urlRedirectAction``):
         # config/routes.yaml
         doc_shortcut:
             path: /doc
-            controller: Symfony\Bundle\FrameworkBundle\Controller\RedirectController::redirectAction
+            controller: Symfony\Bundle\FrameworkBundle\Controller\RedirectController
             defaults:
                 route: 'doc_page'
                 # optionally you can define some arguments passed to the route
@@ -1336,7 +1310,7 @@ and URLs (``urlRedirectAction``):
 
         legacy_doc:
             path: /legacy/doc
-            controller: Symfony\Bundle\FrameworkBundle\Controller\RedirectController::urlRedirectAction
+            controller: Symfony\Bundle\FrameworkBundle\Controller\RedirectController
             defaults:
                 # this value can be an absolute path or an absolute URL
                 path: 'https://legacy.example.com/doc'
@@ -1352,7 +1326,7 @@ and URLs (``urlRedirectAction``):
                 https://symfony.com/schema/routing/routing-1.0.xsd">
 
             <route id="doc_shortcut" path="/doc"
-                   controller="Symfony\Bundle\FrameworkBundle\Controller\RedirectController::redirectAction">
+                   controller="Symfony\Bundle\FrameworkBundle\Controller\RedirectController">
                 <default key="route">doc_page</default>
                 <!-- optionally you can define some arguments passed to the route -->
                 <default key="page">index</default>
@@ -1368,7 +1342,7 @@ and URLs (``urlRedirectAction``):
             </route>
 
             <route id="legacy_doc" path="/legacy/doc"
-                   controller="Symfony\Bundle\FrameworkBundle\Controller\RedirectController::urlRedirectAction">
+                   controller="Symfony\Bundle\FrameworkBundle\Controller\RedirectController">
                 <!-- this value can be an absolute path or an absolute URL -->
                 <default key="path">https://legacy.example.com/doc</default>
                 <!-- redirections are temporary by default (code 302) but you can make them permanent (code 301)-->
@@ -1385,7 +1359,7 @@ and URLs (``urlRedirectAction``):
 
         return function (RoutingConfigurator $routes) {
             $routes->add('doc_shortcut', '/doc')
-                ->controller([RedirectController::class, 'redirectAction'])
+                ->controller(RedirectController::class)
                  ->defaults([
                     'route' => 'doc_page',
                     // optionally you can define some arguments passed to the template
@@ -1403,7 +1377,7 @@ and URLs (``urlRedirectAction``):
             ;
 
             $routes->add('legacy_doc', '/legacy/doc')
-                ->controller([RedirectController::class, 'urlRedirectAction'])
+                ->controller(RedirectController::class)
                  ->defaults([
                     // this value can be an absolute path or an absolute URL
                     'path' => 'https://legacy.example.com/doc',
@@ -1438,12 +1412,6 @@ Route URL   If the requested URL is ``/foo``          If the requested URL is ``
 ``/foo``    It matches (``200`` status response)      It makes a ``301`` redirect to ``/foo``
 ``/foo/``   It makes a ``301`` redirect to ``/foo/``  It matches (``200`` status response)
 ==========  ========================================  ==========================================
-
-.. note::
-
-    If your application defines different routes for each path (``/foo`` and
-    ``/foo/``) this automatic redirection doesn't take place and the right
-    route is always matched.
 
 Sub-Domain Routing
 ------------------
@@ -1626,7 +1594,7 @@ multi-tenant applications) and these parameters can be validated too with
             ;
         };
 
-In the above example, the ``domain`` parameter defines a default value because
+In the above example, the ``subdomain`` parameter defines a default value because
 otherwise you need to include a domain value each time you generate a URL using
 these routes.
 
@@ -1862,6 +1830,8 @@ you only need to add an argument in the service constructor and type-hint it wit
 the :class:`Symfony\\Component\\Routing\\Generator\\UrlGeneratorInterface` class::
 
     // src/Service/SomeService.php
+    namespace App\Service;
+
     use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
     class SomeService
@@ -1898,28 +1868,8 @@ the :class:`Symfony\\Component\\Routing\\Generator\\UrlGeneratorInterface` class
 Generating URLs in Templates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Twig template language used in :doc:`Symfony templates </templating>`
-provides some functions to generate both relative and absolute URLs:
-
-.. code-block:: html+twig
-
-    {# generates relative URLs #}
-    <a href="{{ path('sign_up') }}">Sign up</a>
-    <a href="{{ path('user_profile', {username: app.user.username}) }}">
-        View your profile
-    </a>
-    <a href="{{ path('user_profile', {username: app.user.username, _locale: 'es'}) }}">
-        Ver mi perfil
-    </a>
-
-    {# generates absolute URLs #}
-    <a href="{{ url('sign_up') }}">Sign up</a>
-    <a href="{{ url('user_profile', {username: app.user.username}) }}">
-        View your profile
-    </a>
-    <a href="{{ url('user_profile', {username: app.user.username, _locale: 'es'}) }}">
-        Ver mi perfil
-    </a>
+Read the section about :ref:`creating links between pages <templates-link-to-pages>`
+in the main article about Symfony templates.
 
 Generating URLs in JavaScript
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1949,7 +1899,7 @@ don't have access to HTTP requests. In practice, this means that if you generate
 absolute URLs, you'll get ``http://localhost/`` as the host name instead of your
 real host name.
 
-The solution is to configure "request context" used by commands when they
+The solution is to configure the "request context" used by commands when they
 generate URLs. This context can be configured globally for all commands:
 
 .. configuration-block::
@@ -1987,6 +1937,8 @@ generate URLs. This context can be configured globally for all commands:
 This information can be configured per command too::
 
     // src/Command/SomeCommand.php
+    namespace App\Command;
+
     use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
     use Symfony\Component\Routing\RouterInterface;
     // ...
@@ -2119,7 +2071,7 @@ each route explicitly:
         # config/routes.yaml
         login:
             path:       /login
-            controller: App\Controller\SeurityController::login
+            controller: App\Controller\SecurityController::login
             schemes:    [https]
 
     .. code-block:: xml

@@ -93,6 +93,7 @@ Configuration
   * :ref:`default_options <reference-http-client-default-options>`
 
     * `bindto`_
+    * `buffer`_
     * `cafile`_
     * `capath`_
     * `ciphers`_
@@ -120,6 +121,7 @@ Configuration
     * `auth_ntlm`_
     * `base_uri`_
     * `bindto`_
+    * `buffer`_
     * `cafile`_
     * `capath`_
     * `ciphers`_
@@ -142,6 +144,12 @@ Configuration
 * `http_method_override`_
 * `ide`_
 * :ref:`lock <reference-lock>`
+
+  * :ref:`enabled <reference-lock-enabled>`
+  * :ref:`resources <reference-lock-resources>`
+
+    * :ref:`name <reference-lock-resources-name>`
+
 * `php_errors`_
 
   * `log`_
@@ -215,9 +223,11 @@ Configuration
 * `test`_
 * `translator`_
 
+  * `cache_dir`_
   * :ref:`default_path <reference-translator-default_path>`
   * :ref:`enabled <reference-translator-enabled>`
   * `fallbacks`_
+  * `formatter`_
   * `logging`_
   * :ref:`paths <reference-translator-paths>`
 
@@ -772,6 +782,20 @@ bindto
 
 A network interface name, IP address, a host name or a UNIX socket to use as the
 outgoing network interface.
+
+buffer
+......
+
+**type**: ``bool`` | ``Closure``
+
+Buffering the response means that you can access its content multiple times
+without performing the request again. Buffering is enabled by default when the
+content type of the response is ``text/*``, ``application/json`` or ``application/xml``.
+
+If this option is a boolean value, the response is buffered when the value is
+``true``. If this option is a closure, the response is buffered when the
+returned value is ``true`` (the closure receives as argument an array with the
+response headers).
 
 cafile
 ......
@@ -1925,6 +1949,14 @@ package:
 translator
 ~~~~~~~~~~
 
+cache_dir
+.........
+
+**type**: ``string`` | ``null`` **default**: ``%kernel.cache_dir%/translations/``
+
+Defines the directory where the translation cache is stored. Use ``null`` to
+disable this cache.
+
 .. _reference-translator-enabled:
 
 enabled
@@ -1959,6 +1991,20 @@ When ``true``, a log entry is made whenever the translator cannot find a transla
 for a given key. The logs are made to the ``translation`` channel and at the
 ``debug`` for level for keys where there is a translation in the fallback
 locale and the ``warning`` level if there is no translation to use at all.
+
+.. _reference-framework-translator-formatter:
+
+formatter
+.........
+
+**type**: ``string`` **default**: ``translator.formatter.default``
+
+The ID of the service used to format translation messages. The service class
+must implement the :class:`Symfony\\Component\\Translation\\Formatter\\MessageFormatterInterface`.
+
+.. seealso::
+
+    For more details, see :doc:`/components/translation/custom_message_formatter`.
 
 .. _reference-translator-paths:
 
@@ -2066,7 +2112,7 @@ error messages.
 .. _reference-validation-not-compromised-password:
 
 not_compromised_password
-~~~~~~~~~~~~~~~~~~~~~~~~
+........................
 
 The :doc:`NotCompromisedPassword </reference/constraints/NotCompromisedPassword>`
 constraint makes HTTP requests to a public API to check if the given password
@@ -2075,7 +2121,7 @@ has been compromised in a data breach.
 .. _reference-validation-not-compromised-password-enabled:
 
 enabled
-.......
+"""""""
 
 **type**: ``boolean`` **default**: ``true``
 
@@ -2085,7 +2131,7 @@ make HTTP requests, such as in ``dev`` and ``test`` environments or in
 continuous integration servers.
 
 endpoint
-........
+""""""""
 
 **type**: ``string`` **default**: ``null``
 
@@ -2135,7 +2181,51 @@ paths
 **type**: ``array`` **default**: ``[]``
 
 This option allows to define an array of paths with files or directories where
-the component will look for additional validation files.
+the component will look for additional validation files:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # config/packages/framework.yaml
+        framework:
+            validation:
+                mapping:
+                    paths:
+                        - "%kernel.project_dir%/validation/"
+
+    .. code-block:: xml
+
+        <!-- config/packages/framework.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:framework="http://symfony.com/schema/dic/symfony"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/symfony https://symfony.com/schema/dic/symfony/symfony-1.0.xsd">
+
+            <framework:config>
+                <framework:validation>
+                    <framework:mapping>
+                        <framework:path>%kernel.project_dir%/validation</framework:path>
+                    </framework:mapping>
+                </framework:validation>
+            </framework:config>
+        </container>
+
+    .. code-block:: php
+
+        // config/packages/framework.php
+        $container->loadFromExtension('framework', [
+            'validation' => [
+                'mapping' => [
+                    'paths' => [
+                        '%kernel.project_dir%/validation',
+                    ],
+                ],
+            ],
+        ]);
 
 annotations
 ~~~~~~~~~~~
@@ -2511,10 +2601,134 @@ example, when warming caches offline).
 lock
 ~~~~
 
-**type**: ``string``
+**type**: ``string`` | ``array``
 
 The default lock adapter. If not defined, the value is set to ``semaphore`` when
 available, or to ``flock`` otherwise. Store's DSN are also allowed.
+
+.. _reference-lock-enabled:
+
+enabled
+.......
+
+**type**: ``boolean`` **default**: ``true``
+
+Whether to enable the support for lock or not. This setting is
+automatically set to ``true`` when one of the child settings is configured.
+
+.. _reference-lock-resources:
+
+resources
+.........
+
+**type**: ``array``
+
+A list of lock stores to be created by the framework extension.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # config/packages/lock.yaml
+        framework:
+            # these are all the supported lock stores
+            lock: ~
+            lock: 'flock'
+            lock: 'flock:///path/to/file'
+            lock: 'semaphore'
+            lock: 'memcached://m1.docker'
+            lock: ['memcached://m1.docker', 'memcached://m2.docker']
+            lock: 'redis://r1.docker'
+            lock: ['redis://r1.docker', 'redis://r2.docker']
+            lock: '%env(MEMCACHED_OR_REDIS_URL)%'
+
+            # named locks
+            lock:
+                invoice: ['redis://r1.docker', 'redis://r2.docker']
+                report: 'semaphore'
+
+    .. code-block:: xml
+
+        <!-- config/packages/lock.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:framework="http://symfony.com/schema/dic/symfony"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/symfony https://symfony.com/schema/dic/symfony/symfony-1.0.xsd">
+
+            <framework:config>
+                <framework:lock>
+                    <!-- these are all the supported lock stores -->
+                    <framework:resource>flock</framework:resource>
+
+                    <framework:resource>flock:///path/to/file</framework:resource>
+
+                    <framework:resource>semaphore</framework:resource>
+
+                    <framework:resource>memcached://m1.docker</framework:resource>
+
+                    <framework:resource>memcached://m1.docker</framework:resource>
+                    <framework:resource>memcached://m2.docker</framework:resource>
+
+                    <framework:resource>redis://r1.docker</framework:resource>
+
+                    <framework:resource>redis://r1.docker</framework:resource>
+                    <framework:resource>redis://r2.docker</framework:resource>
+
+                    <framework:resource>%env(REDIS_URL)%</framework:resource>
+
+                    <!-- named locks -->
+                    <framework:resource name="invoice">redis://r1.docker</framework:resource>
+                    <framework:resource name="invoice">redis://r2.docker</framework:resource>
+                    <framework:resource name="report">semaphore</framework:resource>
+                </framework:lock>
+            </framework:config>
+        </container>
+
+    .. code-block:: php
+
+        // config/packages/lock.php
+        $container->loadFromExtension('framework', [
+            // these are all the supported lock stores
+            'lock' => null,
+            'lock' => 'flock',
+            'lock' => 'flock:///path/to/file',
+            'lock' => 'semaphore',
+            'lock' => 'memcached://m1.docker',
+            'lock' => ['memcached://m1.docker', 'memcached://m2.docker'],
+            'lock' => 'redis://r1.docker',
+            'lock' => ['redis://r1.docker', 'redis://r2.docker'],
+            'lock' => '%env(MEMCACHED_OR_REDIS_URL)%',
+
+            // named locks
+            'lock' => [
+                'invoice' => ['redis://r1.docker', 'redis://r2.docker'],
+                'report' => 'semaphore',
+            ],
+        ]);
+
+.. _reference-lock-resources-name:
+
+name
+""""
+
+**type**: ``prototype``
+
+Name of the lock you want to create.
+
+.. tip::
+
+    If you want to use the `RetryTillSaveStore` for :ref:`non-blocking locks <lock-blocking-locks>`,
+    you can do it by :doc:`decorating the store </service_container/service_decoration>` service:
+
+    .. code-block:: yaml
+
+        lock.invoice.retry_till_save.store:
+            class: Symfony\Component\Lock\Store\RetryTillSaveStore
+            decorates: lock.invoice.store
+            arguments: ['@lock.invoice.retry.till.save.store.inner', 100, 50]
 
 workflows
 ~~~~~~~~~
@@ -2664,7 +2878,7 @@ type
 **type**: ``string`` **possible values**: ``'workflow'`` or ``'state_machine'``
 
 Defines the kind of workflow that is going to be created, which can be either
-a normal workflow or a state machine. Read :doc:`this article </workflow/introduction>`
+a normal workflow or a state machine. Read :doc:`this article </workflow/workflow-and-state-machine>`
 to know their differences.
 
 .. _`HTTP Host header attacks`: http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html

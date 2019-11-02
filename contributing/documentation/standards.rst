@@ -53,7 +53,7 @@ Code Examples
   as well as the `Twig Coding Standards`_;
 * The code examples should look real for a web application context. Avoid abstract
   or trivial examples (``foo``, ``bar``, ``demo``, etc.);
-* The code should follow the :doc:`Symfony Best Practices </best_practices/introduction>`.
+* The code should follow the :doc:`Symfony Best Practices </best_practices>`.
 * Use ``Acme`` when the code requires a vendor name;
 * Use ``example.com`` as the domain of sample URLs and ``example.org`` and
   ``example.net`` when additional domains are required. All of these domains are
@@ -173,11 +173,10 @@ In addition, documentation follows these rules:
   * his or hers, use theirs
   * himself or herself, use themselves
 
-* **Avoid belittling words**: People read documentation because they know very
-  little about a specific topic or are even completely new to it. Things that
-  seem "obvious" or "simple" for the person documenting it, can be the exact
-  opposite for the reader. To make sure everybody feels comfortable when reading
-  the documentation, try to avoid words like:
+* **Avoid belittling words**: Things that seem "obvious" or "simple" for the
+  person documenting it, can be the exact opposite for the reader. To make sure
+  everybody feels comfortable when reading the documentation, try to avoid words
+  like:
 
   * basically
   * clearly

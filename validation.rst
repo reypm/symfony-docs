@@ -36,7 +36,7 @@ your application::
 
     class Author
     {
-        public $name;
+        private $name;
     }
 
 So far, this is just an ordinary class that serves some purpose inside your
@@ -44,8 +44,8 @@ application. The goal of validation is to tell you if the data
 of an object is valid. For this to work, you'll configure a list of rules
 (called :ref:`constraints <validation-constraints>`) that the object must
 follow in order to be valid. These rules are usually defined using PHP code or
-annotations but they can also be defined as a ``validation.yaml`` or
-``validation.xml`` file inside the ``config/validator/`` directory:
+annotations but they can also be defined as ``.yaml`` or
+``.xml`` files inside the ``config/validator/`` directory:
 
 For example, to guarantee that the ``$name`` property is not empty, add the
 following:
@@ -55,6 +55,7 @@ following:
     .. code-block:: php-annotations
 
         // src/Entity/Author.php
+        namespace App\Entity;
 
         // ...
         use Symfony\Component\Validator\Constraints as Assert;
@@ -64,7 +65,7 @@ following:
             /**
              * @Assert\NotBlank
              */
-            public $name;
+            private $name;
         }
 
     .. code-block:: yaml
@@ -94,14 +95,14 @@ following:
     .. code-block:: php
 
         // src/Entity/Author.php
-
+        namespace App\Entity;
         // ...
         use Symfony\Component\Validator\Constraints\NotBlank;
         use Symfony\Component\Validator\Mapping\ClassMetadata;
 
         class Author
         {
-            public $name;
+            private $name;
 
             public static function loadValidatorMetadata(ClassMetadata $metadata)
             {
@@ -111,8 +112,9 @@ following:
 
 .. tip::
 
-    Protected and private properties can also be validated, as well as "getter"
-    methods (see :ref:`validator-constraint-targets`).
+    Symfony's validator uses PHP reflection, as well as *"getter"* methods, to
+    get the value of any property, so they can be public, private or protected
+    (see :ref:`validator-constraint-targets`).
 
 .. index::
    single: Validation; Using the validator
@@ -121,7 +123,7 @@ Using the ``validator`` Service
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Next, to actually validate an ``Author`` object, use the ``validate()`` method
-on the ``validator`` service (class :class:`Symfony\\Component\\Validator\\Validator`).
+on the ``validator`` service (which implements :class:`Symfony\\Component\\Validator\\Validator\\ValidatorInterface`).
 The job of the ``validator`` is to read the constraints (i.e. rules)
 of a class and verify if the data on the object satisfies those
 constraints. If validation fails, a non-empty list of errors
@@ -277,6 +279,12 @@ previous configuration by the following:
             ],
         ]);
 
+.. tip::
+
+    When using PHP, YAML, and XML files instead of annotations, Symfony looks
+    for by default in the ``config/validator/`` directory, but you can configure
+    other directories with the :ref:`validation.mapping.paths <reference-validation-mapping>` option.
+
 .. index::
    single: Validation; Constraints
 
@@ -325,6 +333,7 @@ literature genre mostly associated with the author, which can be set to either
     .. code-block:: php-annotations
 
         // src/Entity/Author.php
+        namespace App\Entity;
 
         // ...
         use Symfony\Component\Validator\Constraints as Assert;
@@ -337,7 +346,7 @@ literature genre mostly associated with the author, which can be set to either
              *     message = "Choose a valid genre."
              * )
              */
-            public $genre;
+            private $genre;
 
             // ...
         }
@@ -378,6 +387,7 @@ literature genre mostly associated with the author, which can be set to either
     .. code-block:: php
 
         // src/Entity/Author.php
+        namespace App\Entity;
 
         // ...
         use Symfony\Component\Validator\Constraints as Assert;
@@ -385,7 +395,7 @@ literature genre mostly associated with the author, which can be set to either
 
         class Author
         {
-            public $genre;
+            private $genre;
 
             // ...
 
@@ -412,6 +422,7 @@ options can be specified in this way.
     .. code-block:: php-annotations
 
         // src/Entity/Author.php
+        namespace App\Entity;
 
         // ...
         use Symfony\Component\Validator\Constraints as Assert;
@@ -421,7 +432,7 @@ options can be specified in this way.
             /**
              * @Assert\Choice({"fiction", "non-fiction"})
              */
-            protected $genre;
+            private $genre;
 
             // ...
         }
@@ -459,6 +470,7 @@ options can be specified in this way.
     .. code-block:: php
 
         // src/Entity/Author.php
+        namespace App\Entity;
 
         // ...
         use Symfony\Component\Validator\Constraints as Assert;
@@ -466,7 +478,7 @@ options can be specified in this way.
 
         class Author
         {
-            protected $genre;
+            private $genre;
 
             public static function loadValidatorMetadata(ClassMetadata $metadata)
             {
@@ -482,9 +494,9 @@ options can be specified in this way.
 This is purely meant to make the configuration of the most common option of
 a constraint shorter and quicker.
 
-If you're ever unsure of how to specify an option, either check :namespace:`Symfony\\Component\\Validator\\Constraints`
-for the constraint or play it safe by always passing in an array of options
-(the first method shown above).
+If you're ever unsure of how to specify an option, either check the namespace
+``Symfony\Component\Validator\Constraints`` for the constraint or play it safe
+by always passing in an array of options (the first method shown above).
 
 Constraints in Form Classes
 ---------------------------
@@ -579,6 +591,7 @@ class to have at least 3 characters.
     .. code-block:: php
 
         // src/Entity/Author.php
+        namespace App\Entity;
 
         // ...
         use Symfony\Component\Validator\Constraints as Assert;
@@ -620,6 +633,7 @@ this method must return ``true``:
     .. code-block:: php-annotations
 
         // src/Entity/Author.php
+        namespace App\Entity;
 
         // ...
         use Symfony\Component\Validator\Constraints as Assert;
@@ -664,6 +678,7 @@ this method must return ``true``:
     .. code-block:: php
 
         // src/Entity/Author.php
+        namespace App\Entity;
 
         // ...
         use Symfony\Component\Validator\Constraints as Assert;

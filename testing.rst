@@ -274,7 +274,7 @@ document::
 .. tip::
 
     Instead of installing each testing dependency individually, you can use the
-    Symfony Test pack to install all those dependencies at once:
+    ``test`` :ref:`Symfony pack <symfony-packs>` to install all those dependencies at once:
 
     .. code-block:: terminal
 
@@ -531,6 +531,7 @@ You can also get the objects related to the latest request::
     // the BrowserKit response instance
     $response = $client->getInternalResponse();
 
+    // the Crawler instance
     $crawler = $client->getCrawler();
 
 Accessing the Container
@@ -688,6 +689,13 @@ The Crawler can extract information from the nodes::
     // returns the node value for the first node
     $crawler->text();
 
+    // returns the default text if the node does not exist
+    $crawler->text('Default text content');
+
+    // pass TRUE as the second argument of text() to remove all extra white spaces, including
+    // the internal ones (e.g. "  foo\n  bar    baz \n " is returned as "foo bar baz")
+    $crawler->text(null, true);
+
     // extracts an array of attributes for all nodes
     // (_text returns the node value)
     // returns an array for each element in crawler,
@@ -796,6 +804,13 @@ their type::
     // In the case of a multiple file upload
     $form['my_form[field][O]']->upload('/path/to/lucas.jpg');
     $form['my_form[field][1]']->upload('/path/to/lisa.jpg');
+
+.. tip::
+
+    Instead of hardcoding the form name as part of the field names (e.g.
+    ``my_form[...]`` in previous examples), you can use the
+    :method:`Symfony\\Component\\DomCrawler\\Form::getName` method to get the
+    form name.
 
 .. tip::
 
@@ -1050,7 +1065,6 @@ Learn more
     :glob:
 
     testing/*
-    /best_practices/tests
     /components/dom_crawler
     /components/css_selector
 
