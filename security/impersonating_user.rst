@@ -33,12 +33,14 @@ listener:
     .. code-block:: xml
 
         <!-- config/packages/security.xml -->
-        <?xml version="1.0" encoding="UTF-8"?>
+        <?xml version="1.0" encoding="UTF-8" ?>
         <srv:container xmlns="http://symfony.com/schema/dic/security"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:srv="http://symfony.com/schema/dic/services"
             xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd">
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd">
 
             <config>
                 <!-- ... -->
@@ -53,16 +55,15 @@ listener:
     .. code-block:: php
 
         // config/packages/security.php
-        $container->loadFromExtension('security', [
-            // ...
+        use Symfony\Config\SecurityConfig;
 
-            'firewalls' => [
-                'main'=> [
-                    // ...
-                    'switch_user' => true,
-                ],
-            ],
-        ]);
+        return static function (SecurityConfig $security) {
+            // ...
+            $security->firewall('main')
+                // ...
+                ->switchUser()
+            ;
+        };
 
 To switch to another user, add a query string with the ``_switch_user``
 parameter and the username (or whatever field our user provider uses to load users)
@@ -71,6 +72,11 @@ as the value to the current URL:
 .. code-block:: text
 
     http://example.com/somewhere?_switch_user=thomas
+
+.. tip::
+
+    Instead of adding a ``_switch_user`` query string parameter, you can pass
+    the username in a ``HTTP_X_SWITCH_USER`` header.
 
 To switch back to the original user, use the special ``_exit`` username:
 
@@ -85,15 +91,20 @@ role to the users that need it.
 Knowing When Impersonation Is Active
 ------------------------------------
 
-During impersonation, the user is provided with a special role called
-``ROLE_PREVIOUS_ADMIN``. In a template, for instance, this role can be used
-to show a link to exit impersonation:
+You can use the special attribute ``IS_IMPERSONATOR`` to check if the
+impersonation is active in this session. Use this special role, for
+instance, to show a link to exit impersonation in a template:
 
 .. code-block:: html+twig
 
-    {% if is_granted('ROLE_PREVIOUS_ADMIN') %}
-        <a href="{{ path('homepage', {'_switch_user': '_exit'}) }}">Exit impersonation</a>
+    {% if is_granted('IS_IMPERSONATOR') %}
+        <a href="{{ impersonation_exit_path(path('homepage') ) }}">Exit impersonation</a>
     {% endif %}
+
+.. versionadded:: 5.1
+
+    The ``IS_IMPERSONATOR`` was introduced in Symfony 5.1. Use
+    ``ROLE_PREVIOUS_ADMIN`` prior to Symfony 5.1.
 
 Finding the Original User
 -------------------------
@@ -104,11 +115,14 @@ stored in the token storage will be a ``SwitchUserToken`` instance. Use the
 following snippet to obtain the original token which gives you access to
 the impersonator user::
 
+    // src/Service/SomeService.php
+    namespace App\Service;
+
     use Symfony\Component\Security\Core\Authentication\Token\SwitchUserToken;
     use Symfony\Component\Security\Core\Security;
     // ...
 
-    public class SomeService
+    class SomeService
     {
         private $security;
 
@@ -155,12 +169,14 @@ also adjust the query parameter name via the ``parameter`` setting:
     .. code-block:: xml
 
         <!-- config/packages/security.xml -->
-        <?xml version="1.0" encoding="UTF-8"?>
+        <?xml version="1.0" encoding="UTF-8" ?>
         <srv:container xmlns="http://symfony.com/schema/dic/security"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:srv="http://symfony.com/schema/dic/services"
             xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd">
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd">
             <config>
                 <!-- ... -->
 
@@ -174,27 +190,25 @@ also adjust the query parameter name via the ``parameter`` setting:
     .. code-block:: php
 
         // config/packages/security.php
-        $container->loadFromExtension('security', [
-            // ...
+        use Symfony\Config\SecurityConfig;
 
-            'firewalls' => [
-                'main'=> [
-                    // ...
-                    'switch_user' => [
-                        'role' => 'ROLE_ADMIN',
-                        'parameter' => '_want_to_be_this_user',
-                    ],
-                ],
-            ],
-        ]);
+        return static function (SecurityConfig $security) {
+            // ...
+            $security->firewall('main')
+                // ...
+                ->switchUser()
+                    ->role('ROLE_ADMIN')
+                    ->parameter('_want_to_be_this_user')
+            ;
+        };
 
 Limiting User Switching
 -----------------------
 
 If you need more control over user switching, you can use a security voter. First,
 configure ``switch_user`` to check for some new, custom attribute. This can be
-anything, but *cannot* start with ``ROLE_`` (to enforce that only your voter will)
-be called:
+anything, but *cannot* start with ``ROLE_`` (to enforce that only your voter will
+be called):
 
 .. configuration-block::
 
@@ -212,12 +226,14 @@ be called:
     .. code-block:: xml
 
         <!-- config/packages/security.xml -->
-        <?xml version="1.0" encoding="UTF-8"?>
+        <?xml version="1.0" encoding="UTF-8" ?>
         <srv:container xmlns="http://symfony.com/schema/dic/security"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:srv="http://symfony.com/schema/dic/services"
             xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd">
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd">
             <config>
                 <!-- ... -->
 
@@ -231,22 +247,21 @@ be called:
     .. code-block:: php
 
         // config/packages/security.php
-        $container->loadFromExtension('security', [
-            // ...
+        use Symfony\Config\SecurityConfig;
 
-            'firewalls' => [
-                'main'=> [
-                    // ...
-                    'switch_user' => [
-                        'role' => 'CAN_SWITCH_USER',
-                    ],
-                ],
-            ],
-        ]);
+        return static function (SecurityConfig $security) {
+            // ...
+            $security->firewall('main')
+                // ...
+                ->switchUser()
+                    ->role('CAN_SWITCH_USER')
+            ;
+        };
 
 Then, create a voter class that responds to this role and includes whatever custom
 logic you want::
 
+    // src/Security/Voter/SwitchToCustomerVoter.php
     namespace App\Security\Voter;
 
     use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -263,13 +278,13 @@ logic you want::
             $this->security = $security;
         }
 
-        protected function supports($attribute, $subject)
+        protected function supports($attribute, $subject): bool
         {
             return in_array($attribute, ['CAN_SWITCH_USER'])
                 && $subject instanceof UserInterface;
         }
 
-        protected function voteOnAttribute($attribute, $subject, TokenInterface $token)
+        protected function voteOnAttribute($attribute, $subject, TokenInterface $token): bool
         {
             $user = $token->getUser();
             // if the user is anonymous or if the subject is not a user, do not grant access
@@ -321,7 +336,7 @@ you switch users, add an event subscriber on this event::
 
     class SwitchUserSubscriber implements EventSubscriberInterface
     {
-        public function onSwitchUser(SwitchUserEvent $event)
+        public function onSwitchUser(SwitchUserEvent $event): void
         {
             $request = $event->getRequest();
 
@@ -334,7 +349,7 @@ you switch users, add an event subscriber on this event::
             }
         }
 
-        public static function getSubscribedEvents()
+        public static function getSubscribedEvents(): array
         {
             return [
                 // constant for security.switch_user

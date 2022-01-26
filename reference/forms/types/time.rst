@@ -10,47 +10,19 @@ This can be rendered as a text field, a series of text fields (e.g. hour,
 minute, second) or a series of select fields. The underlying data can be
 stored as a ``DateTime`` object, a string, a timestamp or an array.
 
-+----------------------+-----------------------------------------------------------------------------+
-| Underlying Data Type | can be ``DateTime``, string, timestamp, or array (see the ``input`` option) |
-+----------------------+-----------------------------------------------------------------------------+
-| Rendered as          | can be various tags (see below)                                             |
-+----------------------+-----------------------------------------------------------------------------+
-| Options              | - `choice_translation_domain`_                                              |
-|                      | - `placeholder`_                                                            |
-|                      | - `hours`_                                                                  |
-|                      | - `html5`_                                                                  |
-|                      | - `input`_                                                                  |
-|                      | - `input_format`_                                                           |
-|                      | - `minutes`_                                                                |
-|                      | - `model_timezone`_                                                         |
-|                      | - `seconds`_                                                                |
-|                      | - `view_timezone`_                                                          |
-|                      | - `widget`_                                                                 |
-|                      | - `with_minutes`_                                                           |
-|                      | - `with_seconds`_                                                           |
-+----------------------+-----------------------------------------------------------------------------+
-| Overridden options   | - `by_reference`_                                                           |
-|                      | - `compound`_                                                               |
-|                      | - `data_class`_                                                             |
-|                      | - `error_bubbling`_                                                         |
-+----------------------+-----------------------------------------------------------------------------+
-| Inherited            | - `attr`_                                                                   |
-| options              | - `data`_                                                                   |
-|                      | - `disabled`_                                                               |
-|                      | - `error_mapping`_                                                          |
-|                      | - `help`_                                                                   |
-|                      | - `help_attr`_                                                              |
-|                      | - `help_html`_                                                              |
-|                      | - `inherit_data`_                                                           |
-|                      | - `invalid_message`_                                                        |
-|                      | - `invalid_message_parameters`_                                             |
-|                      | - `mapped`_                                                                 |
-|                      | - `row_attr`_                                                               |
-+----------------------+-----------------------------------------------------------------------------+
-| Parent type          | FormType                                                                    |
-+----------------------+-----------------------------------------------------------------------------+
-| Class                | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\TimeType`          |
-+----------------------+-----------------------------------------------------------------------------+
++---------------------------+-----------------------------------------------------------------------------+
+| Underlying Data Type      | can be ``DateTime``, string, timestamp, or array (see the ``input`` option) |
++---------------------------+-----------------------------------------------------------------------------+
+| Rendered as               | can be various tags (see below)                                             |
++---------------------------+-----------------------------------------------------------------------------+
+| Default invalid message   | Please enter a valid time.                                                  |
++---------------------------+-----------------------------------------------------------------------------+
+| Legacy invalid message    | The value {{ value }} is not valid.                                         |
++---------------------------+-----------------------------------------------------------------------------+
+| Parent type               | FormType                                                                    |
++---------------------------+-----------------------------------------------------------------------------+
+| Class                     | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\TimeType`          |
++---------------------------+-----------------------------------------------------------------------------+
 
 .. include:: /reference/forms/types/options/_debug_form.rst.inc
 
@@ -89,7 +61,7 @@ values.
 Field Options
 -------------
 
-.. include:: /reference/forms/types/options/choice_translation_domain.rst.inc
+.. include:: /reference/forms/types/options/choice_translation_domain_disabled.rst.inc
 
 placeholder
 ~~~~~~~~~~~
@@ -110,7 +82,7 @@ values for the hour, minute and second fields::
     $builder->add('startTime', 'time', [
         'placeholder' => [
             'hour' => 'Hour', 'minute' => 'Minute', 'second' => 'Second',
-        ]
+        ],
     ]);
 
 .. include:: /reference/forms/types/options/hours.rst.inc
@@ -146,9 +118,31 @@ of the time. This must be a valid `PHP time format`_.
 
 .. include:: /reference/forms/types/options/model_timezone.rst.inc
 
+.. caution::
+
+    When using different values for ``model_timezone`` and `view_timezone`_,
+    a `reference_date`_ must be configured.
+
+reference_date
+~~~~~~~~~~~~~~
+
+**type**: ``DateTimeInterface`` **default**: ``null``
+
+Configuring a reference date is required when the `model_timezone`_ and
+`view_timezone`_ are different. Timezone conversions will be calculated
+based on this date.
+
 .. include:: /reference/forms/types/options/seconds.rst.inc
 
 .. include:: /reference/forms/types/options/view_timezone.rst.inc
+
+When no `reference_date`_ is set the ``view_timezone`` defaults to the
+configured `model_timezone`_.
+
+.. caution::
+
+    When using different values for `model_timezone`_ and ``view_timezone``,
+    a `reference_date`_ must be configured.
 
 widget
 ~~~~~~
@@ -197,6 +191,8 @@ error_bubbling
 
 **default**: ``false``
 
+.. include:: /reference/forms/types/options/invalid_message.rst.inc
+
 Inherited Options
 -----------------
 
@@ -217,8 +213,6 @@ These options inherit from the :doc:`FormType </reference/forms/types/form>`:
 .. include:: /reference/forms/types/options/help_html.rst.inc
 
 .. include:: /reference/forms/types/options/inherit_data.rst.inc
-
-.. include:: /reference/forms/types/options/invalid_message.rst.inc
 
 .. include:: /reference/forms/types/options/invalid_message_parameters.rst.inc
 

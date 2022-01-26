@@ -5,7 +5,7 @@ How to Generate Entities from an Existing Database
 ==================================================
 
 When starting work on a brand new project that uses a database, two different
-situations comes naturally. In most cases, the database model is designed
+situations can occur. In most cases, the database model is designed
 and built from scratch. Sometimes, however, you'll start with an existing and
 probably unchangeable database model. Fortunately, Doctrine comes with a bunch
 of tools to help generate model classes from your existing database.
@@ -47,7 +47,7 @@ to a post record thanks to a foreign key constraint.
     ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 Before diving into the recipe, be sure your database connection parameters are
-correctly setup in the ``.env`` file (or ``.env.local`` override file).
+correctly set up in the ``.env`` file (or ``.env.local`` override file).
 
 The first step towards building entity classes from an existing database
 is to ask Doctrine to introspect the database and generate the corresponding
@@ -64,7 +64,7 @@ files: ``BlogPost.php`` and ``BlogComment.php``.
 
 .. tip::
 
-    It's also possible to generate the metadata files into XML or YAML:
+    It's also possible to generate the metadata files into XML or eventually into YAML:
 
     .. code-block:: terminal
 
@@ -82,7 +82,7 @@ files: ``BlogPost.php`` and ``BlogComment.php``.
                 mappings:
                     App:
                         is_bundle: false
-                        type: yml # Set to xml in case of XML mapping
+                        type: xml # "yml" is marked as deprecated for doctrine v2.6+ and will be removed in v3
                         dir: '%kernel.project_dir%/config/doctrine'
                         prefix: 'App\Entity'
                         alias: App
@@ -99,8 +99,11 @@ run:
 
 .. code-block:: terminal
 
-    // generates getter/setter methods
+    // generates getter/setter methods for all Entities
     $ php bin/console make:entity --regenerate App
+
+    // generates getter/setter methods for one specific Entity
+    $ php bin/console make:entity --regenerate App\Entity\Country
 
 .. note::
 
@@ -111,4 +114,4 @@ run:
 
 The generated entities are now ready to be used. Have fun!
 
-.. _`Doctrine tools documentation`: https://www.doctrine-project.org/projects/doctrine-orm/en/latest/reference/tools.html#reverse-engineering
+.. _`Doctrine tools documentation`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/tools.html#reverse-engineering

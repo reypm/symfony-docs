@@ -10,7 +10,8 @@ You can even ignore them completely and continue using your own best practices
 and methodologies. Symfony is flexible enough to adapt to your needs.
 
 This article assumes that you already have experience developing Symfony
-applications. If you don't, read first the rest of the `Symfony documentation`_.
+applications. If you don't, read first the :doc:`Getting Started </setup>`
+section of the documentation.
 
 .. tip::
 
@@ -29,7 +30,7 @@ to create new Symfony applications:
 
 .. code-block:: terminal
 
-    $ symfony new my_project_name
+    $ symfony new my_project_directory
 
 Under the hood, this Symfony binary command executes the needed `Composer`_
 command to :ref:`create a new Symfony application <creating-symfony-applications>`
@@ -51,7 +52,8 @@ self-explanatory and not coupled to Symfony:
     ├─ config/
     │  ├─ packages/
     │  └─ services.yaml
-    └─ public/
+    ├─ migrations/
+    ├─ public/
     │  ├─ build/
     │  └─ index.php
     ├─ src/
@@ -62,7 +64,6 @@ self-explanatory and not coupled to Symfony:
     │  ├─ Entity/
     │  ├─ EventSubscriber/
     │  ├─ Form/
-    │  ├─ Migrations/
     │  ├─ Repository/
     │  ├─ Security/
     │  └─ Twig/
@@ -80,12 +81,18 @@ Configuration
 Use Environment Variables for Infrastructure Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These are the options that change from one machine to another (e.g. from your
-development machine to the production server) but which don't change the
+The values of these options change from one machine to another (e.g. from your
+development machine to the production server) but they don't modify the
 application behavior.
 
 :ref:`Use env vars in your project <config-env-vars>` to define these options
 and create multiple ``.env`` files to :ref:`configure env vars per environment <config-dot-env>`.
+
+Use Secret for Sensitive Information
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When your application has sensitive configuration - like an API key - you should
+store those securely via :doc:`Symfony’s secrets management system </configuration/secrets>`.
 
 Use Parameters for Application Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,7 +130,7 @@ Use Constants to Define Options that Rarely Change
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Configuration options like the number of items to display in some listing rarely
-change. Instead of defining them as :ref:`service container parameters <configuration-parameters>`,
+change. Instead of defining them as :ref:`configuration parameters <configuration-parameters>`,
 define them as PHP constants in the related classes. Example::
 
     // src/Entity/Post.php
@@ -163,7 +170,7 @@ Use Autowiring to Automate the Configuration of Application Services
 
 :doc:`Service autowiring </service_container/autowiring>` is a feature that
 reads the type-hints on your constructor (or other methods) and automatically
-passes the correct services to each method, making unnecessary to configure
+passes the correct services to each method, making it unnecessary to configure
 services explicitly and simplifying the application maintenance.
 
 Use it in combination with :ref:`service autoconfiguration <services-autoconfigure>`
@@ -187,16 +194,19 @@ you'll need to configure services (or parts of them) manually.
 YAML is the format recommended to configure services because it's friendly to
 newcomers and concise, but Symfony also supports XML and PHP configuration.
 
-Use Annotations to Define the Doctrine Entity Mapping
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use Attributes to Define the Doctrine Entity Mapping
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Doctrine entities are plain PHP objects that you store in some "database".
 Doctrine only knows about your entities through the mapping metadata configured
 for your model classes.
 
-Doctrine supports several metadata formats, but it's recommended to use
-annotations because they are by far the most convenient and agile way of setting
+Doctrine supports several metadata formats, but it's recommended to use PHP
+attributes because they are by far the most convenient and agile way of setting
 up and looking for mapping information.
+
+If your PHP version doesn't support attributes yet, use annotations, which is
+similar but requires installing some extra dependencies in your project.
 
 Controllers
 -----------
@@ -216,12 +226,13 @@ important parts of your application.
 
 .. _best-practice-controller-annotations:
 
-Use Annotations to Configure Routing, Caching and Security
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use Attributes or Annotations to Configure Routing, Caching and Security
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Using annotations for routing, caching and security simplifies configuration.
-You don't need to browse several files created with different formats (YAML, XML,
-PHP): all the configuration is just where you need it and it only uses one format.
+Using attributes or annotations for routing, caching and security simplifies
+configuration. You don't need to browse several files created with different
+formats (YAML, XML, PHP): all the configuration is just where you need it and
+it only uses one format.
 
 Don't Use Annotations to Configure the Controller Template
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -234,8 +245,9 @@ the fact that a controller should always return a ``Response`` object.
 Use Dependency Injection to Get Services
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you extend the base ``AbstractController``, you can't access services
-directly from the container via ``$this->container->get()`` or ``$this->get()``.
+If you extend the base ``AbstractController``, you can only access to the most
+common services (e.g ``twig``, ``router``, ``doctrine``, etc.), directly from the
+container via ``$this->container->get()``.
 Instead, you must use dependency injection to fetch services by
 :ref:`type-hinting action method arguments <controller-accessing-services>` or
 constructor arguments.
@@ -257,7 +269,7 @@ Templates
 Use Snake Case for Template Names and Variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use lowercased snake_case for template names, directories and variables (e.g.
+Use lowercase snake_case for template names, directories and variables (e.g.
 ``user_profile`` instead of ``userProfile`` and ``product/edit_form.html.twig``
 instead of ``Product/EditForm.html.twig``).
 
@@ -291,6 +303,10 @@ to add buttons in the templates. This also improves the separation of concerns,
 because the button styling (CSS class and other attributes) is defined in the
 template instead of in a PHP class.
 
+However, if you create a :doc:`form with multiple submit buttons </form/multiple_buttons>`
+you should define them in the controller instead of the template. Otherwise, you
+won't be able to check which button was clicked when handling the form in the controller.
+
 Define Validation Constraints on the Underlying Object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -306,7 +322,9 @@ Use a Single Action to Render and Process the Form
 :ref:`Rendering forms <rendering-forms>` and :ref:`processing forms <processing-forms>`
 are two of the main tasks when handling forms. Both are too similar (most of the
 times, almost identical), so it's much simpler to let a single controller action
-handle everything.
+handle both.
+
+.. _best-practice-internationalization:
 
 Internationalization
 --------------------
@@ -315,8 +333,8 @@ Use the XLIFF Format for Your Translation Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Of all the translation formats supported by Symfony (PHP, Qt, ``.po``, ``.mo``,
-JSON, CSV, INI, etc.) XLIFF and gettext have the best support in the tools used
-by professional translators. And since it's based on XML, you can validate XLIFF
+JSON, CSV, INI, etc.), ``XLIFF`` and ``gettext`` have the best support in the tools used
+by professional translators. And since it's based on XML, you can validate ``XLIFF``
 file contents as you write them.
 
 Symfony also supports notes in XLIFF files, making them more user-friendly for
@@ -353,14 +371,15 @@ Use the ``auto`` Password Hasher
 
 The :ref:`auto password hasher <reference-security-encoder-auto>` automatically
 selects the best possible encoder/hasher depending on your PHP installation.
-Currently, it tries to use ``sodium`` by default and falls back to ``bcrypt``.
+Starting from Symfony 5.3, the default auto hasher is ``bcrypt``.
 
 Use Voters to Implement Fine-grained Security Restrictions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If your security logic is complex, you should create custom
 :doc:`security voters </security/voters>` instead of defining long expressions
-inside the ``@Security`` annotation.
+inside the ``#[Security]`` attribute (or in the ``@Security`` annotation if your
+PHP version doesn't support attributes yet).
 
 Web Assets
 ----------
@@ -369,7 +388,7 @@ Use Webpack Encore to Process Web Assets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Web assets are things like CSS, JavaScript and image files that make the
-frontend of your site look and work great. `Webpack`_ is the leading JavaScript
+frontend of your site looks and works great. `Webpack`_ is the leading JavaScript
 module bundler that compiles, transforms and packages assets for usage in a browser.
 
 :doc:`Webpack Encore </frontend>` is a JavaScript library that gets rid of most
@@ -385,8 +404,8 @@ Smoke Test your URLs
 
 In software engineering, `smoke testing`_ consists of *"preliminary testing to
 reveal simple failures severe enough to reject a prospective software release"*.
-Using :ref:`PHPUnit data providers <testing-data-providers>` you can define a
-functional test that checks that all application URLs load successfully::
+Using `PHPUnit data providers`_ you can define a functional test that
+checks that all application URLs load successfully::
 
     // tests/ApplicationAvailabilityFunctionalTest.php
     namespace App\Tests;
@@ -418,22 +437,23 @@ functional test that checks that all application URLs load successfully::
     }
 
 Add this test while creating your application because it requires little effort
-and checks that none of your pages returns an error. Later you'll add more
+and checks that none of your pages returns an error. Later, you'll add more
 specific tests for each page.
 
-Hardcode URLs in a Functional Test
+.. _hardcode-urls-in-a-functional-test:
+
+Hard-code URLs in a Functional Test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In Symfony applications it's recommended to :ref:`generate URLs <routing-generating-urls>`
+In Symfony applications, it's recommended to :ref:`generate URLs <routing-generating-urls>`
 using routes to automatically update all links when a URL changes. However, if a
 public URL changes, users won't be able to browse it unless you set up a
 redirection to the new URL.
 
 That's why it's recommended to use raw URLs in tests instead of generating them
-from routes. Whenever a route changes, tests will break and you'll know that
+from routes. Whenever a route changes, tests will fail and you'll know that
 you must set up a redirection.
 
-.. _`Symfony documentation`: https://symfony.com/doc
 .. _`Symfony Demo`: https://github.com/symfony/demo
 .. _`download Symfony`: https://symfony.com/download
 .. _`Composer`: https://getcomposer.org/
@@ -441,3 +461,4 @@ you must set up a redirection.
 .. _`feature toggles`: https://en.wikipedia.org/wiki/Feature_toggle
 .. _`smoke testing`: https://en.wikipedia.org/wiki/Smoke_testing_(software)
 .. _`Webpack`: https://webpack.js.org/
+.. _`PHPUnit data providers`: https://phpunit.readthedocs.io/en/stable/writing-tests-for-phpunit.html#data-providers

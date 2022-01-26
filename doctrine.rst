@@ -44,10 +44,19 @@ The database connection information is stored as an environment variable called
     # .env (or override DATABASE_URL in .env.local to avoid committing your changes)
 
     # customize this line!
-    DATABASE_URL="mysql://db_user:db_password@127.0.0.1:3306/db_name"
+    DATABASE_URL="mysql://db_user:db_password@127.0.0.1:3306/db_name?serverVersion=5.7"
+
+    # to use mariadb:
+    DATABASE_URL="mysql://db_user:db_password@127.0.0.1:3306/db_name?serverVersion=mariadb-10.5.8"
 
     # to use sqlite:
     # DATABASE_URL="sqlite:///%kernel.project_dir%/var/app.db"
+
+    # to use postgresql:
+    # DATABASE_URL="postgresql://db_user:db_password@127.0.0.1:5432/db_name?serverVersion=11&charset=utf8"
+
+    # to use oracle:
+    # DATABASE_URL="oci8://db_user:db_password@127.0.0.1:1521/db_name"
 
 .. caution::
 
@@ -86,7 +95,7 @@ you need a ``Product`` object to represent those products.
 You can use the ``make:entity`` command to create this class and any fields you
 need. The command will ask you some questions - answer them like done below:
 
-.. code-block:: terminal
+.. code-block:: bash
 
     $ php bin/console make:entity
 
@@ -128,16 +137,17 @@ Woh! You now have a new ``src/Entity/Product.php`` file::
     // src/Entity/Product.php
     namespace App\Entity;
 
+    use App\Repository\ProductRepository;
     use Doctrine\ORM\Mapping as ORM;
 
     /**
-     * @ORM\Entity(repositoryClass="App\Repository\ProductRepository")
+     * @ORM\Entity(repositoryClass=ProductRepository::class)
      */
     class Product
     {
         /**
-         * @ORM\Id
-         * @ORM\GeneratedValue
+         * @ORM\Id()
+         * @ORM\GeneratedValue()
          * @ORM\Column(type="integer")
          */
         private $id;
@@ -152,7 +162,7 @@ Woh! You now have a new ``src/Entity/Product.php`` file::
          */
         private $price;
 
-        public function getId()
+        public function getId(): ?int
         {
             return $this->id;
         }
@@ -223,9 +233,11 @@ already installed:
 
 If everything worked, you should see something like this:
 
+.. code-block:: text
+
     SUCCESS!
 
-    Next: Review the new migration "src/Migrations/Version20180207231217.php"
+    Next: Review the new migration "migrations/Version20211116204726.php"
     Then: Run the migration with php bin/console doctrine:migrations:migrate
 
 If you open this file, it contains the SQL needed to update your database! To run
@@ -248,7 +260,7 @@ But what if you need to add a new field property to ``Product``, like a
 ``description``? You can edit the class to add the new property. But, you can
 also use ``make:entity`` again:
 
-.. code-block:: terminal
+.. code-block:: bash
 
     $ php bin/console make:entity
 
@@ -273,20 +285,20 @@ methods:
 
 .. code-block:: diff
 
-    // src/Entity/Product.php
-    // ...
+      // src/Entity/Product.php
+      // ...
 
-    class Product
-    {
-        // ...
+      class Product
+      {
+          // ...
 
     +     /**
     +      * @ORM\Column(type="text")
     +      */
     +     private $description;
 
-        // getDescription() & setDescription() were also added
-    }
+          // getDescription() & setDescription() were also added
+      }
 
 The new property is mapped, but it doesn't exist yet in the ``product`` table. No
 problem! Generate a new migration:
@@ -349,7 +361,7 @@ and save it::
 
     // ...
     use App\Entity\Product;
-    use Doctrine\ORM\EntityManagerInterface;
+    use Doctrine\Persistence\ManagerRegistry;
     use Symfony\Component\HttpFoundation\Response;
 
     class ProductController extends AbstractController
@@ -357,11 +369,9 @@ and save it::
         /**
          * @Route("/product", name="create_product")
          */
-        public function createProduct(): Response
+        public function createProduct(ManagerRegistry $doctrine): Response
         {
-            // you can fetch the EntityManager via $this->getDoctrine()
-            // or you can add an argument to the action: createProduct(EntityManagerInterface $entityManager)
-            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager = $doctrine->getManager();
 
             $product = new Product();
             $product->setName('Keyboard');
@@ -396,7 +406,11 @@ Take a look at the previous example in more detail:
 
 .. _doctrine-entity-manager:
 
-* **line 18** The ``$this->getDoctrine()->getManager()`` method gets Doctrine's
+* **line 14** The ``ManagerRegistry $doctrine`` argument tells Symfony to
+  :ref:`inject the Doctrine service <services-constructor-injection>` into the
+  controller method.
+
+* **line 16** The ``$doctrine->getManager()`` method gets Doctrine's
   *entity manager* object, which is the most important object in Doctrine. It's
   responsible for saving objects to, and fetching objects from, the database.
 
@@ -495,28 +509,58 @@ Fetching an object back out of the database is even easier. Suppose you want to
 be able to go to ``/product/1`` to see your new product::
 
     // src/Controller/ProductController.php
+    namespace App\Controller;
+
+    use App\Entity\Product;
+    use Symfony\Component\HttpFoundation\Response;
     // ...
 
-    /**
-     * @Route("/product/{id}", name="product_show")
-     */
-    public function show($id)
+    class ProductController extends AbstractController
     {
-        $product = $this->getDoctrine()
-            ->getRepository(Product::class)
-            ->find($id);
+        /**
+         * @Route("/product/{id}", name="product_show")
+         */
+        public function show(ManagerRegistry $doctrine, int $id): Response
+        {
+            $product = $doctrine->getRepository(Product::class)->find($id);
 
-        if (!$product) {
-            throw $this->createNotFoundException(
-                'No product found for id '.$id
-            );
+            if (!$product) {
+                throw $this->createNotFoundException(
+                    'No product found for id '.$id
+                );
+            }
+
+            return new Response('Check out this great product: '.$product->getName());
+
+            // or render a template
+            // in the template, print things with {{ product.name }}
+            // return $this->render('product/show.html.twig', ['product' => $product]);
         }
+    }
 
-        return new Response('Check out this great product: '.$product->getName());
+Another possibility is to use the ``ProductRepository`` using Symfony's autowiring
+and injected by the dependency injection container::
 
-        // or render a template
-        // in the template, print things with {{ product.name }}
-        // return $this->render('product/show.html.twig', ['product' => $product]);
+    // src/Controller/ProductController.php
+    namespace App\Controller;
+
+    use App\Entity\Product;
+    use App\Repository\ProductRepository;
+    use Symfony\Component\HttpFoundation\Response;
+    // ...
+
+    class ProductController extends AbstractController
+    {
+        /**
+         * @Route("/product/{id}", name="product_show")
+         */
+        public function show(int $id, ProductRepository $productRepository): Response
+        {
+            $product = $productRepository
+                ->find($id);
+
+            // ...
+        }
     }
 
 Try it out!
@@ -529,7 +573,7 @@ job is to help you fetch entities of a certain class.
 
 Once you have a repository object, you have many helper methods::
 
-    $repository = $this->getDoctrine()->getRepository(Product::class);
+    $repository = $doctrine->getRepository(Product::class);
 
     // look for a single Product by its primary key (usually "id")
     $product = $repository->find($id);
@@ -582,15 +626,23 @@ for you automatically! First, install the bundle in case you don't have it:
 Now, simplify your controller::
 
     // src/Controller/ProductController.php
-    use App\Entity\Product;
+    namespace App\Controller;
 
-    /**
-     * @Route("/product/{id}", name="product_show")
-     */
-    public function show(Product $product)
+    use App\Entity\Product;
+    use App\Repository\ProductRepository;
+    use Symfony\Component\HttpFoundation\Response;
+    // ...
+
+    class ProductController extends AbstractController
     {
-        // use the Product!
-        // ...
+        /**
+         * @Route("/product/{id}", name="product_show")
+         */
+        public function show(Product $product): Response
+        {
+            // use the Product!
+            // ...
+        }
     }
 
 That's it! The bundle uses the ``{id}`` from the route to query for the ``Product``
@@ -604,26 +656,37 @@ Updating an Object
 Once you've fetched an object from Doctrine, you interact with it the same as
 with any PHP model::
 
-    /**
-     * @Route("/product/edit/{id}")
-     */
-    public function update($id)
+    // src/Controller/ProductController.php
+    namespace App\Controller;
+
+    use App\Entity\Product;
+    use App\Repository\ProductRepository;
+    use Symfony\Component\HttpFoundation\Response;
+    // ...
+
+    class ProductController extends AbstractController
     {
-        $entityManager = $this->getDoctrine()->getManager();
-        $product = $entityManager->getRepository(Product::class)->find($id);
+        /**
+         * @Route("/product/edit/{id}")
+         */
+        public function update(ManagerRegistry $doctrine, int $id): Response
+        {
+            $entityManager = $doctrine->getManager();
+            $product = $entityManager->getRepository(Product::class)->find($id);
 
-        if (!$product) {
-            throw $this->createNotFoundException(
-                'No product found for id '.$id
-            );
+            if (!$product) {
+                throw $this->createNotFoundException(
+                    'No product found for id '.$id
+                );
+            }
+
+            $product->setName('New product name!');
+            $entityManager->flush();
+
+            return $this->redirectToRoute('product_show', [
+                'id' => $product->getId()
+            ]);
         }
-
-        $product->setName('New product name!');
-        $entityManager->flush();
-
-        return $this->redirectToRoute('product_show', [
-            'id' => $product->getId()
-        ]);
     }
 
 Using Doctrine to edit an existing product consists of three steps:
@@ -657,8 +720,7 @@ You've already seen how the repository object allows you to run basic queries
 without any work::
 
     // from inside a controller
-    $repository = $this->getDoctrine()->getRepository(Product::class);
-
+    $repository = $doctrine->getRepository(Product::class);
     $product = $repository->find($id);
 
 But what if you need a more complex query? When you generated your entity with
@@ -669,7 +731,7 @@ But what if you need a more complex query? When you generated your entity with
 
     use App\Entity\Product;
     use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-    use Doctrine\Common\Persistence\ManagerRegistry;
+    use Doctrine\Persistence\ManagerRegistry;
 
     class ProductRepository extends ServiceEntityRepository
     {
@@ -699,7 +761,7 @@ a new method for this to your repository::
         /**
          * @return Product[]
          */
-        public function findAllGreaterThanPrice($price): array
+        public function findAllGreaterThanPrice(int $price): array
         {
             $entityManager = $this->getEntityManager();
 
@@ -725,44 +787,45 @@ Now, you can call this method on the repository::
     // from inside a controller
     $minPrice = 1000;
 
-    $products = $this->getDoctrine()
-        ->getRepository(Product::class)
-        ->findAllGreaterThanPrice($minPrice);
+    $products = $doctrine->getRepository(Product::class)->findAllGreaterThanPrice($minPrice);
 
     // ...
 
-If you're in a :ref:`services-constructor-injection`, you can type-hint the
-``ProductRepository`` class and inject it like normal.
+See :ref:`services-constructor-injection` for how to inject the repository into
+any service.
 
 Querying with the Query Builder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Doctrine also provides a `Query Builder`_, an object-oriented way to write
-queries. It is recommended to use this when queries and build dynamically (i.e.
+queries. It is recommended to use this when queries are built dynamically (i.e.
 based on PHP conditions)::
 
     // src/Repository/ProductRepository.php
 
     // ...
-    public function findAllGreaterThanPrice($price, $includeUnavailableProducts = false): array
+    class ProductRepository extends ServiceEntityRepository
     {
-        // automatically knows to select Products
-        // the "p" is an alias you'll use in the rest of the query
-        $qb = $this->createQueryBuilder('p')
-            ->where('p.price > :price')
-            ->setParameter('price', $price)
-            ->orderBy('p.price', 'ASC')
+        public function findAllGreaterThanPrice(int $price, bool $includeUnavailableProducts = false): array
+        {
+            // automatically knows to select Products
+            // the "p" is an alias you'll use in the rest of the query
+            $qb = $this->createQueryBuilder('p')
+                ->where('p.price > :price')
+                ->setParameter('price', $price)
+                ->orderBy('p.price', 'ASC');
 
-        if (!$includeUnavailableProducts) {
-            $qb->andWhere('p.available = TRUE')
+            if (!$includeUnavailableProducts) {
+                $qb->andWhere('p.available = TRUE');
+            }
+
+            $query = $qb->getQuery();
+
+            return $query->execute();
+
+            // to get just one result:
+            // $product = $query->setMaxResults(1)->getOneOrNullResult();
         }
-
-        $query = $qb->getQuery();
-
-        return $query->execute();
-
-        // to get just one result:
-        // $product = $query->setMaxResults(1)->getOneOrNullResult();
     }
 
 Querying with SQL
@@ -773,20 +836,23 @@ In addition, you can query directly with SQL if you need to::
     // src/Repository/ProductRepository.php
 
     // ...
-    public function findAllGreaterThanPrice($price): array
+    class ProductRepository extends ServiceEntityRepository
     {
-        $conn = $this->getEntityManager()->getConnection();
+        public function findAllGreaterThanPrice(int $price): array
+        {
+            $conn = $this->getEntityManager()->getConnection();
 
-        $sql = '
-            SELECT * FROM product p
-            WHERE p.price > :price
-            ORDER BY p.price ASC
-            ';
-        $stmt = $conn->prepare($sql);
-        $stmt->execute(['price' => $price]);
+            $sql = '
+                SELECT * FROM product p
+                WHERE p.price > :price
+                ORDER BY p.price ASC
+                ';
+            $stmt = $conn->prepare($sql);
+            $resultSet = $stmt->executeQuery(['price' => $price]);
 
-        // returns an array of arrays (i.e. a raw data set)
-        return $stmt->fetchAll();
+            // returns an array of arrays (i.e. a raw data set)
+            return $resultSet->fetchAllAssociative();
+        }
     }
 
 With SQL, you will get back raw data, not objects (unless you use the `NativeQuery`_
@@ -831,27 +897,26 @@ Learn more
     doctrine/custom_dql_functions
     doctrine/dbal
     doctrine/multiple_entity_managers
-    doctrine/pdo_session_storage
-    doctrine/mongodb_session_storage
     doctrine/resolve_target_entity
     doctrine/reverse_engineering
+    session/database
     testing/database
 
-.. _`Doctrine`: http://www.doctrine-project.org/
+.. _`Doctrine`: https://www.doctrine-project.org/
 .. _`RFC 3986`: https://www.ietf.org/rfc/rfc3986.txt
-.. _`Doctrine's Mapping Types documentation`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html
-.. _`Query Builder`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/query-builder.html
-.. _`Doctrine Query Language`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/dql-doctrine-query-language.html
-.. _`Reserved SQL keywords documentation`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#quoting-reserved-words
+.. _`Doctrine's Mapping Types documentation`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/basic-mapping.html
+.. _`Query Builder`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/query-builder.html
+.. _`Doctrine Query Language`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/dql-doctrine-query-language.html
+.. _`Reserved SQL keywords documentation`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/basic-mapping.html#quoting-reserved-words
 .. _`DoctrineMongoDBBundle docs`: https://symfony.com/doc/current/bundles/DoctrineMongoDBBundle/index.html
-.. _`Transactions and Concurrency`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/transactions-and-concurrency.html
+.. _`Transactions and Concurrency`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/transactions-and-concurrency.html
 .. _`DoctrineMigrationsBundle`: https://github.com/doctrine/DoctrineMigrationsBundle
-.. _`NativeQuery`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/native-sql.html
-.. _`SensioFrameworkExtraBundle`: http://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/index.html
-.. _`ParamConverter`: http://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html
-.. _`limit of 767 bytes for the index key prefix`: https://dev.mysql.com/doc/refman/5.6/en/innodb-restrictions.html
+.. _`NativeQuery`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/native-sql.html
+.. _`SensioFrameworkExtraBundle`: https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/index.html
+.. _`ParamConverter`: https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html
+.. _`limit of 767 bytes for the index key prefix`: https://dev.mysql.com/doc/refman/5.6/en/innodb-limits.html
 .. _`Doctrine screencast series`: https://symfonycasts.com/screencast/symfony-doctrine
 .. _`API Platform`: https://api-platform.com/docs/core/validation/
-.. _`PDO`: https://php.net/pdo
-.. _`available Doctrine extensions`: https://github.com/Atlantic18/DoctrineExtensions
-.. _`StofDoctrineExtensionsBundle`: https://github.com/antishov/StofDoctrineExtensionsBundle
+.. _`PDO`: https://www.php.net/pdo
+.. _`available Doctrine extensions`: https://github.com/doctrine-extensions/DoctrineExtensions
+.. _`StofDoctrineExtensionsBundle`: https://github.com/stof/StofDoctrineExtensionsBundle

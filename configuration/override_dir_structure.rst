@@ -25,7 +25,58 @@ override it to create your own structure:
     │  ├─ cache/
     │  ├─ log/
     │  └─ ...
-    └─ vendor/
+    ├─ vendor/
+    └─ .env
+
+.. _override-env-dir:
+
+Override the Environment (DotEnv) Files Directory
+-------------------------------------------------
+
+By default, the :ref:`.env configuration file <config-dot-env>` is located at
+the root directory of the project. If you store it in a different location,
+define the ``runtime.dotenv_path`` option in the ``composer.json`` file:
+
+.. code-block:: json
+
+    {
+        "...": "...",
+        "extra": {
+            "...": "...",
+            "runtime": {
+                "dotenv_path": "my/custom/path/to/.env"
+            }
+        }
+    }
+
+Then, update your Composer files (running ``composer update``, for instance),
+so that the ``vendor/autoload_runtime.php`` files gets regenerated with the new
+``.env`` path.
+
+You can also set up different ``.env`` paths for your console and web server
+calls. Edit the ``public/index.php`` and/or ``bin/console`` files to define the
+new file path.
+
+Console script::
+
+    // bin/console
+
+    // ...
+    $_SERVER['APP_RUNTIME_OPTIONS']['dotenv_path'] = 'some/custom/path/to/.env';
+
+    require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
+    // ...
+
+Web front-controller::
+
+    // public/index.php
+    
+    // ...
+    $_SERVER['APP_RUNTIME_OPTIONS']['dotenv_path'] = 'another/custom/path/to/.env';
+
+    require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
+    // ...
+
 
 .. _override-config-dir:
 
@@ -41,8 +92,8 @@ at your project root directory.
 Override the Cache Directory
 ----------------------------
 
-You can change the default cache directory by overriding the ``getCacheDir()``
-method in the ``Kernel`` class of your application::
+Changing the cache directory can be achieved by overriding the
+``getCacheDir()`` method in the ``Kernel`` class of your application::
 
     // src/Kernel.php
 
@@ -61,6 +112,9 @@ In this code, ``$this->environment`` is the current environment (i.e. ``dev``).
 In this case you have changed the location of the cache directory to
 ``var/{environment}/cache/``.
 
+You can also change the cache directory defining an environment variable named
+``APP_CACHE_DIR`` whose value is the full path of the cache folder.
+
 .. caution::
 
     You should keep the cache directory different for each environment,
@@ -73,14 +127,16 @@ In this case you have changed the location of the cache directory to
 Override the Log Directory
 --------------------------
 
-Overriding the ``var/log/`` directory is the same as overriding the ``var/cache/``
-directory. The only difference is that you need to override the ``getLogDir()``
-method::
+Overriding the ``var/log/`` directory is almost the same as overriding the
+``var/cache/`` directory.
+
+You can do it overriding the ``getLogDir()`` method in the ``Kernel`` class of
+your application::
 
     // src/Kernel.php
 
     // ...
-    class Kernel extends Kernel
+    class Kernel extends BaseKernel
     {
         // ...
 
@@ -92,14 +148,18 @@ method::
 
 Here you have changed the location of the directory to ``var/{environment}/log/``.
 
+You can also change the log directory defining an environment variable named
+``APP_LOG_DIR`` whose value is the full path of the log folder.
+
 .. _override-templates-dir:
 
 Override the Templates Directory
 --------------------------------
 
 If your templates are not stored in the default ``templates/`` directory, use
-the :ref:`twig.paths <config-twig-paths>` configuration option to define your
-own templates directory (or directories):
+the :ref:`twig.default_path <config-twig-default-path>` configuration
+option to define your own templates directory (use :ref:`twig.paths <config-twig-paths>`
+for multiple directories):
 
 .. configuration-block::
 
@@ -108,12 +168,12 @@ own templates directory (or directories):
         # config/packages/twig.yaml
         twig:
             # ...
-            paths: ["%kernel.project_dir%/resources/views"]
+            default_path: "%kernel.project_dir%/resources/views"
 
     .. code-block:: xml
 
         <!-- config/packages/twig.xml -->
-        <?xml version="1.0" ?>
+        <?xml version="1.0" encoding="UTF-8" ?>
         <container xmlns="http://symfony.com/schema/dic/services"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:twig="http://symfony.com/schema/dic/twig"
@@ -123,7 +183,7 @@ own templates directory (or directories):
                 https://symfony.com/schema/dic/twig/twig-1.0.xsd">
 
             <twig:config>
-                <twig:path>%kernel.project_dir%/resources/views</twig:path>
+                <twig:default-path>%kernel.project_dir%/resources/views</twig:default-path>
             </twig:config>
 
         </container>
@@ -131,18 +191,18 @@ own templates directory (or directories):
     .. code-block:: php
 
         // config/packages/twig.php
-        $container->loadFromExtension('twig', [
-            'paths' => [
-                '%kernel.project_dir%/resources/views',
-            ],
-        ]);
+        use Symfony\Config\TwigConfig;
+
+        return static function (TwigConfig $twig) {
+            $twig->defaultPath('%kernel.project_dir%/resources/views');
+        };
 
 Override the Translations Directory
 -----------------------------------
 
 If your translation files are not stored in the default ``translations/``
-directory, use the :ref:`framework.translator.paths <reference-translator-paths>`
-configuration option to define your own translations directory (or directories):
+directory, use the :ref:`framework.translator.default_path <reference-translator-default_path>`
+configuration option to define your own translations directory (use :ref:`framework.translator.paths <reference-translator-paths>` for multiple directories):
 
 .. configuration-block::
 
@@ -152,12 +212,12 @@ configuration option to define your own translations directory (or directories):
         framework:
             translator:
                 # ...
-                paths: ["%kernel.project_dir%/i18n"]
+                default_path: "%kernel.project_dir%/i18n"
 
     .. code-block:: xml
 
         <!-- config/packages/translation.xml -->
-        <?xml version="1.0" ?>
+        <?xml version="1.0" encoding="UTF-8" ?>
         <container xmlns="http://symfony.com/schema/dic/services"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:twig="http://symfony.com/schema/dic/twig"
@@ -168,7 +228,7 @@ configuration option to define your own translations directory (or directories):
 
             <framework:config>
                 <framework:translator>
-                    <framework:path>%kernel.project_dir%/i18n</framework:path>
+                    <framework:default-path>%kernel.project_dir%/i18n</framework:default-path>
                 </framework:translator>
             </framework:config>
 
@@ -177,13 +237,13 @@ configuration option to define your own translations directory (or directories):
     .. code-block:: php
 
         // config/packages/translation.php
-        $container->loadFromExtension('framework', [
-            'translator' => [
-                'paths' => [
-                    '%kernel.project_dir%/i18n',
-                ],
-            ],
-        ]);
+        use Symfony\Config\FrameworkConfig;
+
+        return static function (FrameworkConfig $framework) {
+            $framework->translator()
+                ->defaultPath('%kernel.project_dir%/i18n')
+            ;
+        };
 
 .. _override-web-dir:
 .. _override-the-web-directory:
@@ -192,7 +252,7 @@ Override the Public Directory
 -----------------------------
 
 If you need to rename or move your ``public/`` directory, the only thing you
-need to guarantee is that the path to the ``var/`` directory is still correct in
+need to guarantee is that the path to the ``vendor/`` directory is still correct in
 your ``index.php`` front controller. If you renamed the directory, you're fine.
 But if you moved it in some way, you may need to modify these paths inside those
 files::
@@ -233,7 +293,7 @@ option in your ``composer.json`` file like this:
         "config": {
             "bin-dir": "bin",
             "vendor-dir": "/some/dir/vendor"
-        },
+        }
     }
 
 .. tip::

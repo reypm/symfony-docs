@@ -10,9 +10,9 @@ user submits a series of different forms to complete a task. Such processes are
 best kept away from your models and should be defined in configuration.
 
 A **definition** of a workflow consists of places and actions to get from one
-place to another. The actions are called **transitions**. A workflow does also
-need to know each object's position in the workflow. That **marking store**
-writes to a property of the object to remember the current place.
+place to another. The actions are called **transitions**. A workflow also needs to
+know each object's position in the workflow. The **marking store** writes
+the current place to a property on the object.
 
 .. note::
 
@@ -130,7 +130,7 @@ Below is the configuration for the pull request state machine.
                     </framework:marking-store>
 
                     <framework:support>App\Entity\PullRequest</framework:support>
-                    
+
                     <framework:initial_marking>start</framework:initial_marking>
 
                     <framework:place>start</framework:place>
@@ -192,58 +192,62 @@ Below is the configuration for the pull request state machine.
     .. code-block:: php
 
         // config/packages/workflow.php
-        $container->loadFromExtension('framework', [
-            // ...
-            'workflows' => [
-                'pull_request' => [
-                    'type' => 'state_machine',
-                    'marking_store' => [
-                        'type' => 'method',
-                        'property' => 'currentPlace',
-                    ],
-                    'supports' => ['App\Entity\PullRequest'],
-                    'initial_marking' => 'start',
-                    'places' => [
-                        'start',
-                        'coding',
-                        'test',
-                        'review',
-                        'merged',
-                        'closed',
-                    ],
-                    'transitions' => [
-                        'submit'=> [
-                            'from' => 'start',
-                            'to' => 'test',
-                        ],
-                        'update'=> [
-                            'from' => ['coding', 'test', 'review'],
-                            'to' => 'test',
-                        ],
-                        'wait_for_review'=> [
-                            'from' => 'test',
-                            'to' => 'review',
-                        ],
-                        'request_change'=> [
-                            'from' => 'review',
-                            'to' => 'coding',
-                        ],
-                        'accept'=> [
-                            'from' => 'review',
-                            'to' => 'merged',
-                        ],
-                        'reject'=> [
-                            'from' => 'review',
-                            'to' => 'closed',
-                        ],
-                        'reopen'=> [
-                            'from' => 'start',
-                            'to' => 'review',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
+        use Symfony\Config\FrameworkConfig;
+
+        return static function (FrameworkConfig $framework) {
+            $pullRequest = $framework->workflows()->workflows('pull_request');
+
+            $pullRequest
+                ->type('state_machine')
+                ->supports(['App\Entity\PullRequest'])
+                ->initialMarking(['start']);
+
+            $pullRequest->markingStore()
+                ->type('method')
+                ->property('currentPlace');
+
+            $pullRequest->place()->name('start');
+            $pullRequest->place()->name('coding');
+            $pullRequest->place()->name('test');
+            $pullRequest->place()->name('review');
+            $pullRequest->place()->name('merged');
+            $pullRequest->place()->name('closed');
+
+            $pullRequest->transition()
+                ->name('submit')
+                    ->from(['start'])
+                    ->to(['test']);
+
+            $pullRequest->transition()
+                ->name('update')
+                    ->from(['coding', 'test', 'review'])
+                    ->to(['test']);
+
+            $pullRequest->transition()
+                ->name('wait_for_review')
+                    ->from(['test'])
+                    ->to(['review']);
+
+            $pullRequest->transition()
+                ->name('request_change')
+                    ->from(['review'])
+                    ->to(['coding']);
+
+            $pullRequest->transition()
+                ->name('accept')
+                    ->from(['review'])
+                    ->to(['merged']);
+
+            $pullRequest->transition()
+                ->name('reject')
+                    ->from(['review'])
+                    ->to(['closed']);
+
+            $pullRequest->transition()
+                ->name('accept')
+                    ->from(['closed'])
+                    ->to(['review']);
+        };
 
 In a Symfony application using the
 :ref:`default services.yaml configuration <service-container-services-load-example>`,
@@ -301,5 +305,34 @@ to access the proper service::
 
         // ...
     }
+
+Automatic and Manual Validation
+-------------------------------
+
+During cache warmup, Symfony validates the workflows and state machines that are
+defined in configuration files. If your workflows or state machines are defined
+programmatically instead of in a configuration file, you can validate them with
+the :class:`Symfony\\Component\\Workflow\\Validator\\WorkflowValidator` and
+:class:`Symfony\\Component\\Workflow\\Validator\\StateMachineValidator`::
+
+    // ...
+    use Symfony\Component\Workflow\Definition;
+    use Symfony\Component\Workflow\StateMachine;
+    use Symfony\Component\Workflow\Validator\StateMachineValidator;
+
+    $states = ['created', 'activated', 'deleted'];
+    $stateTransitions = [
+        new Transition('activate', 'created', 'activated'),
+        // This duplicate event "from" the "created" state is invalid
+        new Transition('activate', 'created', 'deleted'),
+        new Transition('delete', 'activated', 'deleted'),
+    ];
+
+    // No validation is done upon initialization
+    $definition = new Definition($states, $stateTransitions);
+
+    $validator = new StateMachineValidator();
+    // Throws InvalidDefinitionException in case of an invalid definition
+    $validator->validate($definition, 'My First StateMachine');
 
 .. _`Petri nets`: https://en.wikipedia.org/wiki/Petri_net

@@ -1,5 +1,5 @@
-validation_groups
-~~~~~~~~~~~~~~~~~
+``validation_groups``
+~~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``array``, ``string``, ``callable``, :class:`Symfony\\Component\\Validator\\Constraints\\GroupSequence` or ``null`` **default**: ``null``
 
@@ -49,7 +49,7 @@ the option. Symfony will then pass the form when calling it::
 .. note::
 
     When your form contains multiple submit buttons, you can change the
-    validation group depending on :doc:`which button is used</form/button_based_validation>`
+    validation group depending on :doc:`which button is used </form/button_based_validation>`
     to submit the form.
 
     If you need advanced logic to determine the validation groups have

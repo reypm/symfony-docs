@@ -7,9 +7,9 @@ How to Deploy a Symfony Application
 ===================================
 
 Deploying a Symfony application can be a complex and varied task depending on
-the setup and the requirements of your application. This article is not a step-
-by-step guide, but is a general list of the most common requirements and ideas
-for deployment.
+the setup and the requirements of your application. This article is not a
+step-by-step guide, but is a general list of the most common requirements and
+ideas for deployment.
 
 .. _symfony2-deployment-basics:
 
@@ -46,7 +46,7 @@ Basic File Transfer
 The most basic way of deploying an application is copying the files manually
 via FTP/SCP (or similar method). This has its disadvantages as you lack control
 over the system as the upgrade progresses. This method also requires you
-to take some manual steps after transferring the files (see `Common Post-Deployment Tasks`_)
+to take some manual steps after transferring the files (see `Common Deployment Tasks`_).
 
 Using Source Control
 ~~~~~~~~~~~~~~~~~~~~
@@ -58,7 +58,7 @@ system. When using Git, a common approach is to create a tag for each release
 and check out the appropriate tag on deployment (see `Git Tagging`_).
 
 This makes updating your files *easier*, but you still need to worry about
-manually taking other steps (see `Common Post-Deployment Tasks`_).
+manually taking other steps (see `Common Deployment Tasks`_).
 
 Using Platforms as a Service
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,15 +72,13 @@ app quickly. There are many PaaS - below are a few that work well with Symfony:
 * `Azure`_
 * `fortrabbit`_
 * `Clever Cloud`_
+* `Scalingo`_
 
 Using Build Scripts and other Tools
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are also tools to help ease the pain of deployment. Some of them have been
 specifically tailored to the requirements of Symfony.
-
-`EasyDeployBundle`_
-    A Symfony bundle that adds deploy tools to your application.
 
 `Deployer`_
     This is another native PHP rewrite of Capistrano, with some ready recipes for
@@ -102,24 +100,43 @@ specifically tailored to the requirements of Symfony.
     `Symfony plugin`_ is a plugin to ease Symfony related tasks, inspired by `Capifony`_
     (which works only with Capistrano 2).
 
-`sf2debpkg`_
-    Helps you build a native Debian package for your Symfony project.
+.. _common-post-deployment-tasks:
 
-Basic scripting
-    You can use a shell script, `Ant`_ or any other build tool to script
-    the deploying of your project.
+Common Deployment Tasks
+-----------------------
 
-Common Post-Deployment Tasks
-----------------------------
-
-After deploying your actual source code, there are a number of common things
-you'll need to do:
+Before and after deploying your actual source code, there are a number of common
+things you'll need to do:
 
 A) Check Requirements
 ~~~~~~~~~~~~~~~~~~~~~
 
-Use the ``check:requirements`` command to check if your server meets the
-:ref:`technical requirements for running Symfony applications <symfony-tech-requirements>`.
+There are some :ref:`technical requirements for running Symfony applications <symfony-tech-requirements>`.
+In your development machine, the recommended way to check these requirements is
+to use `Symfony CLI`_. However, in your production server you might prefer to
+not install the Symfony CLI tool. In those cases, install this other package in
+your application:
+
+.. code-block:: terminal
+
+    $ composer require symfony/requirements-checker
+
+Then, make sure that the checker is included in your Composer scripts:
+
+.. code-block:: json
+
+    {
+        "...": "...",
+
+        "scripts": {
+            "auto-scripts": {
+                "vendor/bin/requirements-checker": "php-script",
+                "...": "..."
+            },
+
+            "...": "..."
+        }
+    }
 
 .. _b-configure-your-app-config-parameters-yml-file:
 
@@ -132,21 +149,29 @@ While developing locally, you'll usually store these in ``.env`` and ``.env.loca
 
 1. Create "real" environment variables. How you set environment variables, depends
    on your setup: they can be set at the command line, in your Nginx configuration,
-   or via other methods provided by your hosting service.
+   or via other methods provided by your hosting service;
 
-2. Or, create a ``.env.local`` file just like your local development (see note below)
+2. Or, create a ``.env.local`` file like your local development.
 
 There is no significant advantage to either of the two options: use whatever is
 most natural in your hosting environment.
 
-.. note::
+.. tip::
 
-    If you use the ``.env.*`` files on production, you may need to move your
-    ``symfony/dotenv`` dependency from ``require-dev`` to ``require`` in ``composer.json``:
+    You might not want your application to process the ``.env.*`` files on
+    every request. You can generate an optimized ``.env.local.php`` which
+    overrides all other configuration files:
 
     .. code-block:: terminal
 
-        $ composer require symfony/dotenv
+        $ composer dump-env prod
+
+    The generated file will contain all the configuration stored in ``.env``. If you
+    want to rely only on environment variables, generate one without any values using:
+
+    .. code-block:: terminal
+
+        $ composer dump-env prod --empty
 
 C) Install/Update your Vendors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,6 +218,8 @@ setup:
 * Add/edit CRON jobs
 * :ref:`Building and minifying your assets <how-do-i-deploy-my-encore-assets>` with Webpack Encore
 * Pushing assets to a CDN
+* On a shared hosting platform using the Apache web server, you may need to
+  install the :ref:`symfony/apache-pack package <web-server-apache-mod-php>`
 * ...
 
 Application Lifecycle: Continuous Integration, QA, etc.
@@ -209,7 +236,7 @@ are simple and more complex tools and one can make the deployment as easy
 
 Don't forget that deploying your application also involves updating any dependency
 (typically via Composer), migrating your database, clearing your cache and
-other potential things like pushing assets to a CDN (see `Common Post-Deployment Tasks`_).
+other potential things like pushing assets to a CDN (see `Common Deployment Tasks`_).
 
 Troubleshooting
 ---------------
@@ -236,21 +263,20 @@ Learn More
     deployment/proxies
 
 .. _`Capifony`: https://github.com/everzet/capifony
-.. _`Capistrano`: http://capistranorb.com/
-.. _`sf2debpkg`: https://github.com/liip/sf2debpkg
+.. _`Capistrano`: https://capistranorb.com/
 .. _`Fabric`: http://www.fabfile.org/
 .. _`Ansistrano`: https://ansistrano.com/
 .. _`Magallanes`: https://github.com/andres-montanez/Magallanes
-.. _`Ant`: http://blog.sznapka.pl/deploying-symfony2-applications-with-ant
 .. _`Memcached`: http://memcached.org/
-.. _`Redis`: http://redis.io/
+.. _`Redis`: https://redis.io/
 .. _`Symfony plugin`: https://github.com/capistrano/symfony/
-.. _`Deployer`: http://deployer.org/
+.. _`Deployer`: https://deployer.org/
 .. _`Git Tagging`: https://git-scm.com/book/en/v2/Git-Basics-Tagging
-.. _`Heroku`: https://devcenter.heroku.com/articles/getting-started-with-symfony
+.. _`Heroku`: https://devcenter.heroku.com/articles/deploying-symfony4
 .. _`Platform.sh`: https://docs.platform.sh/frameworks/symfony.html
 .. _`Azure`: https://azure.microsoft.com/en-us/develop/php/
-.. _`fortrabbit`: https://help.fortrabbit.com/install-symfony
-.. _`EasyDeployBundle`: https://github.com/EasyCorp/easy-deploy-bundle
+.. _`fortrabbit`: https://help.fortrabbit.com/install-symfony-5
 .. _`Clever Cloud`: https://www.clever-cloud.com/doc/php/tutorial-symfony/
 .. _`Symfony Cloud`: https://symfony.com/doc/master/cloud/intro.html
+.. _`Scalingo`: https://doc.scalingo.com/languages/php/symfony
+.. _`Symfony CLI`: https://symfony.com/download

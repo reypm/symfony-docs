@@ -12,51 +12,50 @@ you can use this field out-of-the-box. If you store your data as a number
 When ``symbol`` is not ``false``, the field will render the given string after
 the input.
 
-+-------------+-----------------------------------------------------------------------+
-| Rendered as | ``input`` ``text`` field                                              |
-+-------------+-----------------------------------------------------------------------+
-| Options     | - `scale`_                                                            |
-|             | - `symbol`_                                                           |
-|             | - `type`_                                                             |
-+-------------+-----------------------------------------------------------------------+
-| Overridden  | - `compound`_                                                         |
-| options     |                                                                       |
-+-------------+-----------------------------------------------------------------------+
-| Inherited   | - `attr`_                                                             |
-| options     | - `data`_                                                             |
-|             | - `disabled`_                                                         |
-|             | - `empty_data`_                                                       |
-|             | - `error_bubbling`_                                                   |
-|             | - `error_mapping`_                                                    |
-|             | - `help`_                                                             |
-|             | - `help_attr`_                                                        |
-|             | - `help_html`_                                                        |
-|             | - `invalid_message`_                                                  |
-|             | - `invalid_message_parameters`_                                       |
-|             | - `label`_                                                            |
-|             | - `label_attr`_                                                       |
-|             | - `label_format`_                                                     |
-|             | - `mapped`_                                                           |
-|             | - `required`_                                                         |
-|             | - `row_attr`_                                                         |
-+-------------+-----------------------------------------------------------------------+
-| Parent type | :doc:`FormType </reference/forms/types/form>`                         |
-+-------------+-----------------------------------------------------------------------+
-| Class       | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\PercentType` |
-+-------------+-----------------------------------------------------------------------+
++---------------------------+-----------------------------------------------------------------------+
+| Rendered as               | ``input`` ``text`` field                                              |
++---------------------------+-----------------------------------------------------------------------+
+| Default invalid message   | Please enter a percentage value.                                      |
++---------------------------+-----------------------------------------------------------------------+
+| Legacy invalid message    | The value {{ value }} is not valid.                                   |
++---------------------------+-----------------------------------------------------------------------+
+| Parent type               | :doc:`FormType </reference/forms/types/form>`                         |
++---------------------------+-----------------------------------------------------------------------+
+| Class                     | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\PercentType` |
++---------------------------+-----------------------------------------------------------------------+
 
 .. include:: /reference/forms/types/options/_debug_form.rst.inc
 
 Field Options
 -------------
 
+.. include:: /reference/forms/types/options/rounding_mode.rst.inc
+
+.. versionadded:: 5.1
+
+    The ``rounding_mode`` option was introduced in Symfony 5.1.
+
+html5
+~~~~~
+
+**type**: ``boolean`` **default**: ``false``
+
+.. versionadded:: 5.2
+
+    This option was introduced in Symfony 5.2.
+
+If set to ``true``, the HTML input will be rendered as a native HTML5
+``<input type="number">`` element.
+
 scale
 ~~~~~
 
 **type**: ``integer`` **default**: ``0``
 
-By default, the input numbers are rounded. To allow for more decimal places,
-use this option.
+This specifies how many decimals will be allowed until the field rounds
+the submitted value (via ``rounding_mode``). For example, if ``scale`` is set
+to ``2``, a submitted value of ``20.123`` will be rounded to, for example,
+``20.12`` (depending on your `rounding_mode`_).
 
 symbol
 ~~~~~~
@@ -93,6 +92,8 @@ Overridden Options
 
 .. include:: /reference/forms/types/options/compound_type.rst.inc
 
+.. include:: /reference/forms/types/options/invalid_message.rst.inc
+
 Inherited Options
 -----------------
 
@@ -104,13 +105,11 @@ These options inherit from the :doc:`FormType </reference/forms/types/form>`:
 
 .. include:: /reference/forms/types/options/disabled.rst.inc
 
-.. include:: /reference/forms/types/options/empty_data.rst.inc
-    :end-before: DEFAULT_PLACEHOLDER
+.. include:: /reference/forms/types/options/empty_data_declaration.rst.inc
 
 The default value is ``''`` (the empty string).
 
-.. include:: /reference/forms/types/options/empty_data.rst.inc
-    :start-after: DEFAULT_PLACEHOLDER
+.. include:: /reference/forms/types/options/empty_data_description.rst.inc
 
 .. include:: /reference/forms/types/options/error_bubbling.rst.inc
 
@@ -121,8 +120,6 @@ The default value is ``''`` (the empty string).
 .. include:: /reference/forms/types/options/help_attr.rst.inc
 
 .. include:: /reference/forms/types/options/help_html.rst.inc
-
-.. include:: /reference/forms/types/options/invalid_message.rst.inc
 
 .. include:: /reference/forms/types/options/invalid_message_parameters.rst.inc
 

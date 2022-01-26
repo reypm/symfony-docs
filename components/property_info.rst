@@ -120,11 +120,12 @@ Extractable Information
 The :class:`Symfony\\Component\\PropertyInfo\\PropertyInfoExtractor`
 class exposes public methods to extract several types of information:
 
-* :ref:`List of properties <property-info-list>`: :method:`Symfony\\Component\\PropertyInfo\\PropertyListExtractorInterface::getProperties()`
-* :ref:`Property type <property-info-type>`: :method:`Symfony\\Component\\PropertyInfo\\PropertyTypeExtractorInterface::getTypes()`
-* :ref:`Property description <property-info-description>`: :method:`Symfony\\Component\\PropertyInfo\\PropertyDescriptionExtractorInterface::getShortDescription()` and :method:`Symfony\\Component\\PropertyInfo\\PropertyDescriptionExtractorInterface::getLongDescription()`
-* :ref:`Property access details <property-info-access>`: :method:`Symfony\\Component\\PropertyInfo\\PropertyAccessExtractorInterface::isReadable()` and  :method:`Symfony\\Component\\PropertyInfo\\PropertyAccessExtractorInterface::isWritable()`
-* :ref:`Property initializable through the constructor <property-info-initializable>`:  :method:`Symfony\\Component\\PropertyInfo\\PropertyInitializableExtractorInterface::isInitializable()`
+* :ref:`List of properties <property-info-list>`: :method:`Symfony\\Component\\PropertyInfo\\PropertyListExtractorInterface::getProperties`
+* :ref:`Property type <property-info-type>`: :method:`Symfony\\Component\\PropertyInfo\\PropertyTypeExtractorInterface::getTypes`
+  (including typed properties since PHP 7.4)
+* :ref:`Property description <property-info-description>`: :method:`Symfony\\Component\\PropertyInfo\\PropertyDescriptionExtractorInterface::getShortDescription` and :method:`Symfony\\Component\\PropertyInfo\\PropertyDescriptionExtractorInterface::getLongDescription`
+* :ref:`Property access details <property-info-access>`: :method:`Symfony\\Component\\PropertyInfo\\PropertyAccessExtractorInterface::isReadable` and  :method:`Symfony\\Component\\PropertyInfo\\PropertyAccessExtractorInterface::isWritable`
+* :ref:`Property initializable through the constructor <property-info-initializable>`:  :method:`Symfony\\Component\\PropertyInfo\\PropertyInitializableExtractorInterface::isInitializable`
 
 .. note::
 
@@ -207,7 +208,7 @@ strings::
         Example Result
         --------------
         string(79):
-            These is the subsequent paragraph in the DocComment.
+            This is the subsequent paragraph in the DocComment.
             It can span multiple lines.
     */
 
@@ -281,8 +282,8 @@ Each object will provide 6 attributes, available in the 6 methods:
 
 .. _`components-property-info-type-builtin`:
 
-Type::getBuiltInType()
-~~~~~~~~~~~~~~~~~~~~~~
+``Type::getBuiltInType()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :method:`Type::getBuiltinType() <Symfony\\Component\\PropertyInfo\\Type::getBuiltinType>`
 method returns the built-in PHP data type, which can be one of these
@@ -292,22 +293,22 @@ string values: ``array``, ``bool``, ``callable``, ``float``, ``int``,
 Constants inside the :class:`Symfony\\Component\\PropertyInfo\\Type`
 class, in the form ``Type::BUILTIN_TYPE_*``, are provided for convenience.
 
-Type::isNullable()
-~~~~~~~~~~~~~~~~~~
+``Type::isNullable()``
+~~~~~~~~~~~~~~~~~~~~~~
 
 The :method:`Type::isNullable() <Symfony\\Component\\PropertyInfo\\Type::isNullable>`
 method will return a boolean value indicating whether the property parameter
 can be set to ``null``.
 
-Type::getClassName()
-~~~~~~~~~~~~~~~~~~~~
+``Type::getClassName()``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the :ref:`built-in PHP data type <components-property-info-type-builtin>`
 is ``object``, the :method:`Type::getClassName() <Symfony\\Component\\PropertyInfo\\Type::getClassName>`
 method will return the fully-qualified class or interface name accepted.
 
-Type::isCollection()
-~~~~~~~~~~~~~~~~~~~~
+``Type::isCollection()``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :method:`Type::isCollection() <Symfony\\Component\\PropertyInfo\\Type::isCollection>`
 method will return a boolean value indicating if the property parameter is
@@ -322,8 +323,8 @@ this returns ``true`` if:
   ``@var SomeClass<DateTime>``, ``@var SomeClass<integer,string>``,
   ``@var Doctrine\Common\Collections\Collection<App\Entity\SomeEntity>``, etc.)
 
-Type::getCollectionKeyType() & Type::getCollectionValueType()
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``Type::getCollectionKeyType()`` & ``Type::getCollectionValueType()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the property is a collection, additional type objects may be returned
 for both the key and value types of the collection (if the information is
@@ -433,8 +434,16 @@ with the ``property_info`` service in the Symfony Framework::
     );
     $serializerExtractor = new SerializerExtractor($serializerClassMetadataFactory);
 
-    // List information.
-    $serializerExtractor->getProperties($class);
+    // the `serializer_groups` option must be configured (may be set to null)
+    $serializerExtractor->getProperties($class, ['serializer_groups' => ['mygroup']]);
+   
+If ``serializer_groups`` is set to ``null``, serializer groups metadata won't be
+checked but you will get only the properties considered by the Serializer
+Component (notably the ``@Ignore`` annotation is taken into account).
+
+.. versionadded:: 5.2
+
+    Support for the ``null`` value in ``serializer_groups`` was introduced in Symfony 5.2. 
 
 DoctrineExtractor
 ~~~~~~~~~~~~~~~~~
@@ -487,6 +496,8 @@ service by defining it as a service with one or more of the following
 * ``property_info.type_extractor`` if it provides type information.
 * ``property_info.description_extractor`` if it provides description information.
 * ``property_info.access_extractor`` if it provides access information.
+* ``property_info.initializable_extractor`` if it provides initializable information
+  (it checks if a property can be initialized through the constructor).
 
 .. _`phpDocumentor Reflection`: https://github.com/phpDocumentor/ReflectionDocBlock
 .. _`phpdocumentor/reflection-docblock`: https://packagist.org/packages/phpdocumentor/reflection-docblock

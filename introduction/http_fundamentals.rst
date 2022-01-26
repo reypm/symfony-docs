@@ -234,10 +234,10 @@ have all the request information at your fingertips::
     $request->getMethod();    // e.g. GET, POST, PUT, DELETE or HEAD
     $request->getLanguages(); // an array of languages the client accepts
 
-As a bonus, the ``Request`` class does a lot of work in the background that
-you'll never need to worry about. For example, the ``isSecure()`` method
+As a bonus, the ``Request`` class does a lot of work in the background about which
+you will never need to worry. For example, the ``isSecure()`` method
 checks the *three* different values in PHP that can indicate whether or not
-the user is connecting via a secured connection (i.e. HTTPS).
+the user is connecting via a secure connection (i.e. HTTPS).
 
 Symfony Response Object
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -385,7 +385,7 @@ Here's what we've learned so far:
 #. Symfony turns your ``Response`` object into the text headers and content
    (i.e. the HTTP response), which are sent back to the client.
 
-.. _`xkcd`: http://xkcd.com/
+.. _`xkcd`: https://xkcd.com/
 .. _`XMLHttpRequest`: https://en.wikipedia.org/wiki/XMLHttpRequest
 .. _`HTTP 1.1 RFC`: http://www.w3.org/Protocols/rfc2616/rfc2616.html
 .. _`HTTP Bis`: http://datatracker.ietf.org/wg/httpbis/

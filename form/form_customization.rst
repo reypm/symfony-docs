@@ -20,8 +20,9 @@ enough to render an entire form, including all its fields and error messages:
 
 .. code-block:: twig
 
-    {# form is a variable passed from the controller and created
-      by calling to the $form->createView() method #}
+    {# form is a variable passed from the controller via either
+      $this->renderForm('...', ['form' => $form])
+      or $this->render('...', ['form' => $form->createView()]) #}
     {{ form(form) }}
 
 The next step is to use the :ref:`form_start() <reference-forms-twig-start>`,
@@ -73,6 +74,16 @@ control over how each form field is rendered, so you can fully customize them:
             {{ form_errors(form.dueDate) }}
         </div>
     </div>
+
+.. caution::
+
+   If you're rendering each field manually, make sure you don't forget the
+   ``_token`` field that is automatically added for CSRF protection.
+
+   You can also use ``{{ form_rest(form) }}`` (recommended) to render any
+   fields that aren't rendered manually. See
+   :ref:`the form_rest() documentation <reference-forms-twig-rest>` below for
+   more information.
 
 .. note::
 
@@ -204,7 +215,7 @@ article) unless you set ``render_rest`` to false:
 .. code-block:: twig
 
     {# don't render unrendered fields #}
-    {{ form_end(form, {'render_rest': false}) }}
+    {{ form_end(form, {render_rest: false}) }}
 
 .. _reference-forms-twig-label:
 
@@ -254,6 +265,12 @@ Renders any errors for the given field.
 
     {# render any "global" errors not associated to any form field #}
     {{ form_errors(form) }}
+
+.. caution::
+
+    In the Bootstrap 4 form theme, ``form_errors()`` is already included in
+    ``form_label()``. Read more about this in the
+    :ref:`Bootstrap 4 theme documentation <reference-forms-bootstrap5-error-messages>`.
 
 .. _reference-forms-twig-widget:
 
@@ -337,7 +354,7 @@ array).
 
 .. code-block:: html+twig
 
-    <option {% if choice is selectedchoice(value) %}selected="selected"{% endif %} ...>
+    <option {% if choice is selectedchoice(value) %}selected="selected"{% endif %}>
 
 .. _form-twig-rootform:
 

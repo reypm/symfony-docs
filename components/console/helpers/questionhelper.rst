@@ -6,13 +6,13 @@ Question Helper
 
 The :class:`Symfony\\Component\\Console\\Helper\\QuestionHelper` provides
 functions to ask the user for more information. It is included in the default
-helper set, which you can get by calling
-:method:`Symfony\\Component\\Console\\Command\\Command::getHelperSet`::
+helper set and you can get it by calling
+:method:`Symfony\\Component\\Console\\Command\\Command::getHelper`::
 
     $helper = $this->getHelper('question');
 
 The Question Helper has a single method
-:method:`Symfony\\Component\\Console\\Command\\Command::ask` that needs an
+:method:`Symfony\\Component\\Console\\Helper\\QuestionHelper::ask` that needs an
 :class:`Symfony\\Component\\Console\\Input\\InputInterface` instance as the
 first argument, an :class:`Symfony\\Component\\Console\\Output\\OutputInterface`
 instance as the second argument and a
@@ -40,7 +40,7 @@ the following to your command::
             $question = new ConfirmationQuestion('Continue with this action?', false);
 
             if (!$helper->ask($input, $output, $question)) {
-                return;
+                return Command::SUCCESS;
             }
         }
     }
@@ -105,6 +105,7 @@ from a predefined list::
         $helper = $this->getHelper('question');
         $question = new ChoiceQuestion(
             'Please select your favorite color (defaults to red)',
+            // choices can also be PHP objects that implement __toString() method
             ['red', 'blue', 'yellow'],
             0
         );
@@ -116,6 +117,10 @@ from a predefined list::
         // ... do something with the color
     }
 
+.. versionadded:: 5.2
+
+    Support for using PHP objects as choice values was introduced in Symfony 5.2.
+
 The option which should be selected by default is provided with the third
 argument of the constructor. The default is ``null``, which means that no
 option is the default one.
@@ -123,7 +128,7 @@ option is the default one.
 If the user enters an invalid string, an error message is shown and the user
 is asked to provide the answer another time, until they enter a valid string
 or reach the maximum number of attempts. The default value for the maximum number
-of attempts is ``null``, which means infinite number of attempts. You can define
+of attempts is ``null``, which means an infinite number of attempts. You can define
 your own error message using
 :method:`Symfony\\Component\\Console\\Question\\ChoiceQuestion::setErrorMessage`.
 
@@ -234,6 +239,36 @@ You can also specify if you want to not trim the answer by setting it directly w
         $name = $helper->ask($input, $output, $question);
     }
 
+Accept Multiline Answers
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.2
+
+    The ``setMultiline()`` and ``isMultiline()`` methods were introduced in
+    Symfony 5.2.
+
+By default, the question helper stops reading user input when it receives a newline
+character (i.e., when the user hits ``ENTER`` once). However, you may specify that
+the response to a question should allow multiline answers by passing ``true`` to
+:method:`Symfony\\Component\\Console\\Question\\Question::setMultiline`::
+
+    use Symfony\Component\Console\Question\Question;
+
+    // ...
+    public function execute(InputInterface $input, OutputInterface $output)
+    {
+        // ...
+        $helper = $this->getHelper('question');
+
+        $question = new Question('How do you solve world peace?');
+        $question->setMultiline(true);
+
+        $answer = $helper->ask($input, $output, $question);
+    }
+
+Multiline questions stop reading user input after receiving an end-of-transmission
+control character (``Ctrl-D`` on Unix systems or ``Ctrl-Z`` on Windows).
+
 Hiding the User's Response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -258,7 +293,7 @@ convenient for passwords::
 .. caution::
 
     When you ask for a hidden response, Symfony will use either a binary, change
-    stty mode or use another trick to hide the response. If none is available,
+    ``stty`` mode or use another trick to hide the response. If none is available,
     it will fallback and allow the response to be visible unless you set this
     behavior to ``false`` using
     :method:`Symfony\\Component\\Console\\Question\\Question::setHiddenFallback`
@@ -318,6 +353,8 @@ method::
     of the validator. If the answer is invalid, don't throw exceptions in the
     normalizer and let the validator handle those errors.
 
+.. _console-validate-question-answer:
+
 Validating the Answer
 ---------------------
 
@@ -359,8 +396,24 @@ was successful.
 You can set the max number of times to ask with the
 :method:`Symfony\\Component\\Console\\Question\\Question::setMaxAttempts` method.
 If you reach this max number it will use the default value. Using ``null`` means
-the amount of attempts is infinite. The user will be asked as long as they provide an
+the number of attempts is infinite. The user will be asked as long as they provide an
 invalid answer and will only be able to proceed if their input is valid.
+
+.. tip::
+
+    You can even use the :doc:`Validator </validation>` component to
+    validate the input by using the :method:`Symfony\\Component\\Validator\\Validation::createCallable`
+    method::
+
+        use Symfony\Component\Validator\Constraints\Regex;
+        use Symfony\Component\Validator\Validation;
+
+        $question = new Question('Please enter the name of the bundle', 'AcmeDemoBundle');
+        $validation = Validation::createCallable(new Regex([
+            'pattern' => '/^[a-zA-Z]+Bundle$',
+            'message' => 'The name of the bundle should be suffixed with \'Bundle\'',
+        ]));
+        $question->setValidator($validation);
 
 Validating a Hidden Response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -395,8 +448,6 @@ Testing a Command that Expects Input
 If you want to write a unit test for a command which expects some kind of input
 from the command line, you need to set the inputs that the command expects::
 
-    use Symfony\Component\Console\Helper\HelperSet;
-    use Symfony\Component\Console\Helper\QuestionHelper;
     use Symfony\Component\Console\Tester\CommandTester;
 
     // ...

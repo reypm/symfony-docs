@@ -54,14 +54,16 @@ Concepts
    For instance: logging, validating a message, starting a transaction, ...
    They are also responsible for calling the next middleware in the chain,
    which means they can tweak the envelope, by adding stamps to it or even
-   replacing it, as well as interrupt the middleware chain.
+   replacing it, as well as interrupt the middleware chain. Middleware are called
+   both when a message is originally dispatched and again later when a message
+   is received from a transport.
 
-**Envelope**
+**Envelope**:
    Messenger specific concept, it gives full flexibility inside the message bus,
    by wrapping the messages into it, allowing to add useful information inside
    through *envelope stamps*.
 
-**Envelope Stamps**
+**Envelope Stamps**:
    Piece of information you need to attach to your message: serializer context
    to use for transport, markers identifying a received message or any sort of
    metadata your middleware or transport layer may use.
@@ -75,15 +77,18 @@ middleware stack. The component comes with a set of middleware that you can use.
 When using the message bus with Symfony's FrameworkBundle, the following middleware
 are configured for you:
 
-#. :class:`Symfony\\Component\\Messenger\\Middleware\\SendMessageMiddleware` (enables asynchronous processing, logs the processing of your messages if you pass a logger)
+#. :class:`Symfony\\Component\\Messenger\\Middleware\\SendMessageMiddleware` (enables asynchronous processing, logs the processing of your messages if you provide a logger)
 #. :class:`Symfony\\Component\\Messenger\\Middleware\\HandleMessageMiddleware` (calls the registered handler(s))
 
 Example::
 
     use App\Message\MyMessage;
+    use App\MessageHandler\MyMessageHandler;
     use Symfony\Component\Messenger\Handler\HandlersLocator;
     use Symfony\Component\Messenger\MessageBus;
     use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
+
+    $handler = new MyMessageHandler();
 
     $bus = new MessageBus([
         new HandleMessageMiddleware(new HandlersLocator([
@@ -116,6 +121,8 @@ that will do the required processing for your message::
         }
     }
 
+.. _messenger-envelopes:
+
 Adding Metadata to Messages (Envelopes)
 ---------------------------------------
 
@@ -135,26 +142,32 @@ through the transport layer, use the ``SerializerStamp`` stamp::
         ]))
     );
 
-At the moment, the Symfony Messenger has the following built-in envelope stamps:
+Here are some important envelope stamps that are shipped with the Symfony Messenger:
 
-#. :class:`Symfony\\Component\\Messenger\\Stamp\\SerializerStamp`,
-   to configure the serialization groups used by the transport.
-#. :class:`Symfony\\Component\\Messenger\\Stamp\\ValidationStamp`,
-   to configure the validation groups used when the validation middleware is enabled.
+#. :class:`Symfony\\Component\\Messenger\\Stamp\\DelayStamp`,
+   to delay handling of an asynchronous message.
+#. :class:`Symfony\\Component\\Messenger\\Stamp\\DispatchAfterCurrentBusStamp`,
+   to make the message be handled after the current bus has executed. Read more
+   at :doc:`/messenger/dispatch_after_current_bus`.
+#. :class:`Symfony\\Component\\Messenger\\Stamp\\HandledStamp`,
+   a stamp that marks the message as handled by a specific handler.
+   Allows accessing the handler returned value and the handler name.
 #. :class:`Symfony\\Component\\Messenger\\Stamp\\ReceivedStamp`,
    an internal stamp that marks the message as received from a transport.
 #. :class:`Symfony\\Component\\Messenger\\Stamp\\SentStamp`,
    a stamp that marks the message as sent by a specific sender.
    Allows accessing the sender FQCN and the alias if available from the
    :class:`Symfony\\Component\\Messenger\\Transport\\Sender\\SendersLocator`.
-#. :class:`Symfony\\Component\\Messenger\\Stamp\\HandledStamp`,
-   a stamp that marks the message as handled by a specific handler.
-   Allows accessing the handler returned value and the handler name.
+#. :class:`Symfony\\Component\\Messenger\\Stamp\\SerializerStamp`,
+   to configure the serialization groups used by the transport.
+#. :class:`Symfony\\Component\\Messenger\\Stamp\\ValidationStamp`,
+   to configure the validation groups used when the validation middleware is enabled.
 
 Instead of dealing directly with the messages in the middleware you receive the envelope.
 Hence you can inspect the envelope content and its stamps, or add any::
 
     use App\Message\Stamp\AnotherStamp;
+    use Symfony\Component\Messenger\Envelope;
     use Symfony\Component\Messenger\Middleware\MiddlewareInterface;
     use Symfony\Component\Messenger\Middleware\StackInterface;
     use Symfony\Component\Messenger\Stamp\ReceivedStamp;
@@ -168,6 +181,8 @@ Hence you can inspect the envelope content and its stamps, or add any::
 
                 // You could for example add another stamp.
                 $envelope = $envelope->with(new AnotherStamp(/* ... */));
+            } else {
+                // Message was just originally dispatched
             }
 
             return $stack->next()->handle($envelope, $stack);
@@ -202,7 +217,7 @@ Your own Sender
 Imagine that you already have an ``ImportantAction`` message going through the
 message bus and being handled by a handler. Now, you also want to send this
 message as an email (using the :doc:`Mime </components/mime>` and
-:doc:`Mailer </components/mailer>` components).
+:doc:`Mailer </mailer>` components).
 
 Using the :class:`Symfony\\Component\\Messenger\\Transport\\Sender\\SenderInterface`,
 you can create your own message sender::

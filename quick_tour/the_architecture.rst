@@ -21,6 +21,7 @@ Want a logging system? No problem:
 This installs and configures (via a recipe) the powerful `Monolog`_ library. To
 use the logger in a controller, add a new argument type-hinted with ``LoggerInterface``::
 
+    <?php
     // src/Controller/DefaultController.php
     namespace App\Controller;
 
@@ -71,9 +72,6 @@ What other possible classes or interfaces could you use? Find out by running:
       Request stack that controls the lifecycle of requests.
       Symfony\Component\HttpFoundation\RequestStack (request_stack)
 
-      Interface for the session.
-      Symfony\Component\HttpFoundation\Session\SessionInterface (session)
-
       RouterInterface is the interface that all Router classes must implement.
       Symfony\Component\Routing\RouterInterface (router.default)
 
@@ -89,6 +87,7 @@ To keep your code organized, you can even create your own services! Suppose you
 want to generate a random greeting (e.g. "Hello", "Yo", etc). Instead of putting
 this code directly in your controller, create a new class::
 
+    <?php
     // src/GreetingGenerator.php
     namespace App;
 
@@ -105,6 +104,7 @@ this code directly in your controller, create a new class::
 
 Great! You can use this immediately in your controller::
 
+    <?php
     // src/Controller/DefaultController.php
     namespace App\Controller;
 
@@ -135,11 +135,12 @@ difference is that it's done in the constructor:
 
 .. code-block:: diff
 
-    // src/GreetingGenerator.php
+      <?php
+      // src/GreetingGenerator.php
     + use Psr\Log\LoggerInterface;
 
-    class GreetingGenerator
-    {
+      class GreetingGenerator
+      {
     +     private $logger;
     +
     +     public function __construct(LoggerInterface $logger)
@@ -147,15 +148,15 @@ difference is that it's done in the constructor:
     +         $this->logger = $logger;
     +     }
 
-        public function getRandomGreeting()
-        {
-            // ...
+          public function getRandomGreeting()
+          {
+              // ...
 
-     +        $this->logger->info('Using the greeting: '.$greeting);
+    +        $this->logger->info('Using the greeting: '.$greeting);
 
-             return $greeting;
-        }
-    }
+               return $greeting;
+          }
+      }
 
 Yes! This works too: no configuration, no time wasted. Keep coding!
 
@@ -167,6 +168,7 @@ by creating an event subscriber or a security voter for complex authorization
 rules. Let's add a new filter to Twig called ``greet``. How? Create a class
 that extends ``AbstractExtension``::
 
+    <?php
     // src/Twig/GreetExtension.php
     namespace App\Twig;
 
@@ -274,7 +276,7 @@ from ``dev`` to ``prod``:
 
 .. code-block:: diff
 
-    # .env
+      # .env
     - APP_ENV=dev
     + APP_ENV=prod
 
@@ -285,8 +287,7 @@ Environment Variables
 ---------------------
 
 Every app contains configuration that's different on each server - like database
-connection information or passwords. How should these be stored? In files? Or some
-other way?
+connection information or passwords. How should these be stored? In files? Or another way?
 
 Symfony follows the industry best practice by storing server-based configuration
 as *environment* variables. This means that Symfony works *perfectly* with
@@ -316,10 +317,10 @@ Thanks to a new recipe installed by Flex, look at the ``.env`` file again:
 
 .. code-block:: diff
 
-    ###> symfony/framework-bundle ###
-    APP_ENV=dev
-    APP_SECRET=cc86c7ca937636d5ddf1b754beb22a10
-    ###< symfony/framework-bundle ###
+      ###> symfony/framework-bundle ###
+      APP_ENV=dev
+      APP_SECRET=cc86c7ca937636d5ddf1b754beb22a10
+      ###< symfony/framework-bundle ###
 
     + ###> doctrine/doctrine-bundle ###
     + # ...

@@ -24,11 +24,12 @@ the alphabet.
 
 Start by creating a ROT13 transformer class::
 
+    // src/Util/Rot13Transformer.php
     namespace App\Util;
 
     class Rot13Transformer
     {
-        public function transform($value)
+        public function transform(string $value): string
         {
             return str_rot13($value);
         }
@@ -36,9 +37,11 @@ Start by creating a ROT13 transformer class::
 
 And now a Twitter client using this transformer::
 
+    // src/Service/TwitterClient.php
     namespace App\Service;
 
     use App\Util\Rot13Transformer;
+    // ...
 
     class TwitterClient
     {
@@ -49,7 +52,7 @@ And now a Twitter client using this transformer::
             $this->transformer = $transformer;
         }
 
-        public function tweet($user, $key, $status)
+        public function tweet(User $user, string $key, string $status): void
         {
             $transformedStatus = $this->transformer->transform($status);
 
@@ -73,7 +76,6 @@ both services:
             _defaults:
                 autowire: true
                 autoconfigure: true
-                public: false
             # ...
 
             App\Service\TwitterClient:
@@ -92,7 +94,7 @@ both services:
             xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
 
             <services>
-                <defaults autowire="true" autoconfigure="true" public="false"/>
+                <defaults autowire="true" autoconfigure="true"/>
                 <!-- ... -->
 
                 <!-- autowire is redundant thanks to defaults, but value is overridable on each service -->
@@ -123,10 +125,13 @@ both services:
 
 Now, you can use the ``TwitterClient`` service immediately in a controller::
 
+    // src/Controller/DefaultController.php
     namespace App\Controller;
 
     use App\Service\TwitterClient;
     use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+    use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\HttpFoundation\Response;
     use Symfony\Component\Routing\Annotation\Route;
 
     class DefaultController extends AbstractController
@@ -134,7 +139,7 @@ Now, you can use the ``TwitterClient`` service immediately in a controller::
         /**
          * @Route("/tweet", methods={"POST"})
          */
-        public function tweet(TwitterClient $twitterClient)
+        public function tweet(TwitterClient $twitterClient, Request $request): Response
         {
             // fetch $user, $key, $status from the POST'ed data
 
@@ -153,6 +158,9 @@ Autowiring Logic Explained
 --------------------------
 
 Autowiring works by reading the ``Rot13Transformer`` *type-hint* in ``TwitterClient``::
+
+    // src/Service/TwitterClient.php
+    namespace App\Service;
 
     // ...
     use App\Util\Rot13Transformer;
@@ -178,7 +186,7 @@ If there is *not* a service whose id exactly matches the type, a clear exception
 will be thrown.
 
 Autowiring is a great way to automate configuration, and Symfony tries to be as
-*predictable* and clear as possible.
+*predictable* and as clear as possible.
 
 .. _service-autowiring-alias:
 
@@ -273,11 +281,12 @@ of concrete classes as it replaces your dependencies with other objects.
 
 To follow this best practice, suppose you decide to create a ``TransformerInterface``::
 
+    // src/Util/TransformerInterface.php
     namespace App\Util;
 
     interface TransformerInterface
     {
-        public function transform($value);
+        public function transform(string $value): string;
     }
 
 Then, you update ``Rot13Transformer`` to implement it::
@@ -372,11 +381,12 @@ Dealing with Multiple Implementations of the Same Type
 Suppose you create a second class - ``UppercaseTransformer`` that implements
 ``TransformerInterface``::
 
+    // src/Util/UppercaseTransformer.php
     namespace App\Util;
 
     class UppercaseTransformer implements TransformerInterface
     {
-        public function transform($value)
+        public function transform(string $value): string
         {
             return strtoupper($value);
         }
@@ -391,7 +401,7 @@ Additionally, you can define several named autowiring aliases if you want to use
 one implementation in some cases, and another implementation in some
 other cases.
 
-For instance, you may want to use by default the ``Rot13Transformer``
+For instance, you may want to use the ``Rot13Transformer``
 implementation by default when the ``TransformerInterface`` interface is
 type hinted, but use the ``UppercaseTransformer`` implementation in some
 specific cases. To do so, you can create a normal alias from the
@@ -400,6 +410,7 @@ create a *named autowiring alias* from a special string containing the
 interface followed by a variable name matching the one you use when doing
 the injection::
 
+    // src/Service/MastodonClient.php
     namespace App\Service;
 
     use App\Util\TransformerInterface;
@@ -413,7 +424,7 @@ the injection::
             $this->transformer = $shoutyTransformer;
         }
 
-        public function toot($user, $key, $status)
+        public function toot(User $user, string $key, string $status): void
         {
             $transformedStatus = $this->transformer->transform($status);
 
@@ -508,8 +519,9 @@ the injection::
 
                 // If you wanted to choose the non-default service and do not
                 // want to use a named autowiring alias, wire it manually:
-                //     ->arg('$transformer', ref(UppercaseTransformer::class))
+                //     ->arg('$transformer', service(UppercaseTransformer::class))
                 // ...
+            ;
         };
 
 Thanks to the ``App\Util\TransformerInterface`` alias, any argument type-hinted
@@ -531,37 +543,117 @@ You wire up the difficult arguments, Symfony takes care of the rest.
 
 .. _autowiring-calls:
 
-Autowiring other Methods (e.g. Setters)
----------------------------------------
+Autowiring other Methods (e.g. Setters and Public Typed Properties)
+-------------------------------------------------------------------
 
 When autowiring is enabled for a service, you can *also* configure the container
 to call methods on your class when it's instantiated. For example, suppose you want
-to inject the ``logger`` service, and decide to use setter-injection::
+to inject the ``logger`` service, and decide to use setter-injection:
 
-    namespace App\Util;
+.. configuration-block::
 
-    class Rot13Transformer
-    {
-        private $logger;
+    .. code-block:: php-annotations
 
-        /**
-         * @required
-         */
-        public function setLogger(LoggerInterface $logger)
+        // src/Util/Rot13Transformer.php
+        namespace App\Util;
+
+        class Rot13Transformer
         {
-            $this->logger = $logger;
+            private $logger;
+
+            /**
+             * @required
+             */
+            public function setLogger(LoggerInterface $logger): void
+            {
+                $this->logger = $logger;
+            }
+
+            public function transform($value): string
+            {
+                $this->logger->info('Transforming '.$value);
+                // ...
+            }
         }
 
-        public function transform($value)
-        {
-            $this->logger->info('Transforming '.$value);
-            // ...
-        }
-    }
+    .. code-block:: php-attributes
 
-Autowiring will automatically call *any* method with the ``@required`` annotation
+        // src/Util/Rot13Transformer.php
+        namespace App\Util;
+
+        use Symfony\Contracts\Service\Attribute\Required;
+
+        class Rot13Transformer
+        {
+            private $logger;
+
+            #[Required]
+            public function setLogger(LoggerInterface $logger): void
+            {
+                $this->logger = $logger;
+            }
+
+            public function transform($value): string
+            {
+                $this->logger->info('Transforming '.$value);
+                // ...
+            }
+        }
+
+Autowiring will automatically call *any* method with the ``#[Required]`` attribute
 above it, autowiring each argument. If you need to manually wire some of the arguments
 to a method, you can always explicitly :doc:`configure the method call </service_container/calls>`.
+
+If your PHP version doesn't support attributes (they were introduced in PHP 8),
+you can use the ``@required`` annotation instead.
+
+.. versionadded:: 5.2
+
+    The ``#[Required]`` attribute was introduced in Symfony 5.2.
+
+Despite property injection having some :ref:`drawbacks <property-injection>`,
+autowiring with ``#[Required]`` or ``@required`` can also be applied to public
+typed properties:
+
+.. configuration-block::
+
+    .. code-block:: php-annotations
+
+        namespace App\Util;
+
+        class Rot13Transformer
+        {
+            /** @required */
+            public LoggerInterface $logger;
+
+            public function transform($value)
+            {
+                $this->logger->info('Transforming '.$value);
+                // ...
+            }
+        }
+
+    .. code-block:: php-attributes
+
+        namespace App\Util;
+
+        use Symfony\Contracts\Service\Attribute\Required;
+
+        class Rot13Transformer
+        {
+            #[Required]
+            public LoggerInterface $logger;
+
+            public function transform($value)
+            {
+                $this->logger->info('Transforming '.$value);
+                // ...
+            }
+        }
+
+.. versionadded:: 5.1
+
+    Public typed properties autowiring was introduced in Symfony 5.1.
 
 Autowiring Controller Action Methods
 ------------------------------------
@@ -583,6 +675,10 @@ Public and Reusable Bundles
 ---------------------------
 
 Public bundles should explicitly configure their services and not rely on autowiring.
+Autowiring depends on the services that are available in the container and bundles have
+no control over the service container of applications they are included in. You can use
+autowiring when building reusable bundles within your company, as you have full control
+over all code.
 
 .. _ROT13: https://en.wikipedia.org/wiki/ROT13
 .. _service definition prototype: https://symfony.com/blog/new-in-symfony-3-3-psr-4-based-service-discovery

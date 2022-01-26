@@ -6,11 +6,6 @@ not included in any of the public data breaches tracked by `haveibeenpwned.com`_
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `groups`_
-            - `message`_
-            - `payload`_
-            - `skipOnError`_
-            - `threshold`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\NotCompromisedPassword`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\NotCompromisedPasswordValidator`
 ==========  ===================================================================
@@ -35,6 +30,19 @@ The following constraint ensures that the ``rawPassword`` property of the
             /**
              * @Assert\NotCompromisedPassword
              */
+            protected $rawPassword;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/User.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class User
+        {
+            #[Assert\NotCompromisedPassword]
             protected $rawPassword;
         }
 
@@ -79,7 +87,7 @@ The following constraint ensures that the ``rawPassword`` property of the
 
 In order to make the password validation, this constraint doesn't send the raw
 password value to the ``haveibeenpwned.com`` API. Instead, it follows a secure
-process known as `k-anonimity password validation`_.
+process known as `k-anonymity password validation`_.
 
 In practice, the raw password is hashed using SHA-1 and only the first bytes of
 the hash are sent. Then, the ``haveibeenpwned.com`` API compares those bytes
@@ -102,8 +110,8 @@ Available Options
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This password has been leaked in a data breach, it must not be used. Please use another password.``
 
@@ -111,8 +119,8 @@ The default message supplied when the password has been compromised.
 
 .. include:: /reference/constraints/_payload-option.rst.inc
 
-skipOnError
-~~~~~~~~~~~
+``skipOnError``
+~~~~~~~~~~~~~~~
 
 **type**: ``boolean`` **default**: ``false``
 
@@ -120,8 +128,8 @@ When the HTTP request made to the ``haveibeenpwned.com`` API fails for any
 reason, an exception is thrown (no validation error is displayed). Set this
 option to ``true`` to not throw the exception and consider the password valid.
 
-threshold
-~~~~~~~~~
+``threshold``
+~~~~~~~~~~~~~
 
 **type**: ``integer`` **default**: ``1``
 
@@ -130,4 +138,4 @@ publicly to consider it compromised. Think carefully before setting this option
 to a higher value because it could decrease the security of your application.
 
 .. _`haveibeenpwned.com`: https://haveibeenpwned.com/
-.. _`k-anonimity password validation`: https://blog.cloudflare.com/validating-leaked-passwords-with-k-anonymity/
+.. _`k-anonymity password validation`: https://blog.cloudflare.com/validating-leaked-passwords-with-k-anonymity/

@@ -120,7 +120,6 @@ option names and their respective values::
 
         // associative array of configuration options
         [
-            'compression' => true,
             'libketama_compatible' => true,
             'serializer' => 'igbinary',
         ]
@@ -138,17 +137,6 @@ Available Options
     commands to buffer instead of being immediately sent to the remote
     server(s). Any action that retrieves data, quits the connection, or closes
     down the connection will cause the buffer to be committed.
-
-``compression`` (type: ``bool``, default: ``true``)
-    Enables or disables payload compression, where item values longer than 100
-    bytes are compressed during storage and decompressed during retrieval.
-
-``compression_type`` (type: ``string``)
-    Specifies the compression method used on value payloads. when the
-    **compression** option is enabled.
-
-    Valid option values include ``fastlz`` and ``zlib``, with a default value
-    that *varies based on flags used at compilation*.
 
 ``connect_timeout`` (type: ``int``, default: ``1000``)
     Specifies the timeout (in milliseconds) of socket connection operations when
@@ -292,8 +280,8 @@ Available Options
 .. _`User Datagram Protocol (UDP)`: https://en.wikipedia.org/wiki/User_Datagram_Protocol
 .. _`no-delay`: https://en.wikipedia.org/wiki/TCP_NODELAY
 .. _`keep-alive`: https://en.wikipedia.org/wiki/Keepalive
-.. _`Memcached PHP extension`: http://php.net/manual/en/book.memcached.php
-.. _`predefined constants`: http://php.net/manual/en/memcached.constants.php
+.. _`Memcached PHP extension`: https://www.php.net/manual/en/book.memcached.php
+.. _`predefined constants`: https://www.php.net/manual/en/memcached.constants.php
 .. _`Memcached server`: https://memcached.org/
-.. _`Memcached`: http://php.net/manual/en/class.memcached.php
+.. _`Memcached`: https://www.php.net/manual/en/class.memcached.php
 .. _`Data Source Name (DSN)`: https://en.wikipedia.org/wiki/Data_source_name

@@ -90,12 +90,13 @@ passes to it the needed variables::
     namespace App\Controller;
 
     use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+    use Symfony\Component\HttpFoundation\Response;
 
     class UserController extends AbstractController
     {
         // ...
 
-        public function notifications()
+        public function notifications(): Response
         {
             // get the user information and notifications somehow
             $userFirstName = '...';
@@ -117,8 +118,8 @@ Template Naming
 
 Symfony recommends the following for template names:
 
-* Use `snake case`_ for filenames and directories (e.g. ``blog_posts.twig``,
-  ``admin/default_theme/blog/index.twig``, etc.);
+* Use `snake case`_ for filenames and directories (e.g. ``blog_posts.html.twig``,
+  ``admin/default_theme/blog/index.html.twig``, etc.);
 * Define two extensions for filenames (e.g. ``index.html.twig`` or
   ``blog_posts.xml.twig``) being the first extension (``html``, ``xml``, etc.)
   the final format that the template will generate.
@@ -163,7 +164,9 @@ in the following order:
 #. ``$foo->getBar()`` (object and *getter* method);
 #. ``$foo->isBar()`` (object and *isser* method);
 #. ``$foo->hasBar()`` (object and *hasser* method);
-#. If none of the above exists, use ``null``.
+#. If none of the above exists, use ``null`` (or throw a ``Twig\Error\RuntimeError``
+   exception if the :ref:`strict_variables <config-twig-strict-variables>`
+   option is enabled).
 
 This allows to evolve your application code without having to change the
 template code (you can start with array variables for the application proof of
@@ -191,6 +194,7 @@ Consider the following routing configuration:
         namespace App\Controller;
 
         // ...
+        use Symfony\Component\HttpFoundation\Response;
         use Symfony\Component\Routing\Annotation\Route;
 
         class BlogController extends AbstractController
@@ -198,7 +202,7 @@ Consider the following routing configuration:
             /**
              * @Route("/", name="blog_index")
              */
-            public function index()
+            public function index(): Response
             {
                 // ...
             }
@@ -206,7 +210,31 @@ Consider the following routing configuration:
             /**
              * @Route("/article/{slug}", name="blog_post")
              */
-            public function show(string $slug)
+            public function show(string $slug): Response
+            {
+                // ...
+            }
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Controller/BlogController.php
+        namespace App\Controller;
+
+        // ...
+        use Symfony\Component\HttpFoundation\Response;
+        use Symfony\Component\Routing\Annotation\Route;
+
+        class BlogController extends AbstractController
+        {
+            #[Route('/', name: 'blog_index')]
+            public function index(): Response
+            {
+                // ...
+            }
+
+            #[Route('/article/{slug}', name: 'blog_post')]
+            public function show(string $slug): Response
             {
                 // ...
             }
@@ -395,17 +423,29 @@ use the ``render()`` helper::
     namespace App\Controller;
 
     use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+    use Symfony\Component\HttpFoundation\Response;
 
     class ProductController extends AbstractController
     {
-        public function index()
+        public function index(): Response
         {
             // ...
 
+            // the `render()` method returns a `Response` object with the
+            // contents created by the template
             return $this->render('product/index.html.twig', [
                 'category' => '...',
                 'promotions' => ['...', '...'],
             ]);
+
+            // the `renderView()` method only returns the contents created by the
+            // template, so you can use those contents later in a `Response` object
+            $contents = $this->renderView('product/index.html.twig', [
+                'category' => '...',
+                'promotions' => ['...', '...'],
+            ]);
+
+            return new Response($contents);
         }
     }
 
@@ -458,7 +498,8 @@ Rendering a Template Directly from a Route
 
 Although templates are usually rendered in controllers and services, you can
 render static pages that don't need any variables directly from the route
-definition. Use the special ``TemplateController`` provided by Symfony:
+definition. Use the special :class:`Symfony\\Bundle\\FrameworkBundle\\Controller\\TemplateController`
+provided by Symfony:
 
 .. configuration-block::
 
@@ -472,13 +513,20 @@ definition. Use the special ``TemplateController`` provided by Symfony:
                 # the path of the template to render
                 template:  'static/privacy.html.twig'
 
+                # the response status code (default: 200)
+                statusCode: 200
+
                 # special options defined by Symfony to set the page cache
                 maxAge:    86400
                 sharedAge: 86400
 
+                # whether or not caching should apply for client caches only
+                private: true
+
                 # optionally you can define some arguments passed to the template
-                site_name: 'ACME'
-                theme: 'dark'
+                context:
+                    site_name: 'ACME'
+                    theme: 'dark'
 
     .. code-block:: xml
 
@@ -494,13 +542,21 @@ definition. Use the special ``TemplateController`` provided by Symfony:
                 <!-- the path of the template to render -->
                 <default key="template">static/privacy.html.twig</default>
 
+                <!-- the response status code (default: 200) -->
+                <default key="statusCode">200</default>
+
                 <!-- special options defined by Symfony to set the page cache -->
                 <default key="maxAge">86400</default>
                 <default key="sharedAge">86400</default>
 
+                <!-- whether or not caching should apply for client caches only -->
+                <default key="private">true</default>
+
                 <!-- optionally you can define some arguments passed to the template -->
-                <default key="site_name">ACME</default>
-                <default key="theme">dark</default>
+                <default key="context">
+                    <default key="site_name">ACME</default>
+                    <default key="theme">dark</default>
+                </default>
             </route>
         </routes>
 
@@ -517,16 +573,32 @@ definition. Use the special ``TemplateController`` provided by Symfony:
                     // the path of the template to render
                     'template'  => 'static/privacy.html.twig',
 
+                    // the response status code (default: 200)
+                    'statusCode' => 200,
+
                     // special options defined by Symfony to set the page cache
                     'maxAge'    => 86400,
                     'sharedAge' => 86400,
 
+                    // whether or not caching should apply for client caches only
+                    'private' => true,
+
                     // optionally you can define some arguments passed to the template
-                    'site_name' => 'ACME',
-                    'theme' => 'dark',
+                    'context' => [
+                        'site_name' => 'ACME',
+                        'theme' => 'dark',
+                    ]
                 ])
             ;
         };
+
+.. versionadded:: 5.1
+
+    The ``context`` option was introduced in Symfony 5.1.
+
+.. versionadded:: 5.4
+
+    The ``statusCode`` option was introduced in Symfony 5.4.
 
 Checking if a Template Exists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -534,15 +606,16 @@ Checking if a Template Exists
 Templates are loaded in the application using a `Twig template loader`_, which
 also provides a method to check for template existence. First, get the loader::
 
-    // in a controller extending from AbstractController
-    $loader = $this->get('twig')->getLoader();
-
-    // in a service using autowiring
     use Twig\Environment;
 
-    public function __construct(Environment $twig)
+    class YourService
     {
-        $loader = $twig->getLoader();
+        // this code assumes that your service uses autowiring to inject dependencies
+        // otherwise, inject the service called 'twig' manually
+        public function __construct(Environment $twig)
+        {
+            $loader = $twig->getLoader();
+        }
     }
 
 Then, pass the path of the Twig template to the ``exists()`` method of the loader::
@@ -575,6 +648,17 @@ errors. It's useful to run it before deploying your application to production
 
     # you can also show the deprecated features used in your templates
     $ php bin/console lint:twig --show-deprecations templates/email/
+
+When running the linter inside `GitHub Actions`_, the output is automatically
+adapted to the format required by GitHub, but you can force that format too:
+
+.. code-block:: terminal
+
+    $ php bin/console lint:twig --format=github
+
+.. versionadded:: 5.4
+
+    The ``github`` output format was introduced in Symfony 5.4.
 
 Inspecting Twig Information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -652,7 +736,7 @@ following code to display the user information is repeated in several places:
 
     {# ... #}
     <div class="user-profile">
-        <img src="{{ user.profileImageUrl }}"/>
+        <img src="{{ user.profileImageUrl }}" alt="{{ user.fullName }}"/>
         <p>{{ user.fullName }} - {{ user.email }}</p>
     </div>
 
@@ -708,11 +792,12 @@ First, create the controller that renders a certain number of recent articles::
     // src/Controller/BlogController.php
     namespace App\Controller;
 
+    use Symfony\Component\HttpFoundation\Response;
     // ...
 
     class BlogController extends AbstractController
     {
-        public function recentArticles($max = 3)
+        public function recentArticles(int $max = 3): Response
         {
             // get the recent articles somehow (e.g. making a database query)
             $articles = ['...', '...', '...'];
@@ -790,15 +875,17 @@ template fragments. Configure that special URL in the ``fragments`` option:
     .. code-block:: php
 
         // config/packages/framework.php
-        $container->loadFromExtension('framework', [
+        use Symfony\Config\FrameworkConfig;
+
+        return static function (FrameworkConfig $framework) {
             // ...
-            'fragments' => ['path' => '/_fragment'],
-        ]);
+            $framework->fragments()->path('/_fragment');
+        };
 
 .. caution::
 
-    Embedding controllers require making requests to those controllers and
-    rendering some templates as result. This can have a significant impact in
+    Embedding controllers requires making requests to those controllers and
+    rendering some templates as result. This can have a significant impact on
     the application performance if you embed lots of controllers. If possible,
     :doc:`cache the template fragment </http_cache/esi>`.
 
@@ -841,25 +928,30 @@ In practice, the ``base.html.twig`` template would look like this:
         <head>
             <meta charset="UTF-8">
             <title>{% block title %}My Application{% endblock %}</title>
+            {% block stylesheets %}
+                <link rel="stylesheet" type="text/css" href="/css/base.css"/>
+            {% endblock %}
         </head>
         <body>
-            <div id="sidebar">
-                {% block sidebar %}
-                    <ul>
-                        <li><a href="{{ path('homepage') }}">Home</a></li>
-                        <li><a href="{{ path('blog_index') }}">Blog</a></li>
-                    </ul>
-                {% endblock %}
-            </div>
+            {% block body %}
+                <div id="sidebar">
+                    {% block sidebar %}
+                        <ul>
+                            <li><a href="{{ path('homepage') }}">Home</a></li>
+                            <li><a href="{{ path('blog_index') }}">Blog</a></li>
+                        </ul>
+                    {% endblock %}
+                </div>
 
-            <div id="content">
-                {% block body %}{% endblock %}
-            </div>
+                <div id="content">
+                    {% block content %}{% endblock %}
+                </div>
+            {% endblock %}
         </body>
     </html>
 
 The `Twig block tag`_ defines the page sections that can be overridden in the
-child templates. They can be empty, like the ``body`` block or define a default
+child templates. They can be empty, like the ``content`` block or define a default
 content, like the ``title`` block, which is displayed when child templates don't
 override them.
 
@@ -870,14 +962,14 @@ The ``blog/layout.html.twig`` template could be like this:
     {# templates/blog/layout.html.twig #}
     {% extends 'base.html.twig' %}
 
-    {% block body %}
+    {% block content %}
         <h1>Blog</h1>
 
-        {% block content %}{% endblock %}
+        {% block page_contents %}{% endblock %}
     {% endblock %}
 
 The template extends from ``base.html.twig`` and only defines the contents of
-the ``body`` block. The rest of the parent template blocks will display their
+the ``content`` block. The rest of the parent template blocks will display their
 default contents. However, they can be overridden by the third-level inheritance
 template, such as ``blog/index.html.twig``, which displays the blog index:
 
@@ -888,7 +980,7 @@ template, such as ``blog/index.html.twig``, which displays the blog index:
 
     {% block title %}Blog Index{% endblock %}
 
-    {% block content %}
+    {% block page_contents %}
         {% for article in articles %}
             <h2>{{ article.title }}</h2>
             <p>{{ article.body }}</p>
@@ -896,13 +988,29 @@ template, such as ``blog/index.html.twig``, which displays the blog index:
     {% endblock %}
 
 This template extends from the second-level template (``blog/layout.html.twig``)
-but overrides blocks of different parent templates: ``content`` from
+but overrides blocks of different parent templates: ``page_contents`` from
 ``blog/layout.html.twig`` and ``title`` from ``base.html.twig``.
 
 When you render the ``blog/index.html.twig`` template, Symfony uses three
 different templates to create the final contents. This inheritance mechanism
 boosts your productivity because each template includes only its unique contents
 and leaves the repeated contents and HTML structure to some parent templates.
+
+.. caution::
+
+    When using ``extends``, a child template is forbidden to define template
+    parts outside of a block. The following code throws a ``SyntaxError``:
+
+    .. code-block:: html+twig
+
+        {# app/Resources/views/blog/index.html.twig #}
+        {% extends 'base.html.twig' %}
+
+        {# the line below is not captured by a "block" tag #}
+        <div class="alert">Some Alert</div>
+
+        {# the following is valid #}
+        {% block content %}My cool blog posts{% endblock %}
 
 Read the `Twig template inheritance`_ docs to learn more about how to reuse
 parent block contents when overriding templates and other advanced features.
@@ -917,7 +1025,7 @@ JavaScript popup window.
 
 This is known as a `Cross-Site Scripting`_ (XSS) attack. And while the previous
 example seems harmless, the attacker could write more advanced JavaScript code
-to performs malicious actions.
+to perform malicious actions.
 
 To prevent this attack, use *"output escaping"* to transform the characters
 which have special meaning (e.g. replace ``<`` by the ``&lt;`` HTML entity).
@@ -988,15 +1096,16 @@ the ``value`` is the Twig namespace, which is explained later:
     .. code-block:: php
 
         // config/packages/twig.php
-        $container->loadFromExtension('twig', [
+        use Symfony\Config\TwigConfig;
+
+        return static function (TwigConfig $twig) {
             // ...
-            'paths' => [
-                // directories are relative to the project root dir (but you
-                // can also use absolute directories)
-                'email/default/templates' => null,
-                'backend/templates' => null,
-            ],
-        ]);
+
+            // directories are relative to the project root dir (but you
+            // can also use absolute directories)
+            $twig->path('email/default/templates', null);
+            $twig->path('backend/templates', null);
+        };
 
 When rendering a template, Symfony looks for it first in the ``twig.paths``
 directories that don't define a namespace and then falls back to the default
@@ -1043,13 +1152,14 @@ configuration to define a namespace for each template directory:
     .. code-block:: php
 
         // config/packages/twig.php
-        $container->loadFromExtension('twig', [
+        use Symfony\Config\TwigConfig;
+
+        return static function (TwigConfig $twig) {
             // ...
-            'paths' => [
-                'email/default/templates' => 'email',
-                'backend/templates' => 'admin',
-            ],
-        ]);
+
+            $twig->path('email/default/templates', 'email');
+            $twig->path('backend/templates', 'admin');
+        };
 
 Now, if you render the ``layout.html.twig`` template, Symfony will render the
 ``templates/layout.html.twig`` file. Use the special syntax ``@`` + namespace to
@@ -1101,3 +1211,4 @@ Learn more
 .. _`Twig template inheritance`: https://twig.symfony.com/doc/2.x/tags/extends.html
 .. _`Twig block tag`: https://twig.symfony.com/doc/2.x/tags/block.html
 .. _`Cross-Site Scripting`: https://en.wikipedia.org/wiki/Cross-site_scripting
+.. _`GitHub Actions`: https://docs.github.com/en/free-pro-team@latest/actions

@@ -5,8 +5,8 @@ Symfony code is contributed by thousands of developers around the world. To make
 every piece of code look and feel familiar, Symfony defines some coding standards
 that all contributions must follow.
 
-These Symfony coding standards are based on the `PSR-1`_, `PSR-2`_ and `PSR-4`_
-standards, so you may already know most of them.
+These Symfony coding standards are based on the `PSR-1`_, `PSR-2`_, `PSR-4`_
+and `PSR-12`_ standards, so you may already know most of them.
 
 Making your Code Follow the Coding Standards
 --------------------------------------------
@@ -40,6 +40,8 @@ short example containing most features described below::
 
     namespace Acme;
 
+    use Other\Qux;
+
     /**
      * Coding standards demonstration.
      */
@@ -52,12 +54,15 @@ short example containing most features described below::
          */
         private $fooBar;
 
+        private $qux;
+
         /**
          * @param string $dummy Some argument description
          */
-        public function __construct($dummy)
+        public function __construct($dummy, Qux $qux)
         {
             $this->fooBar = $this->transformText($dummy);
+            $this->qux = $qux;
         }
 
         /**
@@ -67,13 +72,13 @@ short example containing most features described below::
          */
         public function someDeprecatedMethod()
         {
-            @trigger_error(sprintf('The %s() method is deprecated since vendor-name/package-name 2.8 and will be removed in 3.0. Use Acme\Baz::someMethod() instead.', __METHOD__), E_USER_DEPRECATED);
+            trigger_deprecation('symfony/package-name', '5.1', 'The %s() method is deprecated, use Acme\Baz::someMethod() instead.', __METHOD__);
 
             return Baz::someMethod();
         }
 
         /**
-         * Transforms the input given as first argument.
+         * Transforms the input given as the first argument.
          *
          * @param bool|string $dummy   Some argument description
          * @param array       $options An options collection to be used within the transformation
@@ -89,9 +94,9 @@ short example containing most features described below::
                 'another_default' => 'more values',
             ];
 
-            foreach ($options as $option) {
-                if (!in_array($option, $defaultOptions)) {
-                    throw new \RuntimeException(sprintf('Unrecognized option "%s"', $option));
+            foreach ($options as $name => $value) {
+                if (!array_key_exists($name, $defaultOptions)) {
+                    throw new \RuntimeException(sprintf('Unrecognized option "%s"', $name));
                 }
             }
 
@@ -101,33 +106,34 @@ short example containing most features described below::
             );
 
             if (true === $dummy) {
-                return null;
+                return 'something';
             }
 
-            if ('string' === $dummy) {
+            if (is_string($dummy)) {
                 if ('values' === $mergedOptions['some_default']) {
                     return substr($dummy, 0, 5);
                 }
 
                 return ucwords($dummy);
             }
+
+            return null;
         }
 
         /**
-         * Performs some basic check for a given value.
+         * Performs some basic operations for a given value.
          *
-         * @param mixed $value     Some value to check against
+         * @param mixed $value     Some value to operate against
          * @param bool  $theSwitch Some switch to control the method's flow
-         *
-         * @return bool|void The resultant check if $theSwitch isn't false, void otherwise
          */
-        private function reverseBoolean($value = null, $theSwitch = false)
+        private function performOperations($value = null, $theSwitch = false)
         {
             if (!$theSwitch) {
                 return;
             }
 
-            return !$value;
+            $this->qux->doFoo($value);
+            $this->qux->doBar($value);
         }
     }
 
@@ -181,10 +187,6 @@ Structure
 
 * Exception and error message strings must be concatenated using :phpfunction:`sprintf`;
 
-* Calls to :phpfunction:`trigger_error` with type ``E_USER_DEPRECATED`` must be
-  switched to opt-in via ``@`` operator.
-  Read more at :ref:`contributing-code-conventions-deprecations`;
-
 * Do not use ``else``, ``elseif``, ``break`` after ``if`` and ``case`` conditions
   which return or throw something;
 
@@ -218,6 +220,9 @@ Naming Conventions
 
 * Suffix exceptions with ``Exception``;
 
+* Prefix PHP attributes with ``As`` where applicable (e.g. ``#[AsCommand]``
+  instead of ``#[Command]``, but ``#[When]`` is kept as-is);
+
 * Use UpperCamelCase for naming PHP files (e.g. ``EnvVarProcessor.php``) and
   snake case for naming Twig templates and web assets (``section_layout.html.twig``,
   ``index.scss``);
@@ -238,7 +243,7 @@ Service Naming Conventions
   its class (e.g. ``App\EventSubscriber\UserSubscriber``);
 
 * If there are multiple services for the same class, use the FQCN for the main
-  service and use lowercased and underscored names for the rest of services.
+  service and use lowercase and underscored names for the rest of services.
   Optionally divide them in groups separated with dots (e.g.
   ``something.service_name``, ``fos_user.something.service_name``);
 
@@ -281,7 +286,8 @@ License
 .. _`PSR-1`: https://www.php-fig.org/psr/psr-1/
 .. _`PSR-2`: https://www.php-fig.org/psr/psr-2/
 .. _`PSR-4`: https://www.php-fig.org/psr/psr-4/
-.. _`identical comparison`: https://php.net/manual/en/language.operators.comparison.php
+.. _`PSR-12`: https://www.php-fig.org/psr/psr-12/
+.. _`identical comparison`: https://www.php.net/manual/en/language.operators.comparison.php
 .. _`Yoda conditions`: https://en.wikipedia.org/wiki/Yoda_conditions
 .. _`camelCase`: https://en.wikipedia.org/wiki/Camel_case
 .. _`UpperCamelCase`: https://en.wikipedia.org/wiki/Camel_case

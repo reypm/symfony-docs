@@ -7,12 +7,12 @@ release and maintain its different versions.
 Symfony releases follow the `semantic versioning`_ strategy and they are
 published through a *time-based model*:
 
-* A new **Symfony patch version** (e.g. 2.8.15, 4.1.7) comes out roughly every
+* A new **Symfony patch version** (e.g. 4.4.12, 5.1.9) comes out roughly every
   month. It only contains bug fixes, so you can safely upgrade your applications;
-* A new **Symfony minor version** (e.g. 2.8, 3.2, 4.1) comes out every *six months*:
+* A new **Symfony minor version** (e.g. 4.4, 5.1) comes out every *six months*:
   one in *May* and one in *November*. It contains bug fixes and new features, but
   it doesn't include any breaking change, so you can safely upgrade your applications;
-* A new **Symfony major version** (e.g. 3.0, 4.0) comes out every *two years*.
+* A new **Symfony major version** (e.g. 4.0, 5.0, 6.0) comes out every *two years*.
   It can contain breaking changes, so you may need to do some changes in your
   applications before upgrading.
 
@@ -53,7 +53,7 @@ Maintenance
 
 Starting from the Symfony 3.x branch, the number of minor versions is limited to
 five per branch (X.0, X.1, X.2, X.3 and X.4). The last minor version of a branch
-(e.g. 3.4, 4.4, 5.4) is considered a **long-term support version** and the other
+(e.g. 4.4, 5.4) is considered a **long-term support version** and the other
 ones are considered **standard versions**:
 
 =======================  =====================  ================================
@@ -80,26 +80,42 @@ of Symfony to the next one.
 
 When a feature implementation cannot be replaced with a better one without
 breaking backward compatibility, Symfony deprecates the old implementation and
-adds a new preferred one along side. Read the
+adds a new preferred one alongside. Read the
 :ref:`conventions <contributing-code-conventions-deprecations>` document to
 learn more about how deprecations are handled in Symfony.
 
 .. _major-version-development:
 
 This deprecation policy also requires a custom development process for major
-versions (4.0, 5.0, 6.0, etc.) In those cases, Symfony develops at the same time
-two versions: the new major one (e.g. 4.0) and the latest version of the
-previous branch (e.g. 3.4).
+versions (5.0, 6.0, etc.) In those cases, Symfony develops at the same time
+two versions: the new major one (e.g. 5.0) and the latest version of the
+previous branch (e.g. 4.4).
 
 Both versions have the same new features, but they differ in the deprecated
-features. The oldest version (3.4 in this example) contains all the deprecated
-features whereas the new version (4.0 in this example) removes all of them.
+features. The oldest version (4.4 in this example) contains all the deprecated
+features whereas the new version (5.0 in this example) removes all of them.
 
-This allows you to upgrade your projects to the latest minor version (e.g. 3.4),
+This allows you to upgrade your projects to the latest minor version (e.g. 4.4),
 see all the deprecation messages and fix them. Once you have fixed all those
-deprecations, you can upgrade to the new major version (e.g. 4.0) without
+deprecations, you can upgrade to the new major version (e.g. 5.0) without
 effort, because it contains the same features (the only difference are the
 deprecated features, which your project no longer uses).
+
+PHP Compatibility
+-----------------
+
+The **minimum** PHP version is decided for each major Symfony version by consensus
+amongst the :doc:`core team </contributing/code/core_team>` and documented as
+part of the :ref:`technical requirements for running Symfony applications
+<symfony-tech-requirements>`.
+
+Throughout each Symfony release's support lifetime, all released versions of PHP
+including new major versions will be supported. In this way, the **maximum** supported
+version of PHP for a maintained Symfony release is the latest released
+one that is publicly available.
+
+For out-of-support releases of Symfony, the latest PHP version at time of EOL is the last
+supported PHP version. Newer versions of PHP may or may not function.
 
 Rationale
 ---------
@@ -132,6 +148,6 @@ period to upgrade. Companies wanting more stability use the LTS versions: a new
 version is published every two years and there is a year to upgrade.
 
 .. _`semantic versioning`: https://semver.org/
-.. _`Subscribe to Symfony Roadmap notifications`: https://symfony.com/account
-.. _`Symfony Roadmap`: https://symfony.com/roadmap#checker
+.. _`Subscribe to Symfony Roadmap notifications`: https://symfony.com/account/notifications
+.. _`Symfony Roadmap`: https://symfony.com/releases
 .. _`professional Symfony support`: https://sensiolabs.com/

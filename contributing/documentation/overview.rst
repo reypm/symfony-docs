@@ -112,16 +112,16 @@ memorable name for the new branch (if you are fixing a reported issue, use
 
 .. code-block:: terminal
 
-    $ git checkout -b improve_install_article upstream/3.4
+    $ git checkout -b improve_install_article upstream/4.4
 
 In this example, the name of the branch is ``improve_install_article`` and the
-``upstream/3.4`` value tells Git to create this branch based on the ``3.4``
+``upstream/4.4`` value tells Git to create this branch based on the ``4.4``
 branch of the ``upstream`` remote, which is the original Symfony Docs repository.
 
 Fixes should always be based on the **oldest maintained branch** which contains
-the error. Nowadays this is the ``3.4`` branch. If you are instead documenting a
+the error. Nowadays this is the ``4.4`` branch. If you are instead documenting a
 new feature, switch to the first Symfony version that included it, e.g.
-``upstream/3.1``. Not sure? That's ok! Just use the ``upstream/master`` branch.
+``upstream/5.4``.
 
 **Step 5.** Now make your changes in the documentation. Add, tweak, reword and
 even remove any content and do your best to comply with the
@@ -155,7 +155,7 @@ changes should be applied:
    :align: center
 
 In this example, the **base fork** should be ``symfony/symfony-docs`` and
-the **base** branch should be the ``3.4``, which is the branch that you selected
+the **base** branch should be the ``4.4``, which is the branch that you selected
 to base your changes on. The **head fork** should be your forked copy
 of ``symfony-docs`` and the **compare** branch should be ``improve_install_article``,
 which is the name of the branch you created and where you made your changes.
@@ -194,7 +194,7 @@ Your Next Documentation Contributions
 
 Check you out! You've made your first contribution to the Symfony documentation!
 Somebody throw a party! Your first contribution took a little extra time because
-you needed to learn a few standards and setup your computer. But from now on,
+you had to learn a few standards and set up your computer. But from now on,
 your contributions will be much easier to complete.
 
 Here is a **checklist** of steps that will guide you through your next
@@ -205,7 +205,7 @@ contribution to the Symfony docs:
     # create a new branch based on the oldest maintained version
     $ cd projects/symfony-docs/
     $ git fetch upstream
-    $ git checkout -b my_changes upstream/3.4
+    $ git checkout -b my_changes upstream/4.4
 
     # ... do your changes
 
@@ -229,81 +229,33 @@ this hard work, it's **time to celebrate again!**
 Review your changes
 -------------------
 
-Every GitHub Pull Request is automatically built and deployed by
-`SymfonyCloud`_ on a single environment that you can access on your browser to
-review your changes.
+Symfony repository checks every Pull Request automatically to look for common
+errors, inappropriate words, syntax issues in code blocks, etc.
 
-.. image:: /_images/contributing/docs-pull-request-symfonycloud.png
-   :align: center
-   :alt:   SymfonyCloud Pull Request Deployment
-
-To access the `SymfonyCloud`_ environment URL, go to your Pull Request page on
-GitHub, click on the **Show all checks** link and finally, click on the
-``Details`` link displayed for SymfonyCloud service.
-
-.. note::
-
-    Only Pull Requests to maintained branches are automatically built by
-    SymfonyCloud. Check the `roadmap`_ for maintained branches.
-
-Build the Documentation Locally
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you have Docker installed on your machine, run these commands to build the
-docs:
-
-.. code-block:: terminal
-
-    # build the image...
-    $ docker build . -t symfony-docs
-
-    # ...and start the local web server
-    # (if it's already in use, change the '8080' port by any other port)
-    $ docker run --rm -p 8080:80 symfony-docs
-
-You can now read the docs at ``http://127.0.0.1:8080`` (if you use a virtual
-machine, browse its IP instead of localhost; e.g. ``http://192.168.99.100:8080``).
-
-If you don't use Docker, follow these steps to build the docs locally:
-
-#. Install `pip`_ as explained in the `pip installation`_ article;
-
-#. Install `Sphinx`_ and `Sphinx Extensions for PHP and Symfony`_
-   (depending on your system, you may need to execute this command as root user):
-
-   .. code-block:: terminal
-
-        $ pip install sphinx~=1.3.0 git+https://github.com/fabpot/sphinx-php.git
-
-#. Run the following command to build the documentation in HTML format:
-
-   .. code-block:: terminal
-
-       $ cd _build/
-       $ make html
-
-The generated documentation is available in the ``_build/html`` directory.
+Optionally you can also build the docs in your local machine to debug issues or
+to read the documentation offline. To do so, follow the instructions included in
+`the README file of symfony-docs repository`_.
 
 Frequently Asked Questions
 --------------------------
 
-Why Do my Changes Take so Long to Be Reviewed and/or Merged?
+Why Do My Changes Take So Long to Be Reviewed and/or Merged?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Please be patient. It can take up to several days before your pull request can
 be fully reviewed. After merging the changes, it could take again several hours
-before your changes appear on the symfony.com website.
+before your changes appear on the Symfony website.
 
-Why Should I Use the Oldest Maintained Branch Instead of the Master Branch?
+Why Should I Use the Oldest Maintained Branch Instead of the Latest Branch?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Consistent with Symfony's source code, the documentation repository is split
 into multiple branches, corresponding to the different versions of Symfony itself.
-The ``master`` branch holds the documentation for the development branch of
+The latest (e.g. ``5.x``) branch holds the documentation for the development branch of
 the code.
 
-Unless you're documenting a feature that was introduced after Symfony 3.4,
-your changes should always be based on the ``3.4`` branch. Documentation managers
+Unless you're documenting a feature that was introduced after Symfony 4.4,
+your changes should always be based on the ``4.4`` branch. Documentation managers
 will use the necessary Git-magic to also apply your changes to all the active
 branches of the documentation.
 
@@ -333,15 +285,10 @@ your proposal after you put all that hard work into making the changes. We
 definitely don't want you to waste your time!
 
 .. _`github.com/symfony/symfony-docs`: https://github.com/symfony/symfony-docs
-.. _`reStructuredText`: http://docutils.sourceforge.net/rst.html
+.. _`reStructuredText`: https://docutils.sourceforge.io/rst.html
 .. _`GitHub`: https://github.com/
-.. _`fork the repository`: https://help.github.com/articles/fork-a-repo
+.. _`fork the repository`: https://help.github.com/github/getting-started-with-github/fork-a-repo
 .. _`Symfony Documentation Contributors`: https://symfony.com/contributors/doc
-.. _`SymfonyConnect`: https://connect.symfony.com/
+.. _`SymfonyConnect`: https://symfony.com/connect/login
 .. _`Symfony Documentation Badge`: https://connect.symfony.com/badge/36/symfony-documentation-contributor
-.. _`SymfonyCloud`: https://symfony.com/cloud
-.. _`roadmap`: https://symfony.com/roadmap
-.. _`pip`: https://pip.pypa.io/en/stable/
-.. _`pip installation`: https://pip.pypa.io/en/stable/installing/
-.. _`Sphinx`: http://sphinx-doc.org/
-.. _`Sphinx Extensions for PHP and Symfony`: https://github.com/fabpot/sphinx-php
+.. _`the README file of symfony-docs repository`: https://github.com/symfony/symfony-docs#readme

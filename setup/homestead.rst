@@ -28,7 +28,7 @@ Setting Up a Symfony Application
 
 Imagine you've installed your Symfony application in
 ``~/projects/symfony_demo`` on your local system. You first need Homestead to
-sync your files in this project. Execute ``homestead edit`` to edit the
+sync your files in this project. Run ``homestead edit`` to edit the
 Homestead configuration and configure the ``~/projects`` directory:
 
 .. code-block:: yaml
@@ -58,7 +58,9 @@ Homestead now supports a Symfony 2 and 3 web layout with ``app.php`` and
 using type ``symfony4``.
 
 At last, edit the hosts file on your local machine to map ``symfony-demo.test``
-to ``192.168.10.10`` (which is the IP used by Homestead)::
+to ``192.168.10.10`` (which is the IP used by Homestead):
+
+.. code-block:: text
 
     # /etc/hosts (unix) or C:\Windows\System32\drivers\etc\hosts (Windows)
     192.168.10.10 symfony-demo.test
@@ -76,4 +78,4 @@ developing your Symfony application!
 .. _`Vagrant`: https://www.vagrantup.com/
 .. _`the Homestead documentation`: https://laravel.com/docs/homestead#installation-and-setup
 .. _`Daily Usage`: https://laravel.com/docs/homestead#daily-usage
-.. _`this blog post`: https://www.whitewashing.de/2013/08/19/speedup_symfony2_on_vagrant_boxes.html
+.. _`this blog post`: https://beberlei.de/2013/08/19/speedup_symfony2_on_vagrant_boxes.html

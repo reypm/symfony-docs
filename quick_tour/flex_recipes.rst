@@ -29,7 +29,7 @@ are included in your ``composer.json`` file:
         "symfony/yaml": "^4.1"
     }
 
-This makes Symfony different than any other PHP framework! Instead of starting with
+This makes Symfony different from any other PHP framework! Instead of starting with
 a *bulky* app with *every* possible feature you might ever need, a Symfony app is
 small, simple and *fast*. And you're in total control of what you add.
 
@@ -61,8 +61,8 @@ What did this recipe do? In addition to automatically enabling the feature in
 ``config/packages/twig.yaml``
     A configuration file that sets up Twig with sensible defaults.
 
-``config/routes/dev/twig.yaml``
-    A route that helps you debug your error pages.
+``config/packages/test/twig.yaml``
+    A configuration file that changes some Twig options when running tests.
 
 ``templates/``
     This is the directory where template files will live. The recipe also added
@@ -75,27 +75,28 @@ Thanks to Flex, after one command, you can start using Twig immediately:
 
 .. code-block:: diff
 
-    // src/Controller/DefaultController.php
-    namespace App\Controller;
+      <?php
+      // src/Controller/DefaultController.php
+      namespace App\Controller;
 
-    use Symfony\Component\Routing\Annotation\Route;
+      use Symfony\Component\Routing\Annotation\Route;
     - use Symfony\Component\HttpFoundation\Response;
     + use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-    -class DefaultController
-    +class DefaultController extends AbstractController
-     {
-         /**
-          * @Route("/hello/{name}")
-          */
-         public function index($name)
-         {
+    - class DefaultController
+    + class DefaultController extends AbstractController
+      {
+           /**
+            * @Route("/hello/{name}")
+            */
+           public function index($name)
+           {
     -        return new Response("Hello $name!");
     +        return $this->render('default/index.html.twig', [
     +            'name' => $name,
     +        ]);
-         }
-    }
+           }
+      }
 
 By extending ``AbstractController``, you now have access to a number of shortcut
 methods and tools, like ``render()``. Create the new template:
@@ -153,6 +154,7 @@ Rich API Support
 
 Are you building an API? You can already return JSON from any controller::
 
+    <?php
     // src/Controller/DefaultController.php
     namespace App\Controller;
 
@@ -189,6 +191,7 @@ But like usual, we can immediately start using the new library. Want to create a
 rich API for a ``product`` table? Create a ``Product`` entity and give it the
 ``@ApiResource()`` annotation::
 
+    <?php
     // src/Entity/Product.php
     namespace App\Entity;
 
@@ -250,7 +253,7 @@ Not convinced yet? No problem: remove the library:
 
     $ composer remove api
 
-Flex will *uninstall* the recipes: removing files and un-doing changes to put your
+Flex will *uninstall* the recipes: removing files and undoing changes to put your
 app back in its original state. Experiment without worry.
 
 More Features, Architecture and Speed

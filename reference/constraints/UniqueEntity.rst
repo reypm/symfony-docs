@@ -10,17 +10,13 @@ using an email address that already exists in the system.
     If you want to validate that all the elements of the collection are unique
     use the :doc:`Unique constraint </reference/constraints/Unique>`.
 
+.. note::
+
+    In order to use this constraint, you should have installed the
+    symfony/doctrine-bridge with Composer.
+
 ==========  ===================================================================
 Applies to  :ref:`class <validation-class-target>`
-Options     - `em`_
-            - `entityClass`_
-            - `errorPath`_
-            - `fields`_
-            - `groups`_
-            - `ignoreNull`_
-            - `message`_
-            - `payload`_
-            - `repositoryMethod`_
 Class       :class:`Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntity`
 Validator   :class:`Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntityValidator`
 ==========  ===================================================================
@@ -56,6 +52,27 @@ between all of the rows in your user table:
              * @ORM\Column(name="email", type="string", length=255, unique=true)
              * @Assert\Email
              */
+            protected $email;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/User.php
+        namespace App\Entity;
+
+        use Doctrine\ORM\Mapping as ORM;
+
+        // DON'T forget the following use statement!!!
+        use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        #[ORM\Entity]
+        #[UniqueEntity('email')]
+        class User
+        {
+            #[ORM\Column(name: 'email', type: 'string', length: 255, unique: true)]
+            #[Assert\Email]
             protected $email;
         }
 
@@ -135,8 +152,8 @@ the uniqueness. If it's left blank, the correct entity manager will be
 determined for this class. For that reason, this option should probably
 not need to be used.
 
-entityClass
-~~~~~~~~~~~
+``entityClass``
+~~~~~~~~~~~~~~~
 
 **type**: ``string``
 
@@ -146,8 +163,8 @@ inheritance mapping, you need to execute the query in a different repository.
 Use this option to define the fully-qualified class name (FQCN) of the Doctrine
 entity associated with the repository you want to use.
 
-errorPath
-~~~~~~~~~
+``errorPath``
+~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: The name of the first field in `fields`_
 
@@ -185,6 +202,30 @@ Consider this example:
             /**
              * @ORM\Column(type="integer")
              */
+            public $port;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Service.php
+        namespace App\Entity;
+
+        use App\Entity\Host;
+        use Doctrine\ORM\Mapping as ORM;
+        use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+
+        #[ORM\Entity]
+        #[UniqueEntity(
+            fields: ['host', 'port'],
+            errorPath: 'port',
+            message: 'This port is already in use on that host.',
+        )]
+        class Service
+        {
+            #[ORM\ManyToOne(targetEntity: Host::class)]
+            public $host;
+
+            #[ORM\Column(type: 'integer')]
             public $port;
         }
 
@@ -244,8 +285,8 @@ Consider this example:
 
 Now, the message would be bound to the ``port`` field with this configuration.
 
-fields
-~~~~~~
+``fields``
+~~~~~~~~~~
 
 **type**: ``array`` | ``string`` [:ref:`default option <validation-default-option>`]
 
@@ -261,8 +302,8 @@ each with a single field.
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-ignoreNull
-~~~~~~~~~~
+``ignoreNull``
+~~~~~~~~~~~~~~
 
 **type**: ``boolean`` **default**: ``true``
 
@@ -271,14 +312,14 @@ entities to have a ``null`` value for a field without failing validation.
 If set to ``false``, only one ``null`` value is allowed - if a second entity
 also has a ``null`` value, validation would fail.
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This value is already used.``
 
-The message that's displayed when this constraint fails. This message is always
-mapped to the first field causing the violation, even when using multiple fields
-in the constraint.
+The message that's displayed when this constraint fails. This message is by default
+mapped to the first field causing the violation. When using multiple fields
+in the constraint, the mapping can be specified via the `errorPath`_ property.
 
 Messages can include the ``{{ value }}`` placeholder to display a string
 representation of the invalid entity. If the entity doesn't define the
@@ -291,12 +332,17 @@ You can use the following parameters in this message:
 Parameter        Description
 ===============  ==============================================================
 ``{{ value }}``  The current (invalid) value
+``{{ label }}``  Corresponding form field label
 ===============  ==============================================================
+
+.. versionadded:: 5.2
+
+    The ``{{ label }}`` parameter was introduced in Symfony 5.2.
 
 .. include:: /reference/constraints/_payload-option.rst.inc
 
-repositoryMethod
-~~~~~~~~~~~~~~~~
+``repositoryMethod``
+~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``findBy``
 
@@ -304,7 +350,6 @@ The name of the repository method used to determine the uniqueness. If it's left
 blank, ``findBy()`` will be used. The method receives as its argument a
 ``fieldName => value`` associative array (where ``fieldName`` is each of the
 fields configured in the ``fields`` option). The method should return a
-`countable PHP variable`_.
+:phpfunction:`countable PHP variable <is_countable>`.
 
 .. _`race conditions`: https://en.wikipedia.org/wiki/Race_condition
-.. _`countable PHP variable`: https://php.net/manual/function.is-countable.php

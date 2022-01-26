@@ -7,7 +7,7 @@ How to Use Data Transformers
 Data transformers are used to translate the data for a field into a format that can
 be displayed in a form (and back on submit). They're already used internally for
 many field types. For example, the :doc:`DateType </reference/forms/types/date>` field
-can be rendered as a ``yyyy-MM-dd``-formatted input textbox. Internally, a data transformer
+can be rendered as a ``yyyy-MM-dd``-formatted input text box. Internally, a data transformer
 converts the starting ``DateTime`` value of the field into the ``yyyy-MM-dd`` string
 to render the form, and then back into a ``DateTime`` object on submit.
 
@@ -24,8 +24,8 @@ to render the form, and then back into a ``DateTime`` object on submit.
 
 .. _simple-example-sanitizing-html-on-user-input:
 
-Simple Example: Transforming String Tags from User Input to an Array
---------------------------------------------------------------------
+Example #1: Transforming Strings Form Data Tags from User Input to an Array
+---------------------------------------------------------------------------
 
 Suppose you have a Task form with a tags ``text`` type::
 
@@ -40,12 +40,12 @@ Suppose you have a Task form with a tags ``text`` type::
     // ...
     class TaskType extends AbstractType
     {
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options): void
         {
             $builder->add('tags', TextType::class);
         }
 
-        public function configureOptions(OptionsResolver $resolver)
+        public function configureOptions(OptionsResolver $resolver): void
         {
             $resolver->setDefaults([
                 'data_class' => Task::class,
@@ -56,7 +56,7 @@ Suppose you have a Task form with a tags ``text`` type::
     }
 
 Internally the ``tags`` are stored as an array, but displayed to the user as a
-comma separated string to make them easier to edit.
+plain comma separated string to make them easier to edit.
 
 This is a *perfect* time to attach a custom data transformer to the ``tags``
 field. The easiest way to do this is with the :class:`Symfony\\Component\\Form\\CallbackTransformer`
@@ -72,7 +72,7 @@ class::
 
     class TaskType extends AbstractType
     {
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options): void
         {
             $builder->add('tags', TextType::class);
 
@@ -115,13 +115,13 @@ slightly::
             ->addModelTransformer(...)
     );
 
-Harder Example: Transforming an Issue Number into an Issue Entity
------------------------------------------------------------------
+Example #2: Transforming an Issue Number into an Issue Entity
+-------------------------------------------------------------
 
 Say you have a many-to-one relation from the Task entity to an Issue entity (i.e. each
-Task has an optional foreign key to its related Issue). Adding a listbox with all
+Task has an optional foreign key to its related Issue). Adding a list box with all
 possible issues could eventually get *really* long and take a long time to load.
-Instead, you decide you want to add a textbox, where the user can enter the
+Instead, you decide you want to add a text box, where the user can enter the
 issue number.
 
 Start by setting up the text field like normal::
@@ -136,7 +136,7 @@ Start by setting up the text field like normal::
     // ...
     class TaskType extends AbstractType
     {
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options): void
         {
             $builder
                 ->add('description', TextareaType::class)
@@ -144,7 +144,7 @@ Start by setting up the text field like normal::
             ;
         }
 
-        public function configureOptions(OptionsResolver $resolver)
+        public function configureOptions(OptionsResolver $resolver): void
         {
             $resolver->setDefaults([
                 'data_class' => Task::class,
@@ -188,9 +188,8 @@ to and from the issue number and the ``Issue`` object::
          * Transforms an object (issue) to a string (number).
          *
          * @param  Issue|null $issue
-         * @return string
          */
-        public function transform($issue)
+        public function transform($issue): string
         {
             if (null === $issue) {
                 return '';
@@ -203,14 +202,13 @@ to and from the issue number and the ``Issue`` object::
          * Transforms a string (number) to an object (issue).
          *
          * @param  string $issueNumber
-         * @return Issue|null
          * @throws TransformationFailedException if object (issue) is not found.
          */
-        public function reverseTransform($issueNumber)
+        public function reverseTransform($issueNumber): ?Issue
         {
             // no issue number? It's optional, so that's ok
             if (!$issueNumber) {
-                return;
+                return null;
             }
 
             $issue = $this->entityManager
@@ -233,7 +231,7 @@ to and from the issue number and the ``Issue`` object::
         }
     }
 
-Just like in the first example, a transformer has two directions. The ``transform()``
+Like the first example, the transformer has two directions. The ``transform()``
 method is responsible for converting the data used in your code to a format that
 can be rendered in your form (e.g. an ``Issue`` object to its ``id``, a string).
 The ``reverseTransform()`` method does the reverse: it converts the submitted value
@@ -273,7 +271,7 @@ and type-hint the new class::
             $this->transformer = $transformer;
         }
 
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options): void
         {
             $builder
                 ->add('description', TextareaType::class)
@@ -306,7 +304,7 @@ end-user error message in the data transformer using the
     {
         // ...
 
-        public function reverseTransform($issueNumber)
+        public function reverseTransform($issueNumber): ?Issue
         {
             // ...
 
@@ -376,7 +374,6 @@ First, create the custom field type class::
     namespace App\Form;
 
     use App\Form\DataTransformer\IssueToNumberTransformer;
-    use Doctrine\Common\Persistence\ObjectManager;
     use Symfony\Component\Form\AbstractType;
     use Symfony\Component\Form\Extension\Core\Type\TextType;
     use Symfony\Component\Form\FormBuilderInterface;
@@ -391,19 +388,19 @@ First, create the custom field type class::
             $this->transformer = $transformer;
         }
 
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options): void
         {
             $builder->addModelTransformer($this->transformer);
         }
 
-        public function configureOptions(OptionsResolver $resolver)
+        public function configureOptions(OptionsResolver $resolver): void
         {
             $resolver->setDefaults([
                 'invalid_message' => 'The selected issue does not exist',
             ]);
         }
 
-        public function getParent()
+        public function getParent(): string
         {
             return TextType::class;
         }
@@ -424,7 +421,7 @@ As long as you're using :ref:`autowire <services-autowire>` and
 
     class TaskType extends AbstractType
     {
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options): void
         {
             $builder
                 ->add('description', TextareaType::class)
@@ -480,6 +477,20 @@ types of data:
 Which transformer you need depends on your situation.
 
 To use the view transformer, call ``addViewTransformer()``.
+
+.. caution::
+
+    Be careful with model transformers and
+    :doc:`Collection </reference/forms/types/collection>` field types.
+    Collection's children are created early at ``PRE_SET_DATA`` by its
+    ``ResizeFormListener`` and their data is populated later from the normalized
+    data. So your model transformer cannot reduce the number of items within the
+    Collection (i.e. filtering out some items), as in that case the collection
+    ends up with some empty children.
+    
+    A possible workaround for that limitation could be not using the underlying
+    object directly, but a DTO (Data Transfer Object) instead, that implements
+    the transformation of such incompatible data structures.
 
 So why Use the Model Transformer?
 ---------------------------------

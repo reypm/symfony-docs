@@ -7,9 +7,6 @@ an object and all sub-objects associated with it.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `groups`_
-            - `payload`_
-            - `traverse`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\Valid`
 ==========  ===================================================================
 
@@ -87,6 +84,40 @@ stores an ``Address`` instance in the ``$address`` property::
             protected $address;
         }
 
+    .. code-block:: php-attributes
+
+        // src/Entity/Address.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Address
+        {
+            #[Assert\NotBlank]
+            protected $street;
+
+            #[Assert\NotBlank]
+            #[Assert\Length(max: 5)]
+            protected $zipCode;
+        }
+
+        // src/Entity/Author.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Author
+        {
+            #[Assert\NotBlank]
+            #[Assert\Length(min: 4)]
+            protected $firstName;
+
+            #[Assert\NotBlank]
+            protected $lastName;
+
+            protected $address;
+        }
+
     .. code-block:: yaml
 
         # config/validator/validation.yaml
@@ -155,7 +186,7 @@ stores an ``Address`` instance in the ``$address`` property::
             {
                 $metadata->addPropertyConstraint('street', new Assert\NotBlank());
                 $metadata->addPropertyConstraint('zipCode', new Assert\NotBlank());
-                $metadata->addPropertyConstraint('zipCode', new Assert\Length(["max" => 5]));
+                $metadata->addPropertyConstraint('zipCode', new Assert\Length(['max' => 5]));
             }
         }
 
@@ -170,7 +201,7 @@ stores an ``Address`` instance in the ``$address`` property::
             public static function loadValidatorMetadata(ClassMetadata $metadata)
             {
                 $metadata->addPropertyConstraint('firstName', new Assert\NotBlank());
-                $metadata->addPropertyConstraint('firstName', new Assert\Length(["min" => 4]));
+                $metadata->addPropertyConstraint('firstName', new Assert\Length(['min' => 4]));
                 $metadata->addPropertyConstraint('lastName', new Assert\NotBlank());
             }
         }
@@ -193,6 +224,19 @@ an invalid address. To prevent that, add the ``Valid`` constraint to the
             /**
              * @Assert\Valid
              */
+            protected $address;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Author.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Author
+        {
+            #[Assert\Valid]
             protected $address;
         }
 
@@ -243,6 +287,11 @@ the validation of the ``Address`` fields failed.
     App\Entity\Author.address.zipCode:
         This value is too long. It should have 5 characters or less.
 
+.. tip::
+
+    If you also want to validate that the ``address`` property is an instance of
+    the ``App\Entity\Address`` class, add the :doc:`Type constraint </reference/constraints/Type>`.
+
 Options
 -------
 
@@ -250,11 +299,11 @@ Options
 
 .. include:: /reference/constraints/_payload-option.rst.inc
 
-traverse
-~~~~~~~~
+``traverse``
+~~~~~~~~~~~~
 
 **type**: ``boolean`` **default**: ``true``
 
-If this constraint is applied to a ``Traversable``, then all containing values
+If this constraint is applied to a ``\Traversable``, then all containing values
 will be validated if this option is set to ``true``. This option is ignored on
 arrays: Arrays are traversed in either case. Keys are not validated.

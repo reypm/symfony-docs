@@ -7,9 +7,6 @@ constraint.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `groups`_
-            - `message`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\NotNull`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\NotNullValidator`
 ==========  ===================================================================
@@ -34,6 +31,19 @@ class were not strictly equal to ``null``, you would:
             /**
              * @Assert\NotNull
              */
+            protected $firstName;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Author.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Author
+        {
+            #[Assert\NotNull]
             protected $firstName;
         }
 
@@ -81,8 +91,8 @@ Options
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This value should not be null.``
 
@@ -94,6 +104,11 @@ You can use the following parameters in this message:
 Parameter        Description
 ===============  ==============================================================
 ``{{ value }}``  The current (invalid) value
+``{{ label }}``  Corresponding form field label
 ===============  ==============================================================
+
+.. versionadded:: 5.2
+
+    The ``{{ label }}`` parameter was introduced in Symfony 5.2.
 
 .. include:: /reference/constraints/_payload-option.rst.inc

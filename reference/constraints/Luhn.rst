@@ -7,9 +7,6 @@ card: before communicating with a payment gateway.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `groups`_
-            - `message`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\Luhn`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\LuhnValidator`
 ==========  ===================================================================
@@ -34,6 +31,19 @@ will contain a credit card number.
             /**
              * @Assert\Luhn(message="Please check your credit card number.")
              */
+            protected $cardNumber;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Transaction.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Transaction
+        {
+            #[Assert\Luhn(message: 'Please check your credit card number.')]
             protected $cardNumber;
         }
 
@@ -83,13 +93,13 @@ will contain a credit card number.
 
 .. include:: /reference/constraints/_empty-values-are-valid.rst.inc
 
-Available Options
------------------
+Options
+-------
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``Invalid card number.``
 
@@ -101,7 +111,12 @@ You can use the following parameters in this message:
 Parameter        Description
 ===============  ==============================================================
 ``{{ value }}``  The current (invalid) value
+``{{ label }}``  Corresponding form field label
 ===============  ==============================================================
+
+.. versionadded:: 5.2
+
+    The ``{{ label }}`` parameter was introduced in Symfony 5.2.
 
 .. include:: /reference/constraints/_payload-option.rst.inc
 

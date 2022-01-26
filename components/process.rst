@@ -51,7 +51,7 @@ the contents of the output and
 the contents of the error output.
 
 You can also use the :class:`Symfony\\Component\\Process\\Process` class with the
-foreach construct to get the output while it is generated. By default, the loop waits
+for each construct to get the output while it is generated. By default, the loop waits
 for new output before going to the next iteration::
 
     $process = new Process(['ls', '-lsa']);
@@ -102,12 +102,27 @@ with a non-zero code)::
     :method:`Symfony\\Component\\Process\\Process::getLastOutputTime` method.
     This method returns ``null`` if the process wasn't started!
 
+Configuring Process Options
+---------------------------
+
+.. versionadded:: 5.2
+
+    The feature to configure process options was introduced in Symfony 5.2.
+
+Symfony uses the PHP :phpfunction:`proc_open` function to run the processes.
+You can configure the options passed to the ``other_options`` argument of
+``proc_open()`` using the ``setOptions()`` method::
+
+    $process = new Process(['...', '...', '...']);
+    // this option allows a subprocess to continue running after the main script exited
+    $process->setOptions(['create_new_console' => true]);
+
 Using Features From the OS Shell
 --------------------------------
 
-Using array of arguments is the recommended way to define commands. This
+Using an array of arguments is the recommended way to define commands. This
 saves you from any escaping and allows sending signals seamlessly
-(e.g. to stop processes before completion)::
+(e.g. to stop processes while they run)::
 
     $process = new Process(['/path/command', '--option', 'argument', 'etc.']);
     $process = new Process(['/path/to/php', '--define', 'memory_limit=1024M', '/path/to/script.php']);
@@ -134,6 +149,17 @@ environment variables using the second argument of the ``run()``,
     // On both Unix-like and Windows
     $process->run(null, ['MESSAGE' => 'Something to output']);
 
+If you prefer to create portable commands that are independent from the
+operating system, you can write the above command as follows::
+
+    // works the same on Windows , Linux and macOS
+    $process = Process::fromShellCommandline('echo "${:MESSAGE}"');
+
+Portable commands require using a syntax that is specific to the component: when
+enclosing a variable name into ``"${:`` and ``}"`` exactly, the process object
+will replace it with its escaped value, or will fail if the variable is not
+found in the list of environment variables attached to the command.
+
 Setting Environment Variables for Processes
 -------------------------------------------
 
@@ -158,7 +184,7 @@ env vars you want to remove::
 Getting real-time Process Output
 --------------------------------
 
-When executing a long running command (like rsync-ing files to a remote
+When executing a long running command (like ``rsync`` to a remote
 server), you can give feedback to the end user in real-time by passing an
 anonymous function to the
 :method:`Symfony\\Component\\Process\\Process::run` method::
@@ -275,7 +301,7 @@ Streaming to the Standard Input of a Process
 Before a process is started, you can specify its standard input using either the
 :method:`Symfony\\Component\\Process\\Process::setInput` method or the 4th argument
 of the constructor. The provided input can be a string, a stream resource or a
-Traversable object::
+``Traversable`` object::
 
     $process = new Process(['cat']);
     $process->setInput('foobar');
@@ -305,7 +331,7 @@ provides the :class:`Symfony\\Component\\Process\\InputStream` class::
     echo $process->getOutput();
 
 The :method:`Symfony\\Component\\Process\\InputStream::write` method accepts scalars,
-stream resources or Traversable objects as argument. As shown in the above example,
+stream resources or ``Traversable`` objects as arguments. As shown in the above example,
 you need to explicitly call the :method:`Symfony\\Component\\Process\\InputStream::close`
 method when you are done writing to the standard input of the subprocess.
 
@@ -332,6 +358,35 @@ The input of a process can also be defined using `PHP streams`_::
     // will echo: 'foobar'
     echo $process->getOutput();
 
+Using TTY and PTY Modes
+-----------------------
+
+All examples above show that your program has control over the input of a
+process (using ``setInput()``) and the output from that process (using
+``getOutput()``). The Process component has two special modes that tweak
+the relationship between your program and the process: teletype (tty) and
+pseudo-teletype (pty).
+
+In TTY mode, you connect the input and output of the process to the input
+and output of your program. This allows for instance to open an editor like
+Vim or Nano as a process. You enable TTY mode by calling
+:method:`Symfony\\Component\\Process\\Process::setTty`::
+
+    $process = new Process(['vim']);
+    $process->setTty(true);
+    $process->run();
+
+    // As the output is connected to the terminal, it is no longer possible
+    // to read or modify the output from the process!
+    dump($process->getOutput()); // null
+
+In PTY mode, your program behaves as a terminal for the process instead of
+a plain input and output. Some programs behave differently when
+interacting with a real terminal instead of another program. For instance,
+some programs prompt for a password when talking with a terminal. Use
+:method:`Symfony\\Component\\Process\\Process::setPty` to enable this
+mode.
+
 Stopping a Process
 ------------------
 
@@ -339,7 +394,7 @@ Any asynchronous process can be stopped at any time with the
 :method:`Symfony\\Component\\Process\\Process::stop` method. This method takes
 two arguments: a timeout and a signal. Once the timeout is reached, the signal
 is sent to the running process. The default signal sent to a process is ``SIGKILL``.
-Please read the :ref:`signal documentation below<reference-process-signal>`
+Please read the :ref:`signal documentation below <reference-process-signal>`
 to find out more about signal handling in the Process component::
 
     $process = new Process(['ls', '-lsa']);
@@ -362,23 +417,6 @@ instead::
     EOF
     );
     $process->run();
-
-Using a Prepared Command Line
------------------------------
-
-You can run the process by using a a prepared command line using the
-double bracket notation. You can use a placeholder in order to have a
-process that can only be changed with the values and without changing
-the PHP code::
-
-    use Symfony\Component\Process\Process;
-
-    $process = Process::fromShellCommandline('echo "$name"');
-    $process->run(null, ['name' => 'Elsa']);
-
-.. caution::
-
-    A prepared command line will not be escaped automatically!
 
 Process Timeout
 ---------------
@@ -409,6 +447,14 @@ check regularly::
 
         usleep(200000);
     }
+
+.. tip::
+
+    You can get the process start time using the ``getStartTime()`` method.
+
+    .. versionadded:: 5.1
+
+        The ``getStartTime()`` method was introduced in Symfony 5.1.
 
 .. _reference-process-signal:
 
@@ -480,10 +526,31 @@ Use :method:`Symfony\\Component\\Process\\Process::disableOutput` and
     However, it is possible to pass a callback to the ``start``, ``run`` or ``mustRun``
     methods to handle process output in a streaming fashion.
 
+Finding an Executable
+---------------------
+
+The Process component provides a utility class called
+:class:`Symfony\\Component\\Process\\ExecutableFinder` which finds
+and returns the absolute path of an executable::
+
+    use Symfony\Component\Process\ExecutableFinder;
+
+    $executableFinder = new ExecutableFinder();
+    $chromedriverPath = $executableFinder->find('chromedriver');
+    // $chromedriverPath = '/usr/local/bin/chromedriver' (the result will be different on your computer)
+
+The :method:`Symfony\\Component\\Process\\ExecutableFinder::find` method also takes extra parameters to specify a default value
+to return and extra directories where to look for the executable::
+
+    use Symfony\Component\Process\ExecutableFinder;
+
+    $executableFinder = new ExecutableFinder();
+    $chromedriverPath = $executableFinder->find('chromedriver', '/path/to/chromedriver', ['local-bin/']);
+
 Finding the Executable PHP Binary
 ---------------------------------
 
-This component also provides a utility class called
+This component also provides a special utility class called
 :class:`Symfony\\Component\\Process\\PhpExecutableFinder` which returns the
 absolute path of the executable PHP binary available on your server::
 

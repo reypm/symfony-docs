@@ -8,11 +8,11 @@ The :doc:`Console component documentation </components/console>` covers how to
 create a console command. This article covers how to use a console command
 directly from your controller.
 
-You may have the need to execute some function that is only available in a
-console command. Usually, you should refactor the command and move some logic
-into a service that can be reused in the controller. However, when the command
-is part of a third-party library, you wouldn't want to modify or duplicate
-their code. Instead, you can execute the command directly.
+You may have the need to call some function that is only available in a console
+command. Usually, you should refactor the command and move some logic into a
+service that can be reused in the controller. However, when the command is part
+of a third-party library, you don't want to modify or duplicate their code.
+Instead, you can run the command directly from the controller.
 
 .. caution::
 
@@ -20,11 +20,9 @@ their code. Instead, you can execute the command directly.
     a controller has a slight performance impact because of the request stack
     overhead.
 
-Imagine you want to send spooled Swift Mailer messages by
-:doc:`using the swiftmailer:spool:send command </email>`.
-Run this command from inside your controller via::
+Imagine you want to run the ``debug:twig`` from inside your controller::
 
-    // src/Controller/SpoolController.php
+    // src/Controller/DebugTwigController.php
     namespace App\Controller;
 
     use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -34,19 +32,19 @@ Run this command from inside your controller via::
     use Symfony\Component\HttpFoundation\Response;
     use Symfony\Component\HttpKernel\KernelInterface;
 
-    class SpoolController extends AbstractController
+    class DebugTwigController extends AbstractController
     {
-        public function sendSpool($messages = 10, KernelInterface $kernel)
+        public function debugTwig(KernelInterface $kernel): Response
         {
             $application = new Application($kernel);
             $application->setAutoExit(false);
 
             $input = new ArrayInput([
-                'command' => 'swiftmailer:spool:send',
+                'command' => 'debug:twig',
                 // (optional) define the value of command arguments
                 'fooArgument' => 'barValue',
                 // (optional) pass options to the command
-                '--message-limit' => $messages,
+                '--bar' => 'fooValue',
             ]);
 
             // You can use NullOutput() if you don't need the output
@@ -76,7 +74,7 @@ First, require the package:
 
 Now, use it in your controller::
 
-    // src/Controller/SpoolController.php
+    // src/Controller/DebugTwigController.php
     namespace App\Controller;
 
     use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
@@ -85,9 +83,9 @@ Now, use it in your controller::
     use Symfony\Component\HttpFoundation\Response;
     // ...
 
-    class SpoolController extends AbstractController
+    class DebugTwigController extends AbstractController
     {
-        public function sendSpool($messages = 10)
+        public function sendSpool(int $messages = 10): Response
         {
             // ...
             $output = new BufferedOutput(

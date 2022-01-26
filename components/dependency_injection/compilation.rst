@@ -78,7 +78,7 @@ A very simple extension may just load configuration files into the container::
 
 This does not gain very much compared to loading the file directly into
 the overall container being built. It just allows the files to be split
-up amongst the modules/bundles. Being able to affect the configuration
+up among the modules/bundles. Being able to affect the configuration
 of a module from configuration files outside of the module/bundle is needed
 to make a complex application configurable. This can be done by specifying
 sections of config files loaded directly into the container as being for
@@ -197,7 +197,7 @@ The XML version of the config would then look like this:
 
 .. code-block:: xml
 
-    <?xml version="1.0" ?>
+    <?xml version="1.0" encoding="UTF-8" ?>
     <container xmlns="http://symfony.com/schema/dic/services"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:acme_demo="http://www.example.com/symfony/schema/"
@@ -341,7 +341,7 @@ methods described in :doc:`/service_container/definitions`.
 .. note::
 
     Please note that the ``process()`` method in the extension class is
-    called during the optimization step. You can read
+    called during the ``PassConfig::TYPE_BEFORE_OPTIMIZATION`` step. You can read
     :ref:`the next section <components-di-separate-compiler-passes>` if you
     need to edit the container during another step.
 
@@ -358,8 +358,8 @@ methods described in :doc:`/service_container/definitions`.
     method call if some required service is not available.
 
 A common use-case of compiler passes is to search for all service definitions
-that have a certain tag in order to process dynamically plug each into some
-other service. See the section on :ref:`service tags <service-container-compiler-pass-tags>`
+that have a certain tag, in order to dynamically plug each one into other services.
+See the section on :ref:`service tags <service-container-compiler-pass-tags>`
 for an example.
 
 .. _components-di-separate-compiler-passes:
@@ -564,8 +564,8 @@ Now the cached dumped container is used regardless of whether debug mode
 is on or not. The difference is that the ``ConfigCache`` is set to debug
 mode with its second constructor argument. When the cache is not in debug
 mode the cached container will always be used if it exists. In debug mode,
-an additional metadata file is written with the timestamps of all the resource
-files. These are then checked to see if the files have changed, if they
+an additional metadata file is written with all the involved resource
+files. These are then checked to see if their timestamps have changed, if they
 have the cache will be considered stale.
 
 .. note::

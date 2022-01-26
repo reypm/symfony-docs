@@ -8,7 +8,7 @@ such as HTML and PDF.
 reStructuredText
 ----------------
 
-reStructuredText is a plaintext markup syntax similar to Markdown, but much
+reStructuredText is a plain text markup syntax similar to Markdown, but much
 stricter with its syntax. If you are new to reStructuredText, take some time to
 familiarize with this format by reading the existing `Symfony documentation`_
 source code.
@@ -29,7 +29,7 @@ Sphinx
 
 Sphinx_ is a build system that provides tools to create documentation from
 reStructuredText documents. As such, it adds new directives and interpreted text
-roles to the standard reST markup. Read more about the `Sphinx Markup Constructs`_.
+roles to the standard reStructuredText markup. Read more about the `Sphinx Markup Constructs`_.
 
 Syntax Highlighting
 ~~~~~~~~~~~~~~~~~~~
@@ -74,7 +74,7 @@ directive to show the configuration in all supported configuration formats
 
             // Configuration in PHP
 
-The previous reST snippet renders as follow:
+The previous reStructuredText snippet renders as follow:
 
 .. configuration-block::
 
@@ -104,6 +104,7 @@ Markup Format        Use It to Display
 ``html+php``         PHP code blended with HTML
 ``ini``              INI
 ``php-annotations``  PHP Annotations
+``php-attributes``   PHP Attributes
 ===================  ======================================
 
 Adding Links
@@ -207,10 +208,10 @@ versions that have a lower major version will be removed. For example, if
 Symfony 6.0 were released today, 5.0 to 5.4 ``versionadded`` and ``deprecated``
 tags would be removed from the new ``6.0`` branch.
 
-.. _reStructuredText: http://docutils.sourceforge.net/rst.html
+.. _reStructuredText: https://docutils.sourceforge.io/rst.html
 .. _Sphinx: https://www.sphinx-doc.org/
 .. _`Symfony documentation`: https://github.com/symfony/symfony-docs
 .. _`reStructuredText Primer`: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
-.. _`reStructuredText Reference`: http://docutils.sourceforge.net/docs/user/rst/quickref.html
+.. _`reStructuredText Reference`: https://docutils.sourceforge.io/docs/user/rst/quickref.html
 .. _`Sphinx Markup Constructs`: https://www.sphinx-doc.org/en/1.7/markup/index.html
-.. _`supported languages`: http://pygments.org/languages/
+.. _`supported languages`: https://pygments.org/languages/

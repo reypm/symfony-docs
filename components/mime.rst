@@ -34,7 +34,7 @@ complexity to provide two ways of creating MIME messages:
 * A high-level API based on the :class:`Symfony\\Component\\Mime\\Email` class
   to quickly create email messages with all the common features;
 * A low-level API based on the :class:`Symfony\\Component\\Mime\\Message` class
-  to have an absolute control over every single part of the email message.
+  to have absolute control over every single part of the email message.
 
 Usage
 -----
@@ -56,12 +56,8 @@ methods to compose the entire email message::
         ->html('<h1>Lorem ipsum</h1> <p>...</p>')
     ;
 
-This only purpose of this component is to create the email messages. Use the
-:doc:`Mailer component </components/mailer>` to actually send them. In Symfony
-applications, it's easier to use the :doc:`Mailer integration </mailer>`.
-
-Most of the details about how to create Email objects, including Twig integration,
-can be found in the :doc:`Mailer documentation </mailer>`.
+The only purpose of this component is to create the email messages. Use the
+:doc:`Mailer component </mailer>` to actually send them.
 
 Twig Integration
 ----------------
@@ -103,12 +99,12 @@ extension:
 
 .. code-block:: terminal
 
-    $ composer require twig/cssinliner-extension
+    $ composer require twig/cssinliner-extra
 
 Now, enable the extension::
 
     // ...
-    use Twig\CssInliner\CssInlinerExtension;
+    use Twig\Extra\CssInliner\CssInlinerExtension;
 
     $loader = new FilesystemLoader(__DIR__.'/templates');
     $twig = new Environment($loader);
@@ -166,7 +162,7 @@ different parts of the email by hand::
     ;
 
     $textContent = new TextPart('Lorem ipsum...');
-    $htmlContent = new TextPart('<h1>Lorem ipsum</h1> <p>...</p>', 'html');
+    $htmlContent = new TextPart('<h1>Lorem ipsum</h1> <p>...</p>', null, 'html');
     $body = new AlternativePart($textContent, $htmlContent);
 
     $email = new Message($headers, $body);
@@ -188,7 +184,7 @@ email multiparts::
     $textContent = new TextPart('Lorem ipsum...');
     $htmlContent = new TextPart(sprintf(
         '<img src="cid:%s"/> <h1>Lorem ipsum</h1> <p>...</p>', $imageCid
-    ), 'html');
+    ), null, 'html');
     $bodyContent = new AlternativePart($textContent, $htmlContent);
     $body = new RelatedPart($bodyContent, $embeddedImage);
 
@@ -242,10 +238,10 @@ MIME types and file name extensions::
     $exts = $mimeTypes->getExtensions('image/jpeg');
     // $exts = ['jpeg', 'jpg', 'jpe']
 
-    $mimeTypes = $mimeTypes->getMimeTypes('js');
-    // $mimeTypes = ['application/javascript', 'application/x-javascript', 'text/javascript']
-    $mimeTypes = $mimeTypes->getMimeTypes('apk');
-    // $mimeTypes = ['application/vnd.android.package-archive']
+    $types = $mimeTypes->getMimeTypes('js');
+    // $types = ['application/javascript', 'application/x-javascript', 'text/javascript']
+    $types = $mimeTypes->getMimeTypes('apk');
+    // $types = ['application/vnd.android.package-archive']
 
 These methods return arrays with one or more elements. The element position
 indicates its priority, so the first returned extension is the preferred one.
@@ -272,7 +268,7 @@ that extension to improve the guessing performance.
 Adding a MIME Type Guesser
 ..........................
 
-You can register your own MIME type guesser by creating a class that implements
+You can add your own MIME type guesser by creating a class that implements
 :class:`Symfony\\Component\\Mime\\MimeTypeGuesserInterface`::
 
     namespace App;
@@ -296,6 +292,12 @@ You can register your own MIME type guesser by creating a class that implements
         }
     }
 
+MIME type guessers must be :ref:`registered as services <service-container-creating-service>`
+and :doc:`tagged </service_container/tags>` with the ``mime.mime_type_guesser`` tag.
+If you're using the
+:ref:`default services.yaml configuration <service-container-services-load-example>`,
+this is already done for you, thanks to :ref:`autoconfiguration <services-autoconfigure>`.
+
 .. _`MIME`: https://en.wikipedia.org/wiki/MIME
 .. _`MIME types`: https://en.wikipedia.org/wiki/Media_type
-.. _`fileinfo extension`: https://php.net/fileinfo
+.. _`fileinfo extension`: https://www.php.net/fileinfo

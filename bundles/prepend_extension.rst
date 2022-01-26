@@ -8,7 +8,7 @@ How to Simplify Configuration of Multiple Bundles
 When building reusable and extensible applications, developers are often
 faced with a choice: either create a single large bundle or multiple smaller
 bundles. Creating a single bundle has the drawback that it's impossible for
-users to choose to remove functionality they are not using. Creating multiple
+users to remove unused functionality. Creating multiple
 bundles has the drawback that configuration becomes more tedious and settings
 often need to be repeated for various bundles.
 
@@ -82,6 +82,11 @@ in case a specific other bundle is not registered::
 
         // process the configuration of AcmeHelloExtension
         $configs = $container->getExtensionConfig($this->getAlias());
+
+        // resolve config parameters e.g. %kernel.debug% to its boolean value
+        $resolvingBag = $container->getParameterBag();
+        $configs = $resolvingBag->resolveValue($configs);
+        
         // use the Configuration class to generate a config array with
         // the settings "acme_hello"
         $config = $this->processConfiguration(new Configuration(), $configs);
@@ -122,9 +127,14 @@ registered and the ``entity_manager_name`` setting for ``acme_hello`` is set to
             xmlns:acme-something="http://example.org/schema/dic/acme_something"
             xmlns:acme-other="http://example.org/schema/dic/acme_other"
             xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd">
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://example.org/schema/dic/acme_something
+                https://example.org/schema/dic/acme_something/acme_something-1.0.xsd
+                http://example.org/schema/dic/acme_other
+                https://example.org/schema/dic/acme_something/acme_other-1.0.xsd">
 
             <acme-something:config use-acme-goodbye="false">
+                <!-- ... -->
                 <acme-something:entity-manager-name>non_default</acme-something:entity-manager-name>
             </acme-something:config>
 

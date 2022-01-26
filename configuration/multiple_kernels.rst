@@ -16,8 +16,8 @@ request to generate the response.
 
 This single kernel approach is a convenient default, but Symfony applications
 can define any number of kernels. Whereas
-:ref:`environments <configuration-environments>` execute the same application
-with different configurations, kernels can execute different parts of the same
+:ref:`environments <configuration-environments>` run the same application with
+different configurations, kernels can run different parts of the same
 application.
 
 These are some of the common use cases for creating multiple kernels:
@@ -77,44 +77,67 @@ Now you need to define the ``ApiKernel`` class used by the new front controller.
 The easiest way to do this is by duplicating the existing  ``src/Kernel.php``
 file and make the needed changes.
 
-In this example, the ``ApiKernel`` will load less bundles than the default
+In this example, the ``ApiKernel`` will load fewer bundles than the default
 Kernel. Be sure to also change the location of the cache, logs and configuration
 files so they don't collide with the files from ``src/Kernel.php``::
 
     // src/ApiKernel.php
-    use Symfony\Component\Config\Loader\LoaderInterface;
-    use Symfony\Component\DependencyInjection\ContainerBuilder;
-    use Symfony\Component\HttpKernel\Kernel;
+    use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+    use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+    use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+    use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
     class ApiKernel extends Kernel
     {
-        // ...
+        use MicroKernelTrait;
 
-        public function registerBundles()
+        public function getProjectDir(): string
         {
-            // load only the bundles strictly needed for the API...
+            return \dirname(__DIR__);
         }
 
-        public function getCacheDir()
+        public function getCacheDir(): string
         {
-            return dirname(__DIR__).'/var/cache/api/'.$this->getEnvironment();
+            return $this->getProjectDir().'/var/cache/api/'.$this->environment;
         }
 
-        public function getLogDir()
+        public function getLogDir(): string
         {
-            return dirname(__DIR__).'/var/log/api';
+            return $this->getProjectDir().'/var/log/api';
         }
 
-        public function configureContainer(ContainerBuilder $container, LoaderInterface $loader)
+        protected function configureContainer(ContainerConfigurator $container): void
         {
-            // load only the config files strictly needed for the API
-            $confDir = $this->getProjectDir().'/config';
-            $loader->load($confDir.'/api/*'.self::CONFIG_EXTS, 'glob');
-            if (is_dir($confDir.'/api/'.$this->environment)) {
-                $loader->load($confDir.'/api/'.$this->environment.'/**/*'.self::CONFIG_EXTS, 'glob');
+            $container->import('../config/api/{packages}/*.yaml');
+            $container->import('../config/api/{packages}/'.$this->environment.'/*.yaml');
+
+            if (is_file(\dirname(__DIR__).'/config/api/services.yaml')) {
+                $container->import('../config/api/services.yaml');
+                $container->import('../config/api/{services}_'.$this->environment.'.yaml');
+            } else {
+                $container->import('../config/api/{services}.php');
             }
         }
+
+        protected function configureRoutes(RoutingConfigurator $routes): void
+        {
+            $routes->import('../config/api/{routes}/'.$this->environment.'/*.yaml');
+            $routes->import('../config/api/{routes}/*.yaml');
+            // ... load only the config routes strictly needed for the API
+        }
+
+        // If you need to run some logic to decide which bundles to load,
+        // you might prefer to use the registerBundles() method instead
+        private function getBundlesPath(): string
+        {
+            // load only the bundles strictly needed for the API
+            return $this->getProjectDir().'/config/api_bundles.php';
+        }
     }
+
+.. versionadded:: 5.4
+
+    The ``getBundlesPath()`` method was introduced in Symfony 5.4.
 
 Step 3) Define the Kernel Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,7 +146,7 @@ Finally, define the configuration files that the new ``ApiKernel`` will load.
 According to the above code, this config will live in one or multiple files
 stored in ``config/api/`` and ``config/api/ENVIRONMENT_NAME/`` directories.
 
-The new configuration files can be created from scratch when you load just a few
+The new configuration files can be created from scratch when you load only a few
 bundles, because it will be small. Otherwise, duplicate the existing
 config files in ``config/packages/`` or better, import them and override the
 needed options.
@@ -133,13 +156,12 @@ Executing Commands with a Different Kernel
 
 The ``bin/console`` script used to run Symfony commands always uses the default
 ``Kernel`` class to build the application and load the commands. If you need
-to execute console commands using the new kernel, duplicate the ``bin/console``
+to run console commands using the new kernel, duplicate the ``bin/console``
 script and rename it (e.g. ``bin/api``).
 
-Then, replace the ``Kernel`` instantiation by your own kernel instantiation
-(e.g. ``ApiKernel``) and now you can execute commands using the new kernel
-(e.g. ``php bin/api cache:clear``) Now you can use execute commands using the
-new kernel.
+Then, replace the ``Kernel`` instance by your own kernel instance
+(e.g. ``ApiKernel``). Now you can run commands using the new kernel
+(e.g. ``php bin/api cache:clear``).
 
 .. note::
 

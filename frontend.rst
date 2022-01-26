@@ -7,9 +7,9 @@ Managing CSS and JavaScript
     Do you prefer video tutorials? Check out the `Webpack Encore screencast series`_.
 
 Symfony ships with a pure-JavaScript library - called Webpack Encore - that makes
-working with CSS and JavaScript a joy. You can use it, use something else, or just
-create static CSS and JS files in your ``public/`` directory and include them in your
-templates.
+it a joy to work with CSS and JavaScript. You can use it, use something else, or
+create static CSS and JS files in your ``public/`` directory directly and
+include them in your templates.
 
 .. _frontend-webpack-encore:
 
@@ -40,7 +40,7 @@ Getting Started
 ...............
 
 * :doc:`Installation </frontend/encore/installation>`
-* :doc:`First Example </frontend/encore/simple-example>`
+* :doc:`Using Webpack Encore </frontend/encore/simple-example>`
 
 Adding more Features
 ....................
@@ -61,14 +61,12 @@ Optimizing
 * :doc:`Using a CDN </frontend/encore/cdn>`
 * :doc:`/frontend/encore/code-splitting`
 * :doc:`/frontend/encore/split-chunks`
-* :doc:`Creating a "Shared" entry for re-used modules </frontend/encore/shared-entry>`
 * :doc:`/frontend/encore/url-loader`
 
 Guides
 ......
 
 * :doc:`Using Bootstrap CSS & JS </frontend/encore/bootstrap>`
-* :doc:`Creating Page-Specific CSS/JS </frontend/encore/page-specific-assets>`
 * :doc:`jQuery and Legacy Applications </frontend/encore/legacy-applications>`
 * :doc:`Passing Information from Twig to JavaScript </frontend/encore/server-data>`
 * :doc:`webpack-dev-server and Hot Module Replacement (HMR) </frontend/encore/dev-server>`
@@ -80,12 +78,11 @@ Issues & Questions
 ..................
 
 * :doc:`FAQ & Common Issues </frontend/encore/faq>`
-* :doc:`/frontend/encore/versus-assetic`
 
 Full API
 ........
 
-* `Full API`_: https://github.com/symfony/webpack-encore/blob/master/index.js
+* `Full API`_
 
 Other Front-End Articles
 ------------------------

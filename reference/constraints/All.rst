@@ -6,9 +6,6 @@ you to apply a collection of constraints to each element of the array.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `constraints`_
-            - `groups`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\All`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\AllValidator`
 ==========  ===================================================================
@@ -36,6 +33,23 @@ entry in that array:
              *     @Assert\Length(min=5)
              * })
              */
+            protected $favoriteColors = [];
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/User.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        // IMPORTANT: nested attributes requires PHP 8.1 or higher
+        class User
+        {
+            #[Assert\All([
+                new Assert\NotBlank,
+                new Assert\Length(min: 5),
+            ])]
             protected $favoriteColors = [];
         }
 
@@ -93,14 +107,19 @@ entry in that array:
             }
         }
 
+.. versionadded:: 5.4
+
+    The ``#[All]`` PHP attribute was introduced in Symfony 5.4 and requires
+    PHP 8.1 (which added nested attribute support).
+
 Now, each entry in the ``favoriteColors`` array will be validated to not
 be blank and to be at least 5 characters long.
 
 Options
 -------
 
-constraints
-~~~~~~~~~~~
+``constraints``
+~~~~~~~~~~~~~~~
 
 **type**: ``array`` [:ref:`default option <validation-default-option>`]
 

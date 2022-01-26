@@ -52,7 +52,7 @@ random) number and prints it. To do that, create a "Controller" class and a
 
     class LuckyController
     {
-        public function number()
+        public function number(): Response
         {
             $number = random_int(0, 100);
 
@@ -63,7 +63,7 @@ random) number and prints it. To do that, create a "Controller" class and a
     }
 
 Now you need to associate this controller function with a public URL (e.g. ``/lucky/number``)
-so that the ``number()`` method is executed when a user browses to it. This association
+so that the ``number()`` method is called when a user browses to it. This association
 is defined by creating a **route** in the ``config/routes.yaml`` file:
 
 .. code-block:: yaml
@@ -75,21 +75,19 @@ is defined by creating a **route** in the ``config/routes.yaml`` file:
         path: /lucky/number
         controller: App\Controller\LuckyController::number
 
-That's it! If you are using Symfony web server, try it out by going to:
-
-    http://localhost:8000/lucky/number
+That's it! If you are using Symfony web server, try it out by going to: http://localhost:8000/lucky/number
 
 If you see a lucky number being printed back to you, congratulations! But before
 you run off to play the lottery, check out how this works. Remember the two steps
-to creating a page?
+to create a page?
+
+#. *Create a controller and a method*: This is a function where *you* build the page and ultimately
+   return a ``Response`` object. You'll learn more about :doc:`controllers </controller>`
+   in their own section, including how to return JSON responses;
 
 #. *Create a route*: In ``config/routes.yaml``, the route defines the URL to your
-    page (``path``) and what ``controller`` to call. You'll learn more about :doc:`routing </routing>`
-    in its own section, including how to make *variable* URLs;
-
-#. *Create a controller*: This is a function where *you* build the page and ultimately
-   return a ``Response`` object. You'll learn more about :doc:`controllers </controller>`
-   in their own section, including how to return JSON responses.
+   page (``path``) and what ``controller`` to call. You'll learn more about :doc:`routing </routing>`
+   in its own section, including how to make *variable* URLs.
 
 .. _annotation-routes:
 
@@ -97,7 +95,8 @@ Annotation Routes
 -----------------
 
 Instead of defining your route in YAML, Symfony also allows you to use *annotation*
-routes. To do this, install the annotations package:
+or *attribute* routes. Attributes are built-in in PHP starting from PHP 8. In earlier
+PHP versions you can use annotations. To do this, install the annotations package:
 
 .. code-block:: terminal
 
@@ -105,26 +104,44 @@ routes. To do this, install the annotations package:
 
 You can now add your route directly *above* the controller:
 
-.. code-block:: diff
+.. configuration-block::
 
-    // src/Controller/LuckyController.php
+    .. code-block:: php-annotations
 
-    // ...
-    + use Symfony\Component\Routing\Annotation\Route;
+        // src/Controller/LuckyController.php
 
-    class LuckyController
-    {
-    +     /**
-    +      * @Route("/lucky/number")
-    +      */
-        public function number()
+        // ...
+        + use Symfony\Component\Routing\Annotation\Route;
+
+        class LuckyController
         {
-            // this looks exactly the same
+        +   /**
+        +    * @Route("/lucky/number")
+        +    */
+            public function number(): Response
+            {
+                // this looks exactly the same
+            }
         }
-    }
 
-That's it! The page - ``http://localhost:8000/lucky/number`` will work exactly
-like before! Annotations are the recommended way to configure routes.
+    .. code-block:: php-attributes
+
+        // src/Controller/LuckyController.php
+
+        // ...
+        + use Symfony\Component\Routing\Annotation\Route;
+
+        class LuckyController
+        {
+        +   #[Route('/lucky/number')]
+            public function number(): Response
+            {
+                // this looks exactly the same
+            }
+        }
+
+That's it! The page - http://localhost:8000/lucky/number will work exactly
+like before! Annotations/attributes are the recommended way to configure routes.
 
 .. _flex-quick-intro:
 
@@ -138,11 +155,11 @@ special things happened, both thanks to a powerful Composer plugin called
 First, ``annotations`` isn't a real package name: it's an *alias* (i.e. shortcut)
 that Flex resolves to ``sensio/framework-extra-bundle``.
 
-Second, after this package was downloaded, Flex executed a *recipe*, which is a
+Second, after this package was downloaded, Flex runs a *recipe*, which is a
 set of automated instructions that tell Symfony how to integrate an external
 package. `Flex recipes`_ exist for many packages and have the ability
 to do a lot, like adding configuration files, creating directories, updating ``.gitignore``
-and adding new config to your ``.env`` file. Flex *automates* the installation of
+and adding a new config to your ``.env`` file. Flex *automates* the installation of
 packages so you can get back to coding.
 
 The bin/console Command
@@ -165,67 +182,78 @@ To get a list of *all* of the routes in your system, use the ``debug:router`` co
 
     $ php bin/console debug:router
 
-You should see your ``app_lucky_number`` route at the very top:
+You should see your ``app_lucky_number`` route in the list:
 
 ================== ======== ======== ====== ===============
- Name               Method   Scheme   Host   Path
+Name               Method   Scheme   Host   Path
 ================== ======== ======== ====== ===============
- app_lucky_number   ANY      ANY      ANY    /lucky/number
+app_lucky_number   ANY      ANY      ANY    /lucky/number
 ================== ======== ======== ====== ===============
 
-You will also see debugging routes below ``app_lucky_number`` -- more on
+You will also see debugging routes besides ``app_lucky_number`` -- more on
 the debugging routes in the next section.
 
 You'll learn about many more commands as you continue!
 
+.. _web-debug-toolbar:
+
 The Web Debug Toolbar: Debugging Dream
 --------------------------------------
 
-One of Symfony's *killer* features is the Web Debug Toolbar: a bar that displays
+One of Symfony's *amazing* features is the Web Debug Toolbar: a bar that displays
 a *huge* amount of debugging information along the bottom of your page while
 developing. This is all included out of the box using a :ref:`Symfony pack <symfony-packs>`
 called ``symfony/profiler-pack``.
 
-You will see a black bar along the bottom of the page. You'll learn more about all the information it holds
-along the way, but feel free to experiment: hover over and click
-the different icons to get information about routing, performance, logging and more.
+You will see a dark bar along the bottom of the page. You'll learn more about
+all the information it holds along the way, but feel free to experiment: hover
+over and click the different icons to get information about routing,
+performance, logging and more.
 
 Rendering a Template
 --------------------
 
 If you're returning HTML from your controller, you'll probably want to render
 a template. Fortunately, Symfony comes with `Twig`_: a templating language that's
-easy, powerful and actually quite fun.
+minimal, powerful and actually quite fun.
+
+Install the twig package with:
+
+.. code-block:: terminal
+
+    $ composer require twig
 
 Make sure that ``LuckyController`` extends Symfony's base
 :class:`Symfony\\Bundle\\FrameworkBundle\\Controller\\AbstractController` class:
 
 .. code-block:: diff
 
-    // src/Controller/LuckyController.php
+      // src/Controller/LuckyController.php
 
-    // ...
+      // ...
     + use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
     - class LuckyController
     + class LuckyController extends AbstractController
-    {
-        // ...
-    }
+      {
+          // ...
+      }
 
-Now, use the handy ``render()`` function to render a template. Pass it a ``number``
+Now, use the handy ``render()`` method to render a template. Pass it a ``number``
 variable so you can use it in Twig::
 
     // src/Controller/LuckyController.php
     namespace App\Controller;
 
+    use Symfony\Component\HttpFoundation\Response;
     // ...
+
     class LuckyController extends AbstractController
     {
         /**
          * @Route("/lucky/number")
          */
-        public function number()
+        public function number(): Response
         {
             $number = random_int(0, 100);
 
@@ -302,7 +330,7 @@ What's Next?
 Congrats! You're already starting to master Symfony and learn a whole new
 way of building beautiful, functional, fast and maintainable applications.
 
-Ok, time to finish mastering the fundamentals by reading these articles:
+OK, time to finish mastering the fundamentals by reading these articles:
 
 * :doc:`/routing`
 * :doc:`/controller`

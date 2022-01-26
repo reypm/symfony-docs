@@ -74,6 +74,10 @@ distinguished name (DN) and the password of a user::
 
     $ldap->bind($dn, $password);
 
+.. caution::
+
+    When the LDAP server allows unauthenticated binds, a blank password will always be valid.
+
 Once bound (or if you enabled anonymous authentication on your
 LDAP server), you may query the LDAP server using the
 :method:`Symfony\\Component\\Ldap\\Ldap::query` method::
@@ -111,6 +115,10 @@ to the ``LDAP_SCOPE_BASE`` scope of :phpfunction:`ldap_read`) and ``SCOPE_ONE``
 
     $query = $ldap->query('dc=symfony,dc=com', '...', ['scope' => QueryInterface::SCOPE_ONE]);
 
+Use the ``filter`` option to only retrieve some specific attributes:
+
+    $query = $ldap->query('dc=symfony,dc=com', '...', ['filter' => ['cn', 'mail']);
+
 Creating or Updating Entries
 ----------------------------
 
@@ -135,6 +143,13 @@ delete existing ones::
     $query = $ldap->query('dc=symfony,dc=com', '(&(objectclass=person)(ou=Maintainers))');
     $result = $query->execute();
     $entry = $result[0];
+
+    $phoneNumber = $entry->getAttribute('phoneNumber');
+    $isContractor = $entry->hasAttribute('contractorCompany');
+    // attribute names in getAttribute() and hasAttribute() methods are case-sensitive
+    // pass FALSE as the second method argument to make them case-insensitive
+    $isContractor = $entry->hasAttribute('contractorCompany', false);
+
     $entry->setAttribute('email', ['fabpot@symfony.com']);
     $entryManager->update($entry);
 
@@ -144,6 +159,11 @@ delete existing ones::
 
     // Removing an existing entry
     $entryManager->remove(new Entry('cn=Test User,dc=symfony,dc=com'));
+
+.. versionadded:: 5.3
+
+    The option to make attribute names case-insensitive in ``getAttribute()``
+    and ``hasAttribute()`` was introduced in Symfony 5.3.
 
 Batch Updating
 ______________

@@ -29,19 +29,25 @@ you can "ask" for a service from the container by type-hinting an argument with 
 service's class or interface name. Want to :doc:`log </logging>` something? No problem::
 
     // src/Controller/ProductController.php
-    // ...
+    namespace App\Controller;
 
     use Psr\Log\LoggerInterface;
+    use Symfony\Component\HttpFoundation\Response;
+    use Symfony\Component\Routing\Annotation\Route;
 
-    /**
-     * @Route("/products")
-     */
-    public function list(LoggerInterface $logger)
+    class ProductController
     {
-        $logger->info('Look! I just used a service');
+        /**
+         * @Route("/products")
+         */
+        public function list(LoggerInterface $logger): Response
+        {
+            $logger->info('Look, I just used a service!');
 
-        // ...
+            // ...
+        }
     }
+
 
 What other services are available? Find out by running:
 
@@ -56,9 +62,6 @@ What other services are available? Find out by running:
 
       Request stack that controls the lifecycle of requests.
       Symfony\Component\HttpFoundation\RequestStack (request_stack)
-
-      Interface for the session.
-      Symfony\Component\HttpFoundation\Session\SessionInterface (session)
 
       RouterInterface is the interface that all Router classes must implement.
       Symfony\Component\Routing\RouterInterface (router.default)
@@ -75,7 +78,7 @@ in the container.
 .. tip::
 
     There are actually *many* more services in the container, and each service has
-    a unique id in the container, like ``session`` or ``router.default``. For a full
+    a unique id in the container, like ``request_stack`` or ``router.default``. For a full
     list, you can run ``php bin/console debug:container``. But most of the time,
     you won't need to worry about this. See :ref:`services-wire-specific-service`.
     See :doc:`/service_container/debug`.
@@ -97,7 +100,7 @@ it can't be re-used. Instead, you decide to create a new class::
 
     class MessageGenerator
     {
-        public function getHappyMessage()
+        public function getHappyMessage(): string
         {
             $messages = [
                 'You did it! You updated the system! Amazing!',
@@ -111,12 +114,18 @@ it can't be re-used. Instead, you decide to create a new class::
         }
     }
 
-Congratulations! You've just created your first service class! You can use it immediately
+Congratulations! You've created your first service class! You can use it immediately
 inside your controller::
 
+    // src/Controller/ProductController.php
     use App\Service\MessageGenerator;
+    use Symfony\Component\HttpFoundation\Response;
+    use Symfony\Component\Routing\Annotation\Route;
 
-    public function new(MessageGenerator $messageGenerator)
+    /**
+     * @Route("/products/new")
+     */
+    public function new(MessageGenerator $messageGenerator): Response
     {
         // thanks to the type-hint, the container will instantiate a
         // new MessageGenerator and pass it to you!
@@ -150,15 +159,12 @@ each time you ask for it.
                 _defaults:
                     autowire: true      # Automatically injects dependencies in your services.
                     autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
-                    public: false       # Allows optimizing the container by removing unused services; this also means
-                                        # fetching services directly from the container via $container->get() won't work.
-                                        # The best practice is to be explicit about your dependencies anyway.
 
                 # makes classes in src/ available to be used as services
                 # this creates a service per class whose id is the fully-qualified class name
                 App\:
                     resource: '../src/*'
-                    exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+                    exclude: '../src/{DependencyInjection,Entity,Tests,Kernel.php}'
 
                 # ...
 
@@ -173,9 +179,14 @@ each time you ask for it.
 
                 <services>
                     <!-- Default configuration for services in *this* file -->
-                    <defaults autowire="true" autoconfigure="true" public="false"/>
+                    <defaults autowire="true" autoconfigure="true"/>
 
-                    <prototype namespace="App\" resource="../src/*" exclude="../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}"/>
+                    <!-- makes classes in src/ available to be used as services -->
+                    <!-- this creates a service per class whose id is the fully-qualified class name -->
+                    <prototype namespace="App\" resource="../src/*" exclude="../src/{DependencyInjection,Entity,Tests,Kernel.php}"/>
+
+                    <!-- ... -->
+
                 </services>
             </container>
 
@@ -190,12 +201,12 @@ each time you ask for it.
                     ->defaults()
                         ->autowire()      // Automatically injects dependencies in your services.
                         ->autoconfigure() // Automatically registers your services as commands, event subscribers, etc.
-                ;                      
-                                       
+                ;
+
                 // makes classes in src/ available to be used as services
                 // this creates a service per class whose id is the fully-qualified class name
                 $services->load('App\\', '../src/*')
-                    ->exclude('../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}');
+                    ->exclude('../src/{DependencyInjection,Entity,Tests,Kernel.php}');
             };
 
     .. tip::
@@ -211,6 +222,35 @@ each time you ask for it.
     If you'd prefer to manually wire your service, that's totally possible: see
     :ref:`services-explicitly-configure-wire-services`.
 
+Limiting Services to a specific Symfony Environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.3
+
+    The ``#[When]`` attribute was introduced in Symfony 5.3.
+
+If you are using PHP 8.0 or later, you can use the ``#[When]`` PHP
+attribute to only register the class as a service in some environments::
+
+    use Symfony\Component\DependencyInjection\Attribute\When;
+
+    // SomeClass is only registered in the "dev" environment
+
+    #[When(env: 'dev')]
+    class SomeClass
+    {
+        // ...
+    }
+
+    // you can also apply more than one When attribute to the same class
+
+    #[When(env: 'dev')]
+    #[When(env: 'test')]
+    class AnotherClass
+    {
+        // ...
+    }
+
 .. _services-constructor-injection:
 
 Injecting Services/Config into a Service
@@ -222,7 +262,7 @@ the ``LoggerInterface`` type-hint. Set this on a new ``$logger`` property
 and use it later::
 
     // src/Service/MessageGenerator.php
-    // ...
+    namespace App\Service;
 
     use Psr\Log\LoggerInterface;
 
@@ -235,7 +275,7 @@ and use it later::
             $this->logger = $logger;
         }
 
-        public function getHappyMessage()
+        public function getHappyMessage(): string
         {
             $this->logger->info('About to find a happy message!');
             // ...
@@ -251,7 +291,7 @@ find the matching service. If it can't, you'll see a clear exception with a help
 suggestion.
 
 By the way, this method of adding dependencies to your ``__construct()`` method is
-called *dependency injection*. It's a scary term for a simple concept.
+called *dependency injection*.
 
 .. _services-debug-container-types:
 
@@ -271,9 +311,6 @@ type-hints by running:
       Request stack that controls the lifecycle of requests.
       Symfony\Component\HttpFoundation\RequestStack (request_stack)
 
-      Interface for the session.
-      Symfony\Component\HttpFoundation\Session\SessionInterface (session)
-
       RouterInterface is the interface that all Router classes must implement.
       Symfony\Component\Routing\RouterInterface (router.default)
 
@@ -285,55 +322,65 @@ Handling Multiple Services
 Suppose you also want to email a site administrator each time a site update is
 made. To do that, you create a new class::
 
-    // src/Updates/SiteUpdateManager.php
-    namespace App\Updates;
+    // src/Service/SiteUpdateManager.php
+    namespace App\Service;
 
     use App\Service\MessageGenerator;
+    use Symfony\Component\Mailer\MailerInterface;
+    use Symfony\Component\Mime\Email;
 
     class SiteUpdateManager
     {
         private $messageGenerator;
         private $mailer;
 
-        public function __construct(MessageGenerator $messageGenerator, \Swift_Mailer $mailer)
+        public function __construct(MessageGenerator $messageGenerator, MailerInterface $mailer)
         {
             $this->messageGenerator = $messageGenerator;
             $this->mailer = $mailer;
         }
 
-        public function notifyOfSiteUpdate()
+        public function notifyOfSiteUpdate(): bool
         {
             $happyMessage = $this->messageGenerator->getHappyMessage();
 
-            $message = (new \Swift_Message('Site update just happened!'))
-                ->setFrom('admin@example.com')
-                ->setTo('manager@example.com')
-                ->addPart(
-                    'Someone just updated the site. We told them: '.$happyMessage
-                );
+            $email = (new Email())
+                ->from('admin@example.com')
+                ->to('manager@example.com')
+                ->subject('Site update just happened!')
+                ->text('Someone just updated the site. We told them: '.$happyMessage);
 
-            return $this->mailer->send($message) > 0;
+            $this->mailer->send($email);
+
+            // ...
+
+            return true;
         }
     }
 
-This needs the ``MessageGenerator`` *and* the ``Swift_Mailer`` service. That's no
-problem! In fact, this new service is ready to be used. In a controller, for example,
+This needs the ``MessageGenerator`` *and* the ``Mailer`` service. That's no
+problem, we ask them by type hinting their class and interface names!
+Now, this new service is ready to be used. In a controller, for example,
 you can type-hint the new ``SiteUpdateManager`` class and use it::
 
     // src/Controller/SiteController.php
+    namespace App\Controller;
 
+    use App\Service\SiteUpdateManager;
     // ...
-    use App\Updates\SiteUpdateManager;
 
-    public function new(SiteUpdateManager $siteUpdateManager)
+    class SiteController extends AbstractController
     {
-        // ...
+        public function new(SiteUpdateManager $siteUpdateManager)
+        {
+            // ...
 
-        if ($siteUpdateManager->notifyOfSiteUpdate()) {
-            $this->addFlash('success', 'Notification mail was sent successfully.');
+            if ($siteUpdateManager->notifyOfSiteUpdate()) {
+                $this->addFlash('success', 'Notification mail was sent successfully.');
+            }
+
+            // ...
         }
-
-        // ...
     }
 
 Thanks to autowiring and your type-hints in ``__construct()``, the container creates
@@ -350,38 +397,38 @@ example, suppose you want to make the admin email configurable:
 
 .. code-block:: diff
 
-    // src/Updates/SiteUpdateManager.php
-    // ...
+      // src/Service/SiteUpdateManager.php
+      // ...
 
-    class SiteUpdateManager
-    {
-        // ...
+      class SiteUpdateManager
+      {
+          // ...
     +    private $adminEmail;
 
-    -    public function __construct(MessageGenerator $messageGenerator, \Swift_Mailer $mailer)
-    +    public function __construct(MessageGenerator $messageGenerator, \Swift_Mailer $mailer, $adminEmail)
-        {
-            // ...
+    -    public function __construct(MessageGenerator $messageGenerator, MailerInterface $mailer)
+    +    public function __construct(MessageGenerator $messageGenerator, MailerInterface $mailer, string $adminEmail)
+          {
+              // ...
     +        $this->adminEmail = $adminEmail;
-        }
+          }
 
-        public function notifyOfSiteUpdate()
-        {
-            // ...
+          public function notifyOfSiteUpdate(): bool
+          {
+              // ...
 
-            $message = \Swift_Message::newInstance()
-                // ...
-    -            ->setTo('manager@example.com')
-    +            ->setTo($this->adminEmail)
-                // ...
-            ;
-            // ...
-        }
-    }
+              $email = (new Email())
+                  // ...
+    -            ->to('manager@example.com')
+    +            ->to($this->adminEmail)
+                  // ...
+              ;
+              // ...
+          }
+      }
 
 If you make this change and refresh, you'll see an error:
 
-    Cannot autowire service "App\Updates\SiteUpdateManager": argument "$adminEmail"
+    Cannot autowire service "App\\Service\\SiteUpdateManager": argument "$adminEmail"
     of method "__construct()" must have a type-hint or be given a value explicitly.
 
 That makes sense! There is no way that the container knows what value you want to
@@ -393,15 +440,15 @@ pass here. No problem! In your configuration, you can explicitly set this argume
 
         # config/services.yaml
         services:
-            # ...
+            # ... same as before
 
             # same as before
             App\:
                 resource: '../src/*'
-                exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+                exclude: '../src/{DependencyInjection,Entity,Tests,Kernel.php}'
 
             # explicitly configure the service
-            App\Updates\SiteUpdateManager:
+            App\Service\SiteUpdateManager:
                 arguments:
                     $adminEmail: 'manager@example.com'
 
@@ -415,14 +462,17 @@ pass here. No problem! In your configuration, you can explicitly set this argume
                 https://symfony.com/schema/dic/services/services-1.0.xsd">
 
             <services>
-                <!-- ... -->
+                <!-- ...  same as before -->
 
                 <!-- Same as before -->
 
-                <prototype namespace="App\" resource="../src/*" exclude="../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}"/>
+                <prototype namespace="App\"
+                    resource="../src/*"
+                    exclude="../src/{DependencyInjection,Entity,Tests,Kernel.php}"
+                />
 
                 <!-- Explicitly configure the service -->
-                <service id="App\Updates\SiteUpdateManager">
+                <service id="App\Service\SiteUpdateManager">
                     <argument key="$adminEmail">manager@example.com</argument>
                 </service>
             </services>
@@ -433,14 +483,14 @@ pass here. No problem! In your configuration, you can explicitly set this argume
         // config/services.php
         namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
-        use App\Updates\SiteUpdateManager;
+        use App\Service\SiteUpdateManager;
 
         return function(ContainerConfigurator $configurator) {
             // ...
 
             // same as before
             $services->load('App\\', '../src/*')
-                ->exclude('../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}');
+                ->exclude('../src/{DependencyInjection,Entity,Tests,Kernel.php}');
 
             $services->set(SiteUpdateManager::class)
                 ->arg('$adminEmail', 'manager@example.com')
@@ -469,7 +519,7 @@ all their types (string, boolean, array, binary and PHP constant parameters).
 However, there is another type of parameter related to services. In YAML config,
 any string which starts with ``@`` is considered as the ID of a service, instead
 of a regular string. In XML config, use the ``type="service"`` type for the
-parameter and in PHP config use the ``Reference`` class:
+parameter and in PHP config use the ``service()`` function:
 
 .. configuration-block::
 
@@ -478,13 +528,14 @@ parameter and in PHP config use the ``Reference`` class:
         # config/services.yaml
         services:
             App\Service\MessageGenerator:
-                # this is not a string, but a reference to a service called 'logger'
-                arguments: ['@logger']
+                arguments:
+                    # this is not a string, but a reference to a service called 'logger'
+                    - '@logger'
 
-                # if the value of a string parameter starts with '@', you need to escape
-                # it by adding another '@' so Symfony doesn't consider it a service
-                # (this will be parsed as the string '@securepassword')
-                mailer_password: '@@securepassword'
+                    # if the value of a string argument starts with '@', you need to escape
+                    # it by adding another '@' so Symfony doesn't consider it a service
+                    # the following example would be parsed as the string '@securepassword'
+                    # - '@@securepassword'
 
     .. code-block:: xml
 
@@ -513,7 +564,8 @@ parameter and in PHP config use the ``Reference`` class:
             $services = $configurator->services();
 
             $services->set(MessageGenerator::class)
-                ->args([ref('logger')])
+                // In versions earlier to Symfony 5.1 the service() function was called ref()
+                ->args([service('logger')])
             ;
         };
 
@@ -550,7 +602,7 @@ Choose a Specific Service
 The ``MessageGenerator`` service created earlier requires a ``LoggerInterface`` argument::
 
     // src/Service/MessageGenerator.php
-    // ...
+    namespace App\Service;
 
     use Psr\Log\LoggerInterface;
 
@@ -619,8 +671,8 @@ But, you can control this and pass in a different logger:
             // ... same code as before
 
             // explicitly configure the service
-            $services->set(SiteUpdateManager::class)
-                ->arg('$logger', ref('monolog.logger.request'))
+            $services->set(MessageGenerator::class)
+                ->arg('$logger', service('monolog.logger.request'))
             ;
         };
 
@@ -665,6 +717,7 @@ You can also use the ``bind`` keyword to bind specific arguments by name or type
                     # optionally you can define both the name and type of the argument to match
                     string $adminEmail: 'manager@example.com'
                     Psr\Log\LoggerInterface $requestLogger: '@monolog.logger.request'
+                    iterable $rules: !tagged_iterator app.foo.rule
 
             # ...
 
@@ -695,6 +748,10 @@ You can also use the ``bind`` keyword to bind specific arguments by name or type
                         type="service"
                         id="monolog.logger.request"
                     />
+                    <bind key="iterable $rules"
+                        type="tagged_iterator"
+                        tag="app.foo.rule"
+                    />
                 </defaults>
 
                 <!-- ... -->
@@ -708,6 +765,7 @@ You can also use the ``bind`` keyword to bind specific arguments by name or type
 
         use App\Controller\LuckyController;
         use Psr\Log\LoggerInterface;
+        use Symfony\Component\DependencyInjection\Definition;
         use Symfony\Component\DependencyInjection\Reference;
 
         return function(ContainerConfigurator $configurator) {
@@ -719,15 +777,16 @@ You can also use the ``bind`` keyword to bind specific arguments by name or type
 
                     // pass this service to any $requestLogger argument for any
                     // service that's defined in this file
-                    ->bind('$requestLogger', ref('monolog.logger.request'))
+                    ->bind('$requestLogger', service('monolog.logger.request'))
 
                     // pass this service for any LoggerInterface type-hint for any
                     // service that's defined in this file
-                    ->bind(LoggerInterface::class, ref('monolog.logger.request'))
+                    ->bind(LoggerInterface::class, service('monolog.logger.request'))
 
                     // optionally you can define both the name and type of the argument to match
                     ->bind('string $adminEmail', 'manager@example.com')
-                    ->bind(LoggerInterface::class.' $requestLogger', ref('monolog.logger.request'))
+                    ->bind(LoggerInterface::class.' $requestLogger', service('monolog.logger.request'))
+                    ->bind('iterable $rules', tagged_iterator('app.foo.rule'))
             ;
 
             // ...
@@ -774,35 +833,39 @@ you don't need to do *anything*: the service will be automatically loaded. Then,
 implements ``Twig\Extension\ExtensionInterface``. And thanks to ``autowire``, you can even add
 constructor arguments without any configuration.
 
+Linting Service Definitions
+---------------------------
+
+The ``lint:container`` command checks that the arguments injected into services
+match their type declarations. It's useful to run it before deploying your
+application to production (e.g. in your continuous integration server):
+
+.. code-block:: terminal
+
+    $ php bin/console lint:container
+
+Checking the types of all service arguments whenever the container is compiled
+can hurt performance. That's why this type checking is implemented in a
+:doc:`compiler pass </service_container/compiler_passes>` called
+``CheckTypeDeclarationsPass`` which is disabled by default and enabled only when
+executing the ``lint:container`` command. If you don't mind the performance
+loss, enable the compiler pass in your application.
+
 .. _container-public:
 
 Public Versus Private Services
 ------------------------------
 
-Thanks to the ``_defaults`` section in ``services.yaml``, every service defined in
-this file is ``public: false`` by default.
+Every service defined is private by default. When a service is private, you
+cannot access it directly from the container using ``$container->get()``. As a
+best practice, you should only create *private* services and you should fetch
+services using dependency injection instead of using ``$container->get()``.
 
-What does this mean? When a service **is** public, you can access it directly
-from the container object, which is accessible from any controller that extends
-``Controller``::
+If you need to fetch services lazily, instead of using public services you
+should consider using a :ref:`service locator <service-locators>`.
 
-    use App\Service\MessageGenerator;
-
-    // ...
-    public function new()
-    {
-        // there IS a public "logger" service in the container
-        $logger = $this->container->get('logger');
-
-        // this will NOT work: MessageGenerator is a private service
-        $generator = $this->container->get(MessageGenerator::class);
-    }
-
-As a best practice, you should only create *private* services, which will happen
-automatically. And also, you should *not* use the ``$container->get()`` method to
-fetch public services.
-
-But, if you *do* need to make a service public, override the ``public`` setting:
+But, if you *do* need to make a service public, override the ``public``
+setting:
 
 .. configuration-block::
 
@@ -813,7 +876,7 @@ But, if you *do* need to make a service public, override the ``public`` setting:
             # ... same code as before
 
             # explicitly configure the service
-            App\Service\MessageGenerator:
+            App\Service\PublicService:
                 public: true
 
     .. code-block:: xml
@@ -829,7 +892,7 @@ But, if you *do* need to make a service public, override the ``public`` setting:
                 <!-- ... same code as before -->
 
                 <!-- Explicitly configure the service -->
-                <service id="App\Service\MessageGenerator" public="true"></service>
+                <service id="App\Service\PublicService" public="true"></service>
             </services>
         </container>
 
@@ -838,16 +901,21 @@ But, if you *do* need to make a service public, override the ``public`` setting:
         // config/services.php
         namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
-        use App\Service\MessageGenerator;
+        use App\Service\PublicService;
 
         return function(ContainerConfigurator $configurator) {
             // ... same as code before
 
             // explicitly configure the service
-            $services->set(MessageGenerator::class)
+            $services->set(Service\PublicService::class)
                 ->public()
             ;
         };
+
+.. deprecated:: 5.1
+
+    As of Symfony 5.1, it is no longer possible to autowire the service
+    container by type-hinting ``Psr\Container\ContainerInterface``.
 
 .. _service-psr4-loader:
 
@@ -863,13 +931,13 @@ key. For example, the default Symfony configuration contains this:
 
         # config/services.yaml
         services:
-            # ...
+            # ... same as before
 
             # makes classes in src/ available to be used as services
             # this creates a service per class whose id is the fully-qualified class name
             App\:
                 resource: '../src/*'
-                exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+                exclude: '../src/{DependencyInjection,Entity,Tests,Kernel.php}'
 
     .. code-block:: xml
 
@@ -881,9 +949,9 @@ key. For example, the default Symfony configuration contains this:
                 https://symfony.com/schema/dic/services/services-1.0.xsd">
 
             <services>
-                <!-- ... -->
+                <!-- ... same as before -->
 
-                <prototype namespace="App\" resource="../src/*" exclude="../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}"/>
+                <prototype namespace="App\" resource="../src/*" exclude="../src/{DependencyInjection,Entity,Tests,Kernel.php}"/>
             </services>
         </container>
 
@@ -898,7 +966,7 @@ key. For example, the default Symfony configuration contains this:
             // makes classes in src/ available to be used as services
             // this creates a service per class whose id is the fully-qualified class name
             $services->load('App\\', '../src/*')
-                ->exclude('../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}');
+                ->exclude('../src/{DependencyInjection,Entity,Tests,Kernel.php}');
         };
 
 .. tip::
@@ -920,9 +988,7 @@ them will not cause the container to be rebuilt.
 .. note::
 
     Wait, does this mean that *every* class in ``src/`` is registered as
-    a service? Even model classes? Actually, no. As long as you have
-    ``public: false`` under your ``_defaults`` key (or you can add it under the
-    specific import), all the imported services are *private*. Thanks to this, all
+    a service? Even model classes? Actually, no. As long as you keep your imported services as :ref:`private <container-public>`, all
     classes in ``src/`` that are *not* explicitly used as services are
     automatically removed from the final container. In reality, the import
     means that all classes are "available to be *used* as services" without needing
@@ -935,13 +1001,48 @@ If you define services using the YAML config format, the PHP namespace is used
 as the key of each configuration, so you can't define different service configs
 for classes under the same namespace:
 
-.. code-block:: yaml
+.. configuration-block::
 
-    # config/services.yaml
-    services:
-        App\Domain\:
-            resource: '../src/Domain/*'
-            # ...
+    .. code-block:: yaml
+
+        # config/services.yaml
+        services:
+            App\Domain\:
+                resource: '../src/Domain/*'
+                # ...
+
+    .. code-block:: xml
+
+        <!-- config/services.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd">
+
+            <services>
+                <prototype namespace="App\Domain"
+                    resource="../src/App/Domain/*"/>
+
+                <!-- ... -->
+            </services>
+        </container>
+
+    .. code-block:: php
+
+        // config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+
+        $defaults = new Definition();
+
+        // $this is a reference to the current loader
+        $this->registerClasses(
+            $defaults,
+            'App\\Domain\\',
+            '../src/App/Domain/*'
+        );
+
+        // ...
 
 In order to have multiple definitions, add the ``namespace`` option and use any
 unique string as the key of each service config:
@@ -984,7 +1085,7 @@ admin email. In this case, each needs to have a unique service id:
 
             # this is the service's id
             site_update_manager.superadmin:
-                class: App\Updates\SiteUpdateManager
+                class: App\Service\SiteUpdateManager
                 # you CAN still use autowiring: we just want to show what it looks like without
                 autowire: false
                 # manually wire all arguments
@@ -994,7 +1095,7 @@ admin email. In this case, each needs to have a unique service id:
                     - 'superadmin@example.com'
 
             site_update_manager.normal_users:
-                class: App\Updates\SiteUpdateManager
+                class: App\Service\SiteUpdateManager
                 autowire: false
                 arguments:
                     - '@App\Service\MessageGenerator'
@@ -1003,7 +1104,7 @@ admin email. In this case, each needs to have a unique service id:
 
             # Create an alias, so that - by default - if you type-hint SiteUpdateManager,
             # the site_update_manager.superadmin will be used
-            App\Updates\SiteUpdateManager: '@site_update_manager.superadmin'
+            App\Service\SiteUpdateManager: '@site_update_manager.superadmin'
 
     .. code-block:: xml
 
@@ -1017,19 +1118,19 @@ admin email. In this case, each needs to have a unique service id:
             <services>
                 <!-- ... -->
 
-                <service id="site_update_manager.superadmin" class="App\Updates\SiteUpdateManager" autowire="false">
+                <service id="site_update_manager.superadmin" class="App\Service\SiteUpdateManager" autowire="false">
                     <argument type="service" id="App\Service\MessageGenerator"/>
                     <argument type="service" id="mailer"/>
                     <argument>superadmin@example.com</argument>
                 </service>
 
-                <service id="site_update_manager.normal_users" class="App\Updates\SiteUpdateManager" autowire="false">
+                <service id="site_update_manager.normal_users" class="App\Service\SiteUpdateManager" autowire="false">
                     <argument type="service" id="App\Service\MessageGenerator"/>
                     <argument type="service" id="mailer"/>
                     <argument>contact@example.com</argument>
                 </service>
 
-                <service id="App\Updates\SiteUpdateManager" alias="site_update_manager.superadmin"/>
+                <service id="App\Service\SiteUpdateManager" alias="site_update_manager.superadmin"/>
             </services>
         </container>
 
@@ -1039,7 +1140,7 @@ admin email. In this case, each needs to have a unique service id:
         namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
         use App\Service\MessageGenerator;
-        use App\Updates\SiteUpdateManager;
+        use App\Service\SiteUpdateManager;
 
         return function(ContainerConfigurator $configurator) {
             // ...
@@ -1050,16 +1151,16 @@ admin email. In this case, each needs to have a unique service id:
                 ->autowire(false)
                 // manually wire all arguments
                 ->args([
-                    ref(MessageGenerator::class),
-                    ref('mailer'),
-                    'superadmin@example.com',
+                   service(MessageGenerator::class),
+                   service('mailer'),
+                   'superadmin@example.com',
                 ]);
 
             $services->set('site_update_manager.normal_users', SiteUpdateManager::class)
                 ->autowire(false)
                 ->args([
-                    ref(MessageGenerator::class),
-                    ref('mailer'),
+                    service(MessageGenerator::class),
+                    service('mailer'),
                     'contact@example.com',
                 ]);
 

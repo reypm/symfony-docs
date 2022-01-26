@@ -31,7 +31,7 @@ The move is pretty straightforward and makes a lot of sense as soon as you
 create more pages but you might have noticed a non-desirable side effect...
 The ``LeapYearController`` class is *always* instantiated, even if the
 requested URL does not match the ``leap_year`` route. This is bad for one main
-reason: performance wise, all controllers for all routes must now be
+reason: performance-wise, all controllers for all routes must now be
 instantiated for every request. It would be better if controllers were
 lazy-loaded so that only the controller associated with the matched route is
 instantiated.
@@ -202,4 +202,4 @@ Let's conclude with the new version of our framework::
 Think about it once more: our framework is more robust and more flexible than
 ever and it still has less than 50 lines of code.
 
-.. _`reflection`: https://php.net/reflection
+.. _`reflection`: https://www.php.net/reflection

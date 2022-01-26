@@ -7,9 +7,9 @@ How to Customize a Method Behavior without Using Inheritance
 Doing something before or after a Method Call
 ---------------------------------------------
 
-If you want to do something just before, or just after a method is called, you
-can dispatch an event respectively at the beginning or at the end of the
-method::
+If you want to do something right before, or directly after a method is
+called, you can dispatch an event respectively at the beginning or at the
+end of the method::
 
     class CustomMailer
     {
@@ -21,7 +21,7 @@ method::
             $event = new BeforeSendMailEvent($subject, $message);
             $this->dispatcher->dispatch($event, 'mailer.pre_send');
 
-            // get $foo and $bar from the event, they may have been modified
+            // get $subject and $message from the event, they may have been modified
             $subject = $event->getSubject();
             $message = $event->getMessage();
 
@@ -36,10 +36,14 @@ method::
         }
     }
 
-In this example, two events are thrown: ``mailer.pre_send``, before the method is
-executed, and ``mailer.post_send`` after the method is executed. Each uses a
-custom Event class to communicate information to the listeners of the two
-events. For example, ``BeforeSendMailEvent`` might look like this::
+In this example, two events are dispatched:
+
+#. ``mailer.pre_send``, before the method is called,
+#. and ``mailer.post_send`` after the method is called.
+
+Each uses a custom Event class to communicate information to the listeners
+of the two events. For example, ``BeforeSendMailEvent`` might look like
+this::
 
     // src/Event/BeforeSendMailEvent.php
     namespace App\Event;
@@ -130,7 +134,7 @@ could listen to the ``mailer.post_send`` event and change the method's return va
         public static function getSubscribedEvents()
         {
             return [
-                'mailer.post_send' => 'onMailerPostSend'
+                'mailer.post_send' => 'onMailerPostSend',
             ];
         }
     }

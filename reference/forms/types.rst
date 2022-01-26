@@ -23,6 +23,7 @@ Form Types Reference
    types/color
 
    types/choice
+   types/enum
    types/entity
    types/country
    types/language
@@ -35,10 +36,14 @@ Form Types Reference
    types/datetime
    types/time
    types/birthday
+   types/week
 
    types/checkbox
    types/file
    types/radio
+
+   types/uuid
+   types/ulid
 
    types/collection
    types/repeated

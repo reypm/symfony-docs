@@ -16,32 +16,36 @@ Sometimes it is hard to tell which entries in the log belong to which session
 and/or request. The following example will add a unique token for each request
 using a processor::
 
+    // src/Logger/SessionRequestProcessor.php
     namespace App\Logger;
 
-    use Symfony\Component\HttpFoundation\Session\SessionInterface;
+    use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
+    use Symfony\Component\HttpFoundation\RequestStack;
 
     class SessionRequestProcessor
     {
-        private $session;
-        private $sessionId;
+        private $requestStack;
 
-        public function __construct(SessionInterface $session)
+        public function __construct(RequestStack $requestStack)
         {
-            $this->session = $session;
+            $this->requestStack = $requestStack;
         }
 
         // this method is called for each log record; optimize it to not hurt performance
         public function __invoke(array $record)
         {
-            if (!$this->session->isStarted()) {
+            try {
+                $session = $this->requestStack->getSession();
+            } catch (SessionNotFoundException $e) {
+                return;
+            }
+            if (!$session->isStarted()) {
                 return $record;
             }
 
-            if (!$this->sessionId) {
-                $this->sessionId = substr($this->session->getId(), 0, 8) ?: '????????';
-            }
+            $sessionId = substr($session->getId(), 0, 8) ?: '????????';
 
-            $record['extra']['token'] = $this->sessionId.'-'.substr(uniqid('', true), -8);
+            $record['extra']['token'] = $sessionId.'-'.substr(uniqid('', true), -8);
 
             return $record;
         }
@@ -102,7 +106,7 @@ information:
 
         $container
             ->register(SessionRequestProcessor::class)
-            ->addTag('monolog.processor', ['method' => 'processRecord']);
+            ->addTag('monolog.processor');
 
 Finally, set the formatter to be used on whatever handler you want:
 
@@ -145,16 +149,16 @@ Finally, set the formatter to be used on whatever handler you want:
     .. code-block:: php
 
         // config/packages/prod/monolog.php
-        $container->loadFromExtension('monolog', [
-            'handlers' => [
-                'main' => [
-                    'type'      => 'stream',
-                    'path'      => '%kernel.logs_dir%/%kernel.environment%.log',
-                    'level'     => 'debug',
-                    'formatter' => 'monolog.formatter.session_request',
-                ],
-            ],
-        ]);
+        use Symfony\Config\MonologConfig;
+
+        return static function (MonologConfig $monolog) {
+            $monolog->handler('main')
+                ->type('stream')
+                ->path('%kernel.logs_dir%/%kernel.environment%.log')
+                ->level('debug')
+                ->formatter('monolog.formatter.session_request')
+            ;
+        };
 
 If you use several handlers, you can also register a processor at the
 handler level or at the channel level instead of registering it globally
@@ -170,6 +174,14 @@ Symfony's MonologBridge provides processors that can be registered inside your a
     Adds information from the current user's token to the record namely
     username, roles and whether the user is authenticated.
 
+:class:`Symfony\\Bridge\\Monolog\\Processor\\SwitchUserTokenProcessor`
+    Adds information about the user who is impersonating the logged in user,
+    namely username, roles and whether the user is authenticated.
+
+    .. versionadded:: 5.2
+
+        The ``SwitchUserTokenProcessor`` was introduced in Symfony 5.2.
+
 :class:`Symfony\\Bridge\\Monolog\\Processor\\WebProcessor`
     Overrides data from the request using the data inside Symfony's request
     object.
@@ -178,7 +190,7 @@ Symfony's MonologBridge provides processors that can be registered inside your a
     Adds information about current route (controller, action, route parameters).
 
 :class:`Symfony\\Bridge\\Monolog\\Processor\\ConsoleCommandProcessor`
-    Adds information about current console command.
+    Adds information about the current console command.
 
 .. seealso::
 
@@ -274,4 +286,4 @@ the ``monolog.processor`` tag:
             ->addTag('monolog.processor', ['channel' => 'main']);
 
 .. _`Monolog`: https://github.com/Seldaek/monolog
-.. _`built-in Monolog processors`: https://github.com/Seldaek/monolog/tree/master/src/Monolog/Processor
+.. _`built-in Monolog processors`: https://github.com/Seldaek/monolog/tree/main/src/Monolog/Processor

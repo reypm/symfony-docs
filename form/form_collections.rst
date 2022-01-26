@@ -4,34 +4,22 @@
 How to Embed a Collection of Forms
 ==================================
 
-In this article, you'll learn how to create a form that embeds a collection
-of many other forms. This could be useful, for example, if you had a ``Task``
-class and you wanted to edit/create/remove many ``Tag`` objects related to
-that Task, right inside the same form.
+Symfony Forms can embed a collection of many other forms, which is useful to
+edit related entities in a single form. In this article, you'll create a form to
+edit a ``Task`` class and, right inside the same form, you'll be able to edit,
+create and remove many ``Tag`` objects related to that Task.
 
-.. note::
-
-    In this article, it's loosely assumed that you're using Doctrine as your
-    database store. But if you're not using Doctrine (e.g. Propel or just
-    a database connection), it's all very similar. There are only a few parts
-    of this tutorial that really care about "persistence".
-
-    If you *are* using Doctrine, you'll need to add the Doctrine metadata,
-    including the ``ManyToMany`` association mapping definition on the Task's
-    ``tags`` property.
-
-First, suppose that each ``Task`` belongs to multiple ``Tag`` objects. Start
-by creating a simple ``Task`` class::
+Let's start by creating a ``Task`` entity::
 
     // src/Entity/Task.php
     namespace App\Entity;
 
     use Doctrine\Common\Collections\ArrayCollection;
+    use Doctrine\Common\Collections\Collection;
 
     class Task
     {
         protected $description;
-
         protected $tags;
 
         public function __construct()
@@ -39,17 +27,17 @@ by creating a simple ``Task`` class::
             $this->tags = new ArrayCollection();
         }
 
-        public function getDescription()
+        public function getDescription(): string
         {
             return $this->description;
         }
 
-        public function setDescription($description)
+        public function setDescription(string $description): void
         {
             $this->description = $description;
         }
 
-        public function getTags()
+        public function getTags(): Collection
         {
             return $this->tags;
         }
@@ -57,9 +45,8 @@ by creating a simple ``Task`` class::
 
 .. note::
 
-    The ``ArrayCollection`` is specific to Doctrine and is basically the
-    same as using an ``array`` (but it must be an ``ArrayCollection`` if
-    you're using Doctrine).
+    The `ArrayCollection`_ is specific to Doctrine and is similar to a PHP array
+    but provides many utility methods.
 
 Now, create a ``Tag`` class. As you saw above, a ``Task`` can have many ``Tag``
 objects::
@@ -71,12 +58,12 @@ objects::
     {
         private $name;
 
-        public function getName()
+        public function getName(): string
         {
             return $this->name;
         }
 
-        public function setName($name)
+        public function setName(string $name): void
         {
             $this->name = $name;
         }
@@ -94,12 +81,12 @@ Then, create a form class so that a ``Tag`` object can be modified by the user::
 
     class TagType extends AbstractType
     {
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options): void
         {
             $builder->add('name');
         }
 
-        public function configureOptions(OptionsResolver $resolver)
+        public function configureOptions(OptionsResolver $resolver): void
         {
             $resolver->setDefaults([
                 'data_class' => Tag::class,
@@ -107,12 +94,10 @@ Then, create a form class so that a ``Tag`` object can be modified by the user::
         }
     }
 
-With this, you have enough to render a tag form by itself. But since the end
-goal is to allow the tags of a ``Task`` to be modified right inside the task
-form itself, create a form for the ``Task`` class.
-
-Notice that you embed a collection of ``TagType`` forms using the
-:doc:`CollectionType </reference/forms/types/collection>` field::
+Next, let's create a form for the ``Task`` entity, using a
+:doc:`CollectionType </reference/forms/types/collection>` field of ``TagType``
+forms. This will allow us to modify all the ``Tag`` elements of a ``Task`` right
+inside the task form itself::
 
     // src/Form/TaskType.php
     namespace App\Form;
@@ -125,7 +110,7 @@ Notice that you embed a collection of ``TagType`` forms using the
 
     class TaskType extends AbstractType
     {
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options): void
         {
             $builder->add('description');
 
@@ -135,7 +120,7 @@ Notice that you embed a collection of ``TagType`` forms using the
             ]);
         }
 
-        public function configureOptions(OptionsResolver $resolver)
+        public function configureOptions(OptionsResolver $resolver): void
         {
             $resolver->setDefaults([
                 'data_class' => Task::class,
@@ -153,15 +138,16 @@ In your controller, you'll create a new form from the ``TaskType``::
     use App\Form\TaskType;
     use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
     use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\HttpFoundation\Response;
 
     class TaskController extends AbstractController
     {
-        public function new(Request $request)
+        public function new(Request $request): Response
         {
             $task = new Task();
 
-            // dummy code - this is here just so that the Task has some tags
-            // otherwise, this isn't an interesting example
+            // dummy code - add some example tags to the task
+            // (otherwise, the template will render an empty list of tags)
             $tag1 = new Tag();
             $tag1->setName('tag1');
             $task->getTags()->add($tag1);
@@ -175,20 +161,17 @@ In your controller, you'll create a new form from the ``TaskType``::
             $form->handleRequest($request);
 
             if ($form->isSubmitted() && $form->isValid()) {
-                // ... maybe do some form processing, like saving the Task and Tag objects
+                // ... do your form processing, like saving the Task and Tag entities
             }
 
-            return $this->render('task/new.html.twig', [
-                'form' => $form->createView(),
+            return $this->renderForm('task/new.html.twig', [
+                'form' => $form,
             ]);
         }
     }
 
-The corresponding template is now able to render both the ``description``
-field for the task form as well as all the ``TagType`` forms for any tags
-that are already related to this ``Task``. In the above controller, I added
-some dummy code so that you can see this in action (since a ``Task`` has
-zero tags when first created).
+In the template, you can now iterate over the existing ``TagType`` forms
+to render them:
 
 .. code-block:: html+twig
 
@@ -197,12 +180,10 @@ zero tags when first created).
     {# ... #}
 
     {{ form_start(form) }}
-        {# render the task's only field: description #}
         {{ form_row(form.description) }}
 
         <h3>Tags</h3>
         <ul class="tags">
-            {# iterate over each existing tag and render its only field: name #}
             {% for tag in form.tags %}
                 <li>{{ form_row(tag.name) }}</li>
             {% endfor %}
@@ -211,57 +192,42 @@ zero tags when first created).
 
     {# ... #}
 
-When the user submits the form, the submitted data for the ``tags`` field are
-used to construct an ``ArrayCollection`` of ``Tag`` objects, which is then set
-on the ``tag`` field of the ``Task`` instance.
+When the user submits the form, the submitted data for the ``tags`` field is
+used to construct an ``ArrayCollection`` of ``Tag`` objects. The collection is
+then set on the ``tag`` field of the ``Task`` and can be accessed via ``$task->getTags()``.
 
-The ``tags`` collection is accessible naturally via ``$task->getTags()``
-and can be persisted to the database or used however you need.
-
-So far, this works great, but this doesn't allow you to dynamically add new
-tags or delete existing tags. So, while editing existing tags will work
-great, your user can't actually add any new tags yet.
+So far, this works great, but only to edit *existing* tags. It doesn't allow us
+yet to add new tags or delete existing ones.
 
 .. caution::
 
-    In this article, you embed only one collection, but you are not limited
-    to this. You can also embed nested collection as many levels down as you
-    like. But if you use Xdebug in your development setup, you may receive
-    a ``Maximum function nesting level of '100' reached, aborting!`` error.
-    This is due to the ``xdebug.max_nesting_level`` PHP setting, which defaults
-    to ``100``.
-
-    This directive limits recursion to 100 calls which may not be enough for
-    rendering the form in the template if you render the whole form at
-    once (e.g ``form_widget(form)``). To fix this you can set this directive
-    to a higher value (either via a ``php.ini`` file or via :phpfunction:`ini_set`,
-    for example in ``public/index.php``) or render each form field by hand
-    using ``form_row()``.
+    You can embed nested collections as many levels down as you like. However,
+    if you use Xdebug, you may receive a ``Maximum function nesting level of '100'
+    reached, aborting!`` error. To fix this, increase the ``xdebug.max_nesting_level``
+    PHP setting, or render each form field by hand using ``form_row()`` instead of
+    rendering the whole form at once (e.g ``form_widget(form)``).
 
 .. _form-collections-new-prototype:
 
 Allowing "new" Tags with the "Prototype"
 ----------------------------------------
 
-Allowing the user to dynamically add new tags means that you'll need to
-use some JavaScript. Previously you added two tags to your form in the controller.
-Now let the user add as many tag forms as they need directly in the browser.
-This will be done through a bit of JavaScript.
+Previously you added two tags to your task in the controller. Now let the users
+add as many tag forms as they need directly in the browser. This requires a bit
+of JavaScript code.
 
-The first thing you need to do is to let the form collection know that it will
-receive an unknown number of tags. So far you've added two tags and the form
-type expects to receive exactly two, otherwise an error will be thrown:
-``This form should not contain extra fields``. To make this flexible,
-add the ``allow_add`` option to your collection field::
+But first, you need to let the form collection know that instead of exactly two,
+it will receive an *unknown* number of tags. Otherwise, you'll see a
+*"This form should not contain extra fields"* error. This is done with the
+``allow_add`` option::
 
     // src/Form/TaskType.php
 
     // ...
-    use Symfony\Component\Form\FormBuilderInterface;
 
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->add('description');
+        // ...
 
         $builder->add('tags', CollectionType::class, [
             'entry_type' => TagType::class,
@@ -270,27 +236,44 @@ add the ``allow_add`` option to your collection field::
         ]);
     }
 
-In addition to telling the field to accept any number of submitted objects, the
-``allow_add`` also makes a *"prototype"* variable available to you. This "prototype"
-is a little "template" that contains all the HTML to be able to render any
-new "tag" forms. To render it, make the following change to your template:
+The ``allow_add`` option also makes a ``prototype`` variable available to you.
+This "prototype" is a little "template" that contains all the HTML needed to
+dynamically create any new "tag" forms with JavaScript. To render the prototype, add
+the following ``data-prototype`` attribute to the existing ``<ul>`` in your
+template:
 
 .. code-block:: html+twig
 
-    <ul class="tags" data-prototype="{{ form_widget(form.tags.vars.prototype)|e('html_attr') }}">
-        ...
-    </ul>
+    {# the data-index attribute is required for the JavaScript code below #}
+    <ul class="tags"
+        data-index="{{ form.tags|length > 0 ? form.tags|last.vars.name + 1 : 0 }}"
+        data-prototype="{{ form_widget(form.tags.vars.prototype)|e('html_attr') }}"
+    ></ul>
 
-.. note::
+On the rendered page, the result will look something like this:
 
-    If you render your whole "tags" sub-form at once (e.g. ``form_row(form.tags)``),
-    then the prototype is automatically available on the outer ``div`` as
-    the ``data-prototype`` attribute, similar to what you see above.
+.. code-block:: html
+
+    <ul class="tags"
+        data-index="0"
+        data-prototype="&lt;div&gt;&lt;label class=&quot; required&quot;&gt;__name__&lt;/label&gt;&lt;div id=&quot;task_tags___name__&quot;&gt;&lt;div&gt;&lt;label for=&quot;task_tags___name___name&quot; class=&quot; required&quot;&gt;Name&lt;/label&gt;&lt;input type=&quot;text&quot; id=&quot;task_tags___name___name&quot; name=&quot;task[tags][__name__][name]&quot; required=&quot;required&quot; maxlength=&quot;255&quot; /&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;"
+    ></ul>
+
+Now add a button to dynamically add a new tag:
+
+.. code-block:: html+twig
+
+    <button type="button" class="add_item_link" data-collection-holder-class="tags">Add a tag</button>
+
+.. seealso::
+
+    If you want to customize the HTML code in the prototype, see
+    :ref:`form-custom-prototype`.
 
 .. tip::
 
     The ``form.tags.vars.prototype`` is a form element that looks and feels just
-    like the individual ``form_widget(tag)`` elements inside your ``for`` loop.
+    like the individual ``form_widget(tag.*)`` elements inside your ``for`` loop.
     This means that you can call ``form_widget()``, ``form_row()`` or ``form_label()``
     on it. You could even choose to render only one of its fields (e.g. the
     ``name`` field):
@@ -299,87 +282,49 @@ new "tag" forms. To render it, make the following change to your template:
 
         {{ form_widget(form.tags.vars.prototype.name)|e }}
 
-On the rendered page, the result will look something like this:
-
-.. code-block:: html
-
-    <ul class="tags" data-prototype="&lt;div&gt;&lt;label class=&quot; required&quot;&gt;__name__&lt;/label&gt;&lt;div id=&quot;task_tags___name__&quot;&gt;&lt;div&gt;&lt;label for=&quot;task_tags___name___name&quot; class=&quot; required&quot;&gt;Name&lt;/label&gt;&lt;input type=&quot;text&quot; id=&quot;task_tags___name___name&quot; name=&quot;task[tags][__name__][name]&quot; required=&quot;required&quot; maxlength=&quot;255&quot; /&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;">
-
-The goal of this section will be to use JavaScript to read this attribute
-and dynamically add new tag forms when the user clicks a "Add a tag" link.
-This example uses jQuery and assumes you have it included somewhere on your page.
-
-Add a ``script`` tag somewhere on your page so you can start writing some JavaScript.
-
-First, add a link to the bottom of the "tags" list via JavaScript. Second,
-bind to the "click" event of that link so you can add a new tag form (``addTagForm()``
-will be show next):
-
-.. code-block:: javascript
-
-    var $collectionHolder;
-
-    // setup an "add a tag" link
-    var $addTagButton = $('<button type="button" class="add_tag_link">Add a tag</button>');
-    var $newLinkLi = $('<li></li>').append($addTagButton);
-
-    jQuery(document).ready(function() {
-        // Get the ul that holds the collection of tags
-        $collectionHolder = $('ul.tags');
-
-        // add the "add a tag" anchor and li to the tags ul
-        $collectionHolder.append($newLinkLi);
-
-        // count the current form inputs we have (e.g. 2), use that as the new
-        // index when inserting a new item (e.g. 2)
-        $collectionHolder.data('index', $collectionHolder.find(':input').length);
-
-        $addTagButton.on('click', function(e) {
-            // add a new tag form (see next code block)
-            addTagForm($collectionHolder, $newLinkLi);
-        });
-    });
-
-The ``addTagForm()`` function's job will be to use the ``data-prototype`` attribute
-to dynamically add a new form when this link is clicked. The ``data-prototype``
-HTML contains the tag ``text`` input element with a name of ``task[tags][__name__][name]``
-and id of ``task_tags___name___name``. The ``__name__`` is a little "placeholder",
-which you'll replace with a unique, incrementing number (e.g. ``task[tags][3][name]``).
-
-The actual code needed to make this all work can vary quite a bit, but here's
-one example:
-
-.. code-block:: javascript
-
-    function addTagForm($collectionHolder, $newLinkLi) {
-        // Get the data-prototype explained earlier
-        var prototype = $collectionHolder.data('prototype');
-
-        // get the new index
-        var index = $collectionHolder.data('index');
-
-        var newForm = prototype;
-        // You need this only if you didn't set 'label' => false in your tags field in TaskType
-        // Replace '__name__label__' in the prototype's HTML to
-        // instead be a number based on how many items we have
-        // newForm = newForm.replace(/__name__label__/g, index);
-
-        // Replace '__name__' in the prototype's HTML to
-        // instead be a number based on how many items we have
-        newForm = newForm.replace(/__name__/g, index);
-
-        // increase the index with one for the next item
-        $collectionHolder.data('index', index + 1);
-
-        // Display the form in the page in an li, before the "Add a tag" link li
-        var $newFormLi = $('<li></li>').append(newForm);
-        $newLinkLi.before($newFormLi);
-    }
-
 .. note::
 
-    It is better to separate your JavaScript in real JavaScript files than
-    to write it inside the HTML as is done here.
+    If you render your whole "tags" sub-form at once (e.g. ``form_row(form.tags)``),
+    the ``data-prototype`` attribute is automatically added to the containing ``div``,
+    and you need to adjust the following JavaScript accordingly.
+
+Now add some JavaScript to read this attribute and dynamically add new tag forms
+when the user clicks the "Add a tag" link. Add a ``<script>`` tag somewhere
+on your page to include the required functionality with JavaScript:
+
+.. code-block:: javascript
+
+    document
+      .querySelectorAll('.add_item_link')
+      .forEach(btn => {
+          btn.addEventListener("click", addFormToCollection)
+      });
+
+The ``addFormToCollection()`` function's job will be to use the ``data-prototype``
+attribute to dynamically add a new form when this link is clicked. The ``data-prototype``
+HTML contains the tag's ``text`` input element with a name of ``task[tags][__name__][name]``
+and id of ``task_tags___name___name``. The ``__name__`` is a placeholder, which
+you'll replace with a unique, incrementing number (e.g. ``task[tags][3][name]``):
+
+.. code-block:: javascript
+
+    const addFormToCollection = (e) => {
+      const collectionHolder = document.querySelector('.' + e.currentTarget.dataset.collectionHolderClass);
+
+      const item = document.createElement('li');
+
+      item.innerHTML = collectionHolder
+        .dataset
+        .prototype
+        .replace(
+          /__name__/g,
+          collectionHolder.dataset.index
+        );
+
+      collectionHolder.appendChild(item);
+
+      collectionHolder.dataset.index++;
+    };
 
 Now, each time a user clicks the ``Add a tag`` link, a new sub form will
 appear on the page. When the form is submitted, any new tag forms will be converted
@@ -388,11 +333,6 @@ into new ``Tag`` objects and added to the ``tags`` property of the ``Task`` obje
 .. seealso::
 
     You can find a working example in this `JSFiddle`_.
-
-.. seealso::
-
-    If you want to customize the HTML code in the prototype, read
-    :ref:`form-custom-prototype`.
 
 To make handling these new tags easier, add an "adder" and a "remover" method
 for the tags in the ``Task`` class::
@@ -405,12 +345,12 @@ for the tags in the ``Task`` class::
     {
         // ...
 
-        public function addTag(Tag $tag)
+        public function addTag(Tag $tag): void
         {
             $this->tags->add($tag);
         }
 
-        public function removeTag(Tag $tag)
+        public function removeTag(Tag $tag): void
         {
             // ...
         }
@@ -421,7 +361,7 @@ Next, add a ``by_reference`` option to the ``tags`` field and set it to ``false`
     // src/Form/TaskType.php
 
     // ...
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         // ...
 
@@ -434,7 +374,7 @@ Next, add a ``by_reference`` option to the ``tags`` field and set it to ``false`
 With these two changes, when the form is submitted, each new ``Tag`` object
 is added to the ``Task`` class by calling the ``addTag()`` method. Before this
 change, they were added internally by the form by calling ``$task->getTags()->add($tag)``.
-That was just fine, but forcing the use of the "adder" method makes handling
+That was fine, but forcing the use of the "adder" method makes handling
 these new ``Tag`` objects easier (especially if you're using Doctrine, which
 you will learn about next!).
 
@@ -522,7 +462,7 @@ you will learn about next!).
         // src/Entity/Task.php
 
         // ...
-        public function addTag(Tag $tag)
+        public function addTag(Tag $tag): void
         {
             // for a many-to-many association:
             $tag->addTask($this);
@@ -539,7 +479,7 @@ you will learn about next!).
         // src/Entity/Tag.php
 
         // ...
-        public function addTask(Task $task)
+        public function addTask(Task $task): void
         {
             if (!$this->tasks->contains($task)) {
                 $this->tasks->add($task);
@@ -559,7 +499,7 @@ Start by adding the ``allow_delete`` option in the form Type::
     // src/Form/TaskType.php
 
     // ...
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         // ...
 
@@ -578,7 +518,7 @@ Now, you need to put some code into the ``removeTag()`` method of ``Task``::
     {
         // ...
 
-        public function removeTag(Tag $tag)
+        public function removeTag(Tag $tag): void
         {
             $this->tags->removeElement($tag);
         }
@@ -597,36 +537,35 @@ First, add a "delete this tag" link to each tag form:
 
 .. code-block:: javascript
 
-    jQuery(document).ready(function() {
-        // Get the ul that holds the collection of tags
-        $collectionHolder = $('ul.tags');
+    document
+        .querySelectorAll('ul.tags li')
+        .forEach((tag) => {
+            addTagFormDeleteLink(tag)
+        })
 
-        // add a delete link to all of the existing tag form li elements
-        $collectionHolder.find('li').each(function() {
-            addTagFormDeleteLink($(this));
-        });
+    // ... the rest of the block from above
 
-        // ... the rest of the block from above
-    });
-
-    function addTagForm() {
+    const addFormToCollection = (e) => {
         // ...
 
         // add a delete link to the new form
-        addTagFormDeleteLink($newFormLi);
+        addTagFormDeleteLink(item);
     }
 
 The ``addTagFormDeleteLink()`` function will look something like this:
 
 .. code-block:: javascript
 
-    function addTagFormDeleteLink($tagFormLi) {
-        var $removeFormButton = $('<button type="button">Delete this tag</button>');
-        $tagFormLi.append($removeFormButton);
+    const addTagFormDeleteLink = (item) => {
+        const removeFormButton = document.createElement('button');
+        removeFormButton.innerText = 'Delete this tag';
 
-        $removeFormButton.on('click', function(e) {
+        item.append(removeFormButton);
+
+        removeFormButton.addEventListener('click', (e) => {
+            e.preventDefault();
             // remove the li for the tag form
-            $tagFormLi.remove();
+            item.remove();
         });
     }
 
@@ -655,52 +594,56 @@ the relationship between the removed ``Tag`` and ``Task`` object.
     is handling the "update" of your Task::
 
         // src/Controller/TaskController.php
+
+        // ...
         use App\Entity\Task;
         use Doctrine\Common\Collections\ArrayCollection;
 
-        // ...
-        public function edit($id, Request $request, EntityManagerInterface $entityManager)
+        class TaskController extends AbstractController
         {
-            if (null === $task = $entityManager->getRepository(Task::class)->find($id)) {
-                throw $this->createNotFoundException('No task found for id '.$id);
-            }
-
-            $originalTags = new ArrayCollection();
-
-            // Create an ArrayCollection of the current Tag objects in the database
-            foreach ($task->getTags() as $tag) {
-                $originalTags->add($tag);
-            }
-
-            $editForm = $this->createForm(TaskType::class, $task);
-
-            $editForm->handleRequest($request);
-
-            if ($editForm->isSubmitted() && $editForm->isValid()) {
-                // remove the relationship between the tag and the Task
-                foreach ($originalTags as $tag) {
-                    if (false === $task->getTags()->contains($tag)) {
-                        // remove the Task from the Tag
-                        $tag->getTasks()->removeElement($task);
-
-                        // if it was a many-to-one relationship, remove the relationship like this
-                        // $tag->setTask(null);
-
-                        $entityManager->persist($tag);
-
-                        // if you wanted to delete the Tag entirely, you can also do that
-                        // $entityManager->remove($tag);
-                    }
+            public function edit($id, Request $request, EntityManagerInterface $entityManager): Response
+            {
+                if (null === $task = $entityManager->getRepository(Task::class)->find($id)) {
+                    throw $this->createNotFoundException('No task found for id '.$id);
                 }
 
-                $entityManager->persist($task);
-                $entityManager->flush();
+                $originalTags = new ArrayCollection();
 
-                // redirect back to some edit page
-                return $this->redirectToRoute('task_edit', ['id' => $id]);
+                // Create an ArrayCollection of the current Tag objects in the database
+                foreach ($task->getTags() as $tag) {
+                    $originalTags->add($tag);
+                }
+
+                $editForm = $this->createForm(TaskType::class, $task);
+
+                $editForm->handleRequest($request);
+
+                if ($editForm->isSubmitted() && $editForm->isValid()) {
+                    // remove the relationship between the tag and the Task
+                    foreach ($originalTags as $tag) {
+                        if (false === $task->getTags()->contains($tag)) {
+                            // remove the Task from the Tag
+                            $tag->getTasks()->removeElement($task);
+
+                            // if it was a many-to-one relationship, remove the relationship like this
+                            // $tag->setTask(null);
+
+                            $entityManager->persist($tag);
+
+                            // if you wanted to delete the Tag entirely, you can also do that
+                            // $entityManager->remove($tag);
+                        }
+                    }
+
+                    $entityManager->persist($task);
+                    $entityManager->flush();
+
+                    // redirect back to some edit page
+                    return $this->redirectToRoute('task_edit', ['id' => $id]);
+                }
+
+                // ... render some form template
             }
-
-            // render some form template
         }
 
     As you can see, adding and removing the elements correctly can be tricky.
@@ -714,9 +657,10 @@ the relationship between the removed ``Tag`` and ``Task`` object.
     The Symfony community has created some JavaScript packages that provide the
     functionality needed to add, edit and delete elements of the collection.
     Check out the `@a2lix/symfony-collection`_ package for modern browsers and
-    the `symfony-collection`_ package based on jQuery for the rest of browsers.
+    the `symfony-collection`_ package based on `jQuery`_ for the rest of browsers.
 
 .. _`Owning Side and Inverse Side`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/unitofwork-associations.html
-.. _`JSFiddle`: http://jsfiddle.net/847Kf/4/
+.. _`JSFiddle`: https://jsfiddle.net/ey8ozh6n/
 .. _`@a2lix/symfony-collection`: https://github.com/a2lix/symfony-collection
 .. _`symfony-collection`: https://github.com/ninsuo/symfony-collection
+.. _`ArrayCollection`: https://www.doctrine-project.org/projects/doctrine-collections/en/1.6/index.html

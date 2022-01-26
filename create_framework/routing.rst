@@ -30,7 +30,9 @@ framework just a little to make templates even more readable::
     $response->send();
 
 As we now extract the request query parameters, simplify the ``hello.php``
-template as follows::
+template as follows:
+
+.. code-block:: html+php
 
     <!-- example.com/src/pages/hello.php -->
     Hello <?= htmlspecialchars(isset($name) ? $name : 'World', ENT_QUOTES, 'UTF-8') ?>
@@ -70,12 +72,10 @@ of default values for route attributes (``['name' => 'World']``).
 
 .. note::
 
-    Read the
-    :doc:`Routing component documentation </components/routing>` to
-    learn more about its many features like URL generation, attribute
-    requirements, HTTP method enforcements, loaders for YAML or XML files,
-    dumpers to PHP or Apache rewrite rules for enhanced performance and much
-    more.
+    Read the :doc:`Routing documentation </routing>` to learn more about
+    its many features like URL generation, attribute requirements, HTTP
+    method enforcement, loaders for YAML or XML files, dumpers to PHP or
+    Apache rewrite rules for enhanced performance and much more.
 
 Based on the information stored in the ``RouteCollection`` instance, a
 ``UrlMatcher`` instance can match URL paths::
@@ -163,7 +163,9 @@ There are a few new things in the code:
 
 * ``500`` errors are now managed correctly;
 
-* Request attributes are extracted to keep our templates simple::
+* Request attributes are extracted to keep our templates simple:
+
+.. code-block:: html+php
 
     // example.com/src/pages/hello.php
     Hello <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>

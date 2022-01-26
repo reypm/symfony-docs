@@ -25,36 +25,6 @@ under the ``twig`` key in your application configuration.
 Configuration
 -------------
 
-.. class:: list-config-options list-config-options--complex
-
-* `auto_reload`_
-* `autoescape`_
-* `autoescape_service`_
-* `autoescape_service_method`_
-* `base_template_class`_
-* `cache`_
-* `charset`_
-* `date`_
-
-  * `format`_
-  * `interval_format`_
-  * `timezone`_
-
-* `debug`_
-* `default_path`_
-* `exception_controller`_
-* `form_themes`_
-* `globals`_
-* `number_format`_
-
-  * `decimals`_
-  * `decimal_point`_
-  * `thousands_separator`_
-
-* `optimizations`_
-* `paths`_
-* `strict_variables`_
-
 auto_reload
 ~~~~~~~~~~~
 
@@ -85,7 +55,7 @@ If set to a string, the template contents are escaped using the strategy with
 that name. Allowed values are ``html``, ``js``, ``css``, ``url``, ``html_attr``
 and ``name``. The default value is ``name``. This strategy escapes contents
 according to the template name extension (e.g. it uses ``html`` for ``*.html.twig``
-templates and ``js`` for ``*.js.html`` templates).
+templates and ``js`` for ``*.js.twig`` templates).
 
 .. tip::
 
@@ -159,7 +129,7 @@ format
 **type**: ``string`` **default**: ``F j, Y H:i``
 
 The format used by the ``date`` filter to display values when no specific format
-is passed as argument.
+is passed as an argument.
 
 interval_format
 ...............
@@ -175,7 +145,7 @@ timezone
 **type**: ``string`` **default**: (the value returned by ``date_default_timezone_get()``)
 
 The timezone used when formatting date values with the ``date`` filter and no
-specific timezone is passed as argument.
+specific timezone is passed as an argument.
 
 debug
 ~~~~~
@@ -196,23 +166,6 @@ The path to the directory where Symfony will look for the application Twig
 templates by default. If you store the templates in more than one directory, use
 the :ref:`paths <config-twig-paths>`  option too.
 
-.. _config-twig-exception-controller:
-
-exception_controller
-~~~~~~~~~~~~~~~~~~~~
-
-**type**: ``string`` **default**: ``twig.controller.exception:showAction``
-
-This is the controller that is activated after an exception is thrown anywhere
-in your application. The default controller
-(:class:`Symfony\\Bundle\\TwigBundle\\Controller\\ExceptionController`)
-is what's responsible for rendering specific templates under different error
-conditions (see :doc:`/controller/error_pages`). Modifying this
-option is advanced. If you need to customize an error page you should use
-the previous link. If you need to perform some behavior on an exception,
-you should add an :doc:`event listener </event_dispatcher>` to the
-:ref:`kernel.exception event <kernel-kernel.exception>`.
-
 .. _config-twig-form-themes:
 
 form_themes
@@ -229,7 +182,7 @@ all the forms of the application:
 
         # config/packages/twig.yaml
         twig:
-            form_themes: ['bootstrap_4_layout.html.twig', 'form/my_theme.html.twig']
+            form_themes: ['bootstrap_5_layout.html.twig', 'form/my_theme.html.twig']
             # ...
 
     .. code-block:: xml
@@ -244,7 +197,7 @@ all the forms of the application:
                 http://symfony.com/schema/dic/twig https://symfony.com/schema/dic/twig/twig-1.0.xsd">
 
             <twig:config>
-                <twig:form-theme>bootstrap_4_layout.html.twig</twig:form-theme>
+                <twig:form-theme>bootstrap_5_layout.html.twig</twig:form-theme>
                 <twig:form-theme>form/my_theme.html.twig</twig:form-theme>
                 <!-- ... -->
             </twig:config>
@@ -253,13 +206,16 @@ all the forms of the application:
     .. code-block:: php
 
         // config/packages/twig.php
-        $container->loadFromExtension('twig', [
-            'form_themes' => [
-                'bootstrap_4_layout.html.twig',
+        use Symfony\Config\TwigConfig;
+
+        return static function (TwigConfig $twig) {
+            $twig->formThemes([
+                'bootstrap_5_layout.html.twig',
                 'form/my_theme.html.twig',
-            ],
+            ]);
+
             // ...
-        ]);
+        };
 
 The order in which themes are defined is important because each theme overrides
 all the previous one. When rendering a form field whose block is not defined in
@@ -312,7 +268,7 @@ no specific character is passed as argument to the ``number_format`` filter.
 optimizations
 ~~~~~~~~~~~~~
 
-**type**: ``int`` **default**: ``-1``
+**type**: ``integer`` **default**: ``-1``
 
 Twig includes an extension called ``optimizer`` which is enabled by default in
 Symfony applications. This extension analyzes the templates to optimize them
@@ -366,20 +322,23 @@ the directory defined in the :ref:`default_path option <config-twig-default-path
     .. code-block:: php
 
         // config/packages/twig.php
-        $container->loadFromExtension('twig', [
+        use Symfony\Config\TwigConfig;
+
+        return static function (TwigConfig $twig) {
             // ...
-            'paths' => [
-                'email/default/templates' => null,
-                'backend/templates' => 'admin',
-            ],
-        ]);
+
+            $twig->path('email/default/templates', null);
+            $twig->path('backend/templates', 'admin');
+        };
 
 Read more about :ref:`template directories and namespaces <templates-namespaces>`.
+
+.. _config-twig-strict-variables:
 
 strict_variables
 ~~~~~~~~~~~~~~~~
 
-**type**: ``boolean`` **default**: ``false``
+**type**: ``boolean`` **default**: ``%kernel.debug%``
 
 If set to ``true``, Symfony shows an exception whenever a Twig variable,
 attribute or method doesn't exist. If set to ``false`` these errors are ignored

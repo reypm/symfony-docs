@@ -46,16 +46,17 @@ Symfony to use your session handler instead of the default one:
 
         // config/packages/framework.php
         use App\Session\CustomSessionHandler;
-        $container->loadFromExtension('framework', [
+        use Symfony\Config\FrameworkConfig;
+
+        return static function (FrameworkConfig $framework) {
             // ...
-            'session' => [
-                // ...
-                'handler_id' => CustomSessionHandler::class,
-            ],
-        ]);
+            $framework->session()
+                ->handlerId(CustomSessionHandler::class)
+            ;
+        };
 
 Keep reading the next sections to learn how to use the session handlers in practice
-to solve two common use cases: encrypt session information and define readonly
+to solve two common use cases: encrypt session information and define read-only
 guest sessions.
 
 Encryption of Session Data
@@ -98,8 +99,8 @@ library, but you can adapt it to any other library that you may be using::
         }
     }
 
-Readonly Guest Sessions
------------------------
+Read-only Guest Sessions
+------------------------
 
 There are some applications where a session is required for guest users, but
 where there is no particular need to persist the session. In this case you

@@ -7,7 +7,7 @@ Migrating an Existing Application to Symfony
 When you have an existing application that was not built with Symfony,
 you might want to move over parts of that application without rewriting
 the existing logic completely. For those cases there is a pattern called
-`Strangler Application`_. The basic idea of this pattern is to create a
+`Strangler Fig Application`_. The basic idea of this pattern is to create a
 new application that gradually takes over functionality from an existing
 application. This migration approach can be implemented with Symfony in
 various ways and has some benefits over a rewrite such as being able
@@ -82,7 +82,7 @@ Setting up Composer
 Another point you will have to look out for is conflicts between
 dependencies in both applications. This is especially important if your
 existing application already uses Symfony components or libraries commonly
-used in Symfony applications such as Doctrine ORM, Swiftmailer or Twig.
+used in Symfony applications such as Doctrine ORM or Twig.
 A good way for ensuring compatibility is to use the same ``composer.json``
 for both project's dependencies.
 
@@ -188,7 +188,7 @@ that different paths were handled by different PHP files.
 In any case you have to create a ``public/index.php`` that will start
 your Symfony application by either copying the file from the
 ``FrameworkBundle``-recipe or by using Flex and requiring the
-FrameworkBundle. You will also likely have to update you web server
+FrameworkBundle. You will also likely have to update your web server
 (e.g. Apache or nginx) to always use this front controller. You can
 look at :doc:`Web Server Configuration </setup/web_server_configuration>`
 for examples on how this might look. For example when using Apache you can
@@ -223,7 +223,7 @@ unique approach for migration. This guide shows two examples of commonly used
 approaches, which you can use as a base for your own approach:
 
 * `Front Controller with Legacy Bridge`_, which leaves the legacy application
-  untouched and allows to migrate it in phases to the Symfony application.
+  untouched and allows migrating it in phases to the Symfony application.
 * `Legacy Route Loader`_, where the legacy application is integrated in phases
   into Symfony, with a fully integrated final result.
 
@@ -238,10 +238,13 @@ could look something like this::
     // public/index.php
     use App\Kernel;
     use App\LegacyBridge;
-    use Symfony\Component\Debug\Debug;
+    use Symfony\Component\Dotenv\Dotenv;
+    use Symfony\Component\ErrorHandler\Debug;
     use Symfony\Component\HttpFoundation\Request;
 
-    require dirname(__DIR__).'/config/bootstrap.php';
+    require dirname(__DIR__).'/vendor/autoload.php';
+
+    (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
 
     /*
      * The kernel will always be available globally, allowing you to
@@ -260,7 +263,7 @@ could look something like this::
     if ($trustedProxies = $_SERVER['TRUSTED_PROXIES'] ?? $_ENV['TRUSTED_PROXIES'] ?? false) {
         Request::setTrustedProxies(
           explode(',', $trustedProxies),
-          Request::HEADER_X_FORWARDED_ALL ^ Request::HEADER_X_FORWARDED_HOST
+          Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO
         );
     }
 
@@ -268,7 +271,7 @@ could look something like this::
         Request::setTrustedHosts([$trustedHosts]);
     }
 
-    $kernel = new Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG'], dirname(__DIR__));
+    $kernel = new Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
     $request = Request::createFromGlobals();
     $response = $kernel->handle($request);
 
@@ -286,7 +289,7 @@ could look something like this::
 
 There are 2 major deviations from the original file:
 
-Line 15
+Line 18
   First of all, ``$kernel`` is made globally available. This allows you to use
   Symfony features inside your existing application and gives access to
   services configured in our Symfony application. This helps you prepare your
@@ -294,7 +297,7 @@ Line 15
   it over. For instance, by replacing outdated or redundant libraries with
   Symfony components.
 
-Line 38 - 47
+Line 41 - 50
   Instead of sending the Symfony response directly, a ``LegacyBridge`` is
   called to decide whether the legacy application should be booted and used to
   create the response instead.
@@ -313,11 +316,11 @@ somewhat like this::
 
     class LegacyBridge
     {
-        public static function prepareLegacyScript(Request $request, Response $response, string $publicDirectory): string
+        public static function prepareLegacyScript(Request $request, Response $response, string $publicDirectory): ?string
         {
             // If Symfony successfully handled the route, you do not have to do anything.
             if (false === $response->isNotFound()) {
-                return;
+                return null;
             }
 
             // Figure out how to map to the needed script file
@@ -433,7 +436,7 @@ which script to call and wrap the output in a response class::
     {
         public function loadLegacyScript(string $requestPath, string $legacyScript)
         {
-            return StreamedResponse::create(
+            return new StreamedResponse(
                 function () use ($requestPath, $legacyScript) {
                     $_SERVER['PHP_SELF'] = $requestPath;
                     $_SERVER['SCRIPT_NAME'] = $requestPath;
@@ -461,7 +464,7 @@ chance to use Symfony's event lifecycle. For instance, this allows you to
 transition the authentication and authorization of the legacy application over
 to the Symfony application using the Security component and its firewalls.
 
-.. _`Strangler Application`: https://www.martinfowler.com/bliki/StranglerApplication.html
+.. _`Strangler Fig Application`: https://martinfowler.com/bliki/StranglerFigApplication.html
 .. _`autoload`: https://getcomposer.org/doc/04-schema.md#autoload
 .. _`Modernizing with Symfony`: https://youtu.be/YzyiZNY9htQ
 .. _`Symfony Panther`: https://github.com/symfony/panther

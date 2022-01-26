@@ -81,7 +81,7 @@ Before dumping it, you can further limit the resulting
     Removes internal objects' handles for sparser output (useful for tests).
 
 :method:`Symfony\\Component\\VarDumper\\Cloner\\Data::seek`
-    Selects only subparts of already cloned arrays, objects or resources.
+    Selects only sub-parts of already cloned arrays, objects or resources.
 
 Unlike the previous limits on cloners that remove data on purpose, these can
 be changed back and forth before dumping since they do not affect the
@@ -200,7 +200,7 @@ method::
     $dumper->dump($var, $output, [
         // 1 and 160 are the default values for these options
         'maxDepth' => 1,
-        'maxStringLength' => 160
+        'maxStringLength' => 160,
     ]);
 
 The output format of a dumper can be fine tuned by the two flags
@@ -223,7 +223,7 @@ next to its content::
 
     $varCloner = new VarCloner();
     $var = ['test'];
-    
+
     $dumper = new CliDumper();
     echo $dumper->dump($varCloner->cloneVar($var), true);
 
@@ -248,7 +248,7 @@ similar to PHP's short array notation::
 
     $varCloner = new VarCloner();
     $var = ['test'];
-    
+
     $dumper = new CliDumper();
     echo $dumper->dump($varCloner->cloneVar($var), true);
 
@@ -273,7 +273,7 @@ using the logical OR operator ``|``::
 
     $varCloner = new VarCloner();
     $var = ['test'];
-    
+
     $dumper = new CliDumper(null, null, AbstractDumper::DUMP_STRING_LENGTH | AbstractDumper::DUMP_LIGHT_ARRAY);
     echo $dumper->dump($varCloner->cloneVar($var), true);
 
@@ -325,7 +325,7 @@ Casters are responsible for returning the properties of the object or resource
 being cloned in an array. They are callables that accept five arguments:
 
 * the object or resource being casted;
-* an array modelled for objects after PHP's native ``(array)`` cast operator;
+* an array modeled for objects after PHP's native ``(array)`` cast operator;
 * a :class:`Symfony\\Component\\VarDumper\\Cloner\\Stub` object
   representing the main properties of the object (class, type, etc.);
 * true/false when the caster is called nested in a structure or not;

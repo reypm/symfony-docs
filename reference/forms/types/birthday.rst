@@ -5,7 +5,7 @@ BirthdayType Field
 ==================
 
 A :doc:`DateType </reference/forms/types/date>` field that specializes in handling
-birthdate data.
+birth date data.
 
 Can be rendered as a single text box, three text boxes (month, day and year),
 or three select boxes.
@@ -14,53 +14,30 @@ This type is essentially the same as the :doc:`DateType </reference/forms/types/
 type, but with a more appropriate default for the `years`_ option. The `years`_
 option defaults to 120 years ago to the current year.
 
-+----------------------+-------------------------------------------------------------------------------+
-| Underlying Data Type | can be ``DateTime``, ``string``, ``timestamp``, or ``array``                  |
-|                      | (see the :ref:`input option <form-reference-date-input>`)                     |
-+----------------------+-------------------------------------------------------------------------------+
-| Rendered as          | can be three select boxes or 1 or 3 text boxes, based on the `widget`_ option |
-+----------------------+-------------------------------------------------------------------------------+
-| Overridden options   | - `years`_                                                                    |
-+----------------------+-------------------------------------------------------------------------------+
-| Inherited options    | from the :doc:`DateType </reference/forms/types/date>`:                       |
-|                      |                                                                               |
-|                      | - `choice_translation_domain`_                                                |
-|                      | - `days`_                                                                     |
-|                      | - `placeholder`_                                                              |
-|                      | - `format`_                                                                   |
-|                      | - `input`_                                                                    |
-|                      | - `input_format`_                                                             |
-|                      | - `model_timezone`_                                                           |
-|                      | - `months`_                                                                   |
-|                      | - `view_timezone`_                                                            |
-|                      | - `widget`_                                                                   |
-|                      |                                                                               |
-|                      | from the :doc:`FormType </reference/forms/types/form>`:                       |
-|                      |                                                                               |
-|                      | - `attr`_                                                                     |
-|                      | - `data`_                                                                     |
-|                      | - `disabled`_                                                                 |
-|                      | - `help`_                                                                     |
-|                      | - `help_attr`_                                                                |
-|                      | - `help_html`_                                                                |
-|                      | - `inherit_data`_                                                             |
-|                      | - `invalid_message`_                                                          |
-|                      | - `invalid_message_parameters`_                                               |
-|                      | - `mapped`_                                                                   |
-|                      | - `row_attr`_                                                                 |
-+----------------------+-------------------------------------------------------------------------------+
-| Parent type          | :doc:`DateType </reference/forms/types/date>`                                 |
-+----------------------+-------------------------------------------------------------------------------+
-| Class                | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\BirthdayType`        |
-+----------------------+-------------------------------------------------------------------------------+
++---------------------------+-------------------------------------------------------------------------------+
+| Underlying Data Type      | can be ``DateTime``, ``string``, ``timestamp``, or ``array``                  |
+|                           | (see the :ref:`input option <form-reference-date-input>`)                     |
++---------------------------+-------------------------------------------------------------------------------+
+| Rendered as               | can be three select boxes or 1 or 3 text boxes, based on the `widget`_ option |
++---------------------------+-------------------------------------------------------------------------------+
+| Default invalid message   | Please enter a valid birthdate.                                               |
++---------------------------+-------------------------------------------------------------------------------+
+| Legacy invalid message    | The value {{ value }} is not valid.                                           |
++---------------------------+-------------------------------------------------------------------------------+
+| Parent type               | :doc:`DateType </reference/forms/types/date>`                                 |
++---------------------------+-------------------------------------------------------------------------------+
+| Class                     | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\BirthdayType`        |
++---------------------------+-------------------------------------------------------------------------------+
 
 .. include:: /reference/forms/types/options/_debug_form.rst.inc
 
 Overridden Options
 ------------------
 
-years
-~~~~~
+.. include:: /reference/forms/types/options/invalid_message.rst.inc
+
+``years``
+~~~~~~~~~
 
 **type**: ``array`` **default**: 120 years ago to the current year
 
@@ -72,12 +49,12 @@ Inherited Options
 
 These options inherit from the :doc:`DateType </reference/forms/types/date>`:
 
-.. include:: /reference/forms/types/options/choice_translation_domain.rst.inc
+.. include:: /reference/forms/types/options/choice_translation_domain_disabled.rst.inc
 
 .. include:: /reference/forms/types/options/days.rst.inc
 
-placeholder
-~~~~~~~~~~~
+``placeholder``
+~~~~~~~~~~~~~~~
 
 **type**: ``string`` | ``array``
 
@@ -95,7 +72,7 @@ values for the year, month and day fields::
     $builder->add('birthdate', BirthdayType::class, [
         'placeholder' => [
             'year' => 'Year', 'month' => 'Month', 'day' => 'Day',
-        ]
+        ],
     ]);
 
 .. include:: /reference/forms/types/options/date_format.rst.inc
@@ -127,8 +104,6 @@ These options inherit from the :doc:`FormType </reference/forms/types/form>`:
 .. include:: /reference/forms/types/options/help_html.rst.inc
 
 .. include:: /reference/forms/types/options/inherit_data.rst.inc
-
-.. include:: /reference/forms/types/options/invalid_message.rst.inc
 
 .. include:: /reference/forms/types/options/invalid_message_parameters.rst.inc
 

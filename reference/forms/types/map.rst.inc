@@ -19,6 +19,7 @@ Choice Fields
 ~~~~~~~~~~~~~
 
 * :doc:`ChoiceType </reference/forms/types/choice>`
+* :doc:`EnumType </reference/forms/types/enum>`
 * :doc:`EntityType </reference/forms/types/entity>`
 * :doc:`CountryType </reference/forms/types/country>`
 * :doc:`LanguageType </reference/forms/types/language>`
@@ -34,6 +35,7 @@ Date and Time Fields
 * :doc:`DateTimeType </reference/forms/types/datetime>`
 * :doc:`TimeType </reference/forms/types/time>`
 * :doc:`BirthdayType </reference/forms/types/birthday>`
+* :doc:`WeekType </reference/forms/types/week>`
 
 Other Fields
 ~~~~~~~~~~~~
@@ -41,6 +43,20 @@ Other Fields
 * :doc:`CheckboxType </reference/forms/types/checkbox>`
 * :doc:`FileType </reference/forms/types/file>`
 * :doc:`RadioType </reference/forms/types/radio>`
+
+Symfony UX Fields
+~~~~~~~~~~~~~~~~~
+
+These types are part of the `Symfony UX initiative`_:
+
+* `CropperType`_ (using Cropper.js)
+* `DropzoneType`_
+
+UID Fields
+~~~~~~~~~~
+
+* :doc:`UuidType </reference/forms/types/uuid>`
+* :doc:`UlidType </reference/forms/types/ulid>`
 
 Field Groups
 ~~~~~~~~~~~~
@@ -64,3 +80,7 @@ Base Fields
 ~~~~~~~~~~~
 
 * :doc:`FormType </reference/forms/types/form>`
+
+.. _`Symfony UX initiative`: https://github.com/symfony/ux#readme
+.. _`CropperType`: https://github.com/symfony/ux/tree/2.x/src/Cropperjs#readme
+.. _`DropzoneType`: https://github.com/symfony/ux/tree/2.x/src/Dropzone#readme

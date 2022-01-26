@@ -8,7 +8,7 @@ The Asset Component
     The Asset component manages URL generation and versioning of web assets such
     as CSS stylesheets, JavaScript files and image files.
 
-In the past, it was common for web applications to hardcode URLs of web assets.
+In the past, it was common for web applications to hard-code the URLs of web assets.
 For example:
 
 .. code-block:: html
@@ -17,7 +17,7 @@ For example:
 
     <!-- ... -->
 
-    <a href="/"><img src="/images/logo.png"></a>
+    <a href="/"><img src="/images/logo.png" alt="logo"></a>
 
 This practice is no longer recommended unless the web application is extremely
 simple. Hardcoding URLs can be a disadvantage because:
@@ -50,6 +50,8 @@ Installation
 
 Usage
 -----
+
+.. _asset-packages:
 
 Asset Packages
 ~~~~~~~~~~~~~~
@@ -119,8 +121,9 @@ suffix to any asset path::
     echo $package->getUrl('image.png');
     // result: image.png?v1
 
-In case you want to modify the version format, pass a sprintf-compatible format
-string as the second argument of the ``StaticVersionStrategy`` constructor::
+In case you want to modify the version format, pass a ``sprintf``-compatible
+format string as the second argument of the ``StaticVersionStrategy``
+constructor::
 
     // puts the 'version' word before the version value
     $package = new Package(new StaticVersionStrategy('v1', '%s?version=%s'));
@@ -146,7 +149,6 @@ corresponding output file:
 
 .. code-block:: json
 
-    // rev-manifest.json
     {
         "css/app.css": "build/css/app.b916426ea1d10021f3f17ce8031f93c2.css",
         "js/app.js": "build/js/app.13630905267b809161e71d0f8a0c017b.js",
@@ -159,10 +161,47 @@ In those cases, use the
     use Symfony\Component\Asset\Package;
     use Symfony\Component\Asset\VersionStrategy\JsonManifestVersionStrategy;
 
+    // assumes the JSON file above is called "rev-manifest.json"
     $package = new Package(new JsonManifestVersionStrategy(__DIR__.'/rev-manifest.json'));
 
     echo $package->getUrl('css/app.css');
     // result: build/css/app.b916426ea1d10021f3f17ce8031f93c2.css
+
+If you request an asset that is *not found* in the ``rev-manifest.json`` file,
+the original - *unmodified* - asset path will be returned. The ``$strictMode``
+argument helps debug issues because it throws an exception when the asset is not
+listed in the manifest::
+
+    use Symfony\Component\Asset\Package;
+    use Symfony\Component\Asset\VersionStrategy\JsonManifestVersionStrategy;
+
+    // The value of $strictMode can be specific per environment "true" for debugging and "false" for stability.
+    $strictMode = true;
+    // assumes the JSON file above is called "rev-manifest.json"
+    $package = new Package(new JsonManifestVersionStrategy(__DIR__.'/rev-manifest.json', null, $strictMode));
+
+    echo $package->getUrl('not-found.css');
+    // error:
+
+.. versionadded:: 5.4
+
+    The ``$strictMode`` option was introduced in Symfony 5.4.
+
+If your JSON file is not on your local filesystem but is accessible over HTTP,
+use the :class:`Symfony\\Component\\Asset\\VersionStrategy\\RemoteJsonManifestVersionStrategy`
+with the :doc:`HttpClient component </http_client>`::
+
+    use Symfony\Component\Asset\Package;
+    use Symfony\Component\Asset\VersionStrategy\RemoteJsonManifestVersionStrategy;
+    use Symfony\Component\HttpClient\HttpClient;
+
+    $httpClient = HttpClient::create();
+    $manifestUrl = 'https://cdn.example.com/rev-manifest.json';
+    $package = new Package(new RemoteJsonManifestVersionStrategy($manifestUrl, $httpClient));
+
+.. versionadded:: 5.1
+
+    The ``RemoteJsonManifestVersionStrategy`` was introduced in Symfony 5.1.
 
 Custom Version Strategies
 .........................
@@ -183,12 +222,12 @@ every day::
             $this->version = date('Ymd');
         }
 
-        public function getVersion($path)
+        public function getVersion(string $path)
         {
             return $this->version;
         }
 
-        public function applyVersion($path)
+        public function applyVersion(string $path)
         {
             return sprintf('%s?v=%s', $path, $this->getVersion($path));
         }
@@ -356,7 +395,7 @@ they all have different base paths::
     $packages = new Packages($defaultPackage, $namedPackages);
 
 The ``Packages`` class allows to define a default package, which will be applied
-to assets that don't define the name of package to use. In addition, this
+to assets that don't define the name of the package to use. In addition, this
 application defines a package named ``img`` to serve images from an external
 domain and a ``doc`` package to avoid repeating long paths when linking to a
 document inside a template::
@@ -400,6 +439,6 @@ Learn more
 ----------
 
 * :doc:`How to manage CSS and JavaScript assets in Symfony applications </frontend>`
-* :doc:`WebLink component </components/web_link>` to preload assets using HTTP/2.
+* :doc:`WebLink component </web_link>` to preload assets using HTTP/2.
 
 .. _`Webpack`: https://webpack.js.org/

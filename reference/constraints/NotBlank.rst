@@ -8,11 +8,6 @@ that a value is not equal to ``null``, see the
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `allowNull`_
-            - `groups`_
-            - `message`_
-            - `normalizer`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\NotBlank`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\NotBlankValidator`
 ==========  ===================================================================
@@ -37,6 +32,19 @@ class were not blank, you could do the following:
             /**
              * @Assert\NotBlank
              */
+            protected $firstName;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Author.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Author
+        {
+            #[Assert\NotBlank]
             protected $firstName;
         }
 
@@ -82,18 +90,18 @@ class were not blank, you could do the following:
 Options
 -------
 
-allowNull
-~~~~~~~~~
+``allowNull``
+~~~~~~~~~~~~~
 
-**type**: ``bool`` **default**: ``false``
+**type**: ``boolean`` **default**: ``false``
 
 If set to ``true``, ``null`` values are considered valid and won't trigger a
 constraint violation.
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This value should not be blank.``
 
@@ -105,7 +113,12 @@ You can use the following parameters in this message:
 Parameter        Description
 ===============  ==============================================================
 ``{{ value }}``  The current (invalid) value
+``{{ label }}``  Corresponding form field label
 ===============  ==============================================================
+
+.. versionadded:: 5.2
+
+    The ``{{ label }}`` parameter was introduced in Symfony 5.2.
 
 .. include:: /reference/constraints/_normalizer-option.rst.inc
 

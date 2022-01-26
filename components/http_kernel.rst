@@ -65,8 +65,8 @@ that system::
          */
         public function handle(
             Request $request,
-            $type = self::MASTER_REQUEST,
-            $catch = true
+            int $type = self::MAIN_REQUEST,
+            bool $catch = true
         );
     }
 
@@ -200,8 +200,8 @@ attributes).
     is the :class:`Symfony\\Component\\HttpKernel\\EventListener\\RouterListener`.
     This class executes the routing layer, which returns an *array* of information
     about the matched request, including the ``_controller`` and any placeholders
-    that are in the route's pattern (e.g. ``{slug}``). See
-    :doc:`Routing component </components/routing>`.
+    that are in the route's pattern (e.g. ``{slug}``). See the
+    :doc:`Routing documentation </routing>`.
 
     This array of information is stored in the :class:`Symfony\\Component\\HttpFoundation\\Request`
     object's ``attributes`` array. Adding the routing information here doesn't
@@ -249,7 +249,7 @@ on the request's information.
 
     The Symfony Framework uses the built-in
     :class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolver`
-    class (actually, it uses a sub-class with some extra functionality
+    class (actually, it uses a subclass with some extra functionality
     mentioned below). This class leverages the information that was placed
     on the ``Request`` object's ``attributes`` property during the ``RouterListener``.
 
@@ -358,7 +358,7 @@ of arguments that should be passed when executing that callable.
 5) Calling the Controller
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The next step ``HttpKernel::handle()`` does is executing the controller.
+The next step of ``HttpKernel::handle()`` is executing the controller.
 
 The job of the controller is to build the response for the given resource.
 This could be an HTML page, a JSON string or anything else. Unlike every
@@ -498,12 +498,6 @@ as possible to the client (e.g. sending emails).
     Using the ``kernel.terminate`` event is optional, and should only be
     called if your kernel implements :class:`Symfony\\Component\\HttpKernel\\TerminableInterface`.
 
-.. sidebar:: ``kernel.terminate`` in the Symfony Framework
-
-    If you use the :ref:`memory spooling <email-spool-memory>` option of the
-    default Symfony mailer, then the `EmailSenderListener`_ is activated, which
-    actually delivers any emails that you scheduled to send during the request.
-
 .. _component-http-kernel-kernel-exception:
 
 Handling Exceptions: the ``kernel.exception`` Event
@@ -516,7 +510,7 @@ Handling Exceptions: the ``kernel.exception`` Event
 
 If an exception is thrown at any point inside ``HttpKernel::handle()``, another
 event - ``kernel.exception`` is thrown. Internally, the body of the ``handle()``
-function is wrapped in a try-catch block. When any exception is thrown, the
+method is wrapped in a try-catch block. When any exception is thrown, the
 ``kernel.exception`` event is dispatched so that your system can somehow respond
 to the exception.
 
@@ -526,14 +520,14 @@ to the exception.
 
 Each listener to this event is passed a :class:`Symfony\\Component\\HttpKernel\\Event\\ExceptionEvent`
 object, which you can use to access the original exception via the
-:method:`Symfony\\Component\\HttpKernel\\Event\\ExceptionEvent::getException`
+:method:`Symfony\\Component\\HttpKernel\\Event\\ExceptionEvent::getThrowable`
 method. A typical listener on this event will check for a certain type of
 exception and create an appropriate error ``Response``.
 
 For example, to generate a 404 page, you might throw a special type of exception
 and then add a listener on this event that looks for this exception and
 creates and returns a 404 ``Response``. In fact, the HttpKernel component
-comes with an :class:`Symfony\\Component\\HttpKernel\\EventListener\\ExceptionListener`,
+comes with an :class:`Symfony\\Component\\HttpKernel\\EventListener\\ErrorListener`,
 which if you choose to use, will do this and more by default (see the sidebar
 below for more details).
 
@@ -547,14 +541,14 @@ below for more details).
     There are two main listeners to ``kernel.exception`` when using the
     Symfony Framework.
 
-    **ExceptionListener in the HttpKernel Component**
+    **ErrorListener in the HttpKernel Component**
 
     The first comes core to the HttpKernel component
-    and is called :class:`Symfony\\Component\\HttpKernel\\EventListener\\ExceptionListener`.
+    and is called :class:`Symfony\\Component\\HttpKernel\\EventListener\\ErrorListener`.
     The listener has several goals:
 
     1) The thrown exception is converted into a
-       :class:`Symfony\\Component\\ErrorRenderer\\Exception\\FlattenException`
+       :class:`Symfony\\Component\\ErrorHandler\\Exception\\FlattenException`
        object, which contains all the information about the request, but which
        can be printed and serialized.
 
@@ -596,7 +590,7 @@ on creating and attaching event listeners, see :doc:`/components/event_dispatche
 
 The name of each of the "kernel" events is defined as a constant on the
 :class:`Symfony\\Component\\HttpKernel\\KernelEvents` class. Additionally, each
-event listener is passed a single argument, which is some sub-class of :class:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent`.
+event listener is passed a single argument, which is some subclass of :class:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent`.
 This object contains information about the current state of the system and
 each event has their own event object:
 
@@ -673,7 +667,7 @@ Sub Requests
 ------------
 
 In addition to the "main" request that's sent into ``HttpKernel::handle()``,
-you can also send so-called "sub request". A sub request looks and acts like
+you can also send a so-called "sub request". A sub request looks and acts like
 any other request, but typically serves to render just one small portion of
 a page instead of a full page. You'll most commonly make sub-requests from
 your controller (or perhaps from inside a template, that's being rendered by
@@ -701,12 +695,12 @@ argument as follows::
 
 This creates another full request-response cycle where this new ``Request`` is
 transformed into a ``Response``. The only difference internally is that some
-listeners (e.g. security) may only act upon the master request. Each listener
-is passed some sub-class of :class:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent`,
-whose :method:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent::isMasterRequest`
-can be used to check if the current request is a "master" or "sub" request.
+listeners (e.g. security) may only act upon the main request. Each listener
+is passed some subclass of :class:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent`,
+whose :method:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent::isMainRequest`
+method can be used to check if the current request is a "main" or "sub" request.
 
-For example, a listener that only needs to act on the master request may
+For example, a listener that only needs to act on the main request may
 look like this::
 
     use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -714,7 +708,7 @@ look like this::
 
     public function onKernelRequest(RequestEvent $event)
     {
-        if (!$event->isMasterRequest()) {
+        if (!$event->isMainRequest()) {
             return;
         }
 
@@ -752,11 +746,10 @@ Learn more
 
    /reference/events
 
-.. _reflection: https://php.net/manual/en/book.reflection.php
+.. _reflection: https://www.php.net/manual/en/book.reflection.php
 .. _FOSRestBundle: https://github.com/friendsofsymfony/FOSRestBundle
-.. _`PHP FPM`: https://php.net/manual/en/install.fpm.php
+.. _`PHP FPM`: https://www.php.net/manual/en/install.fpm.php
 .. _`SensioFrameworkExtraBundle`: https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/index.html
 .. _`@ParamConverter`: https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html
 .. _`@Template`: https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/view.html
-.. _`EmailSenderListener`: https://github.com/symfony/swiftmailer-bundle/blob/master/EventListener/EmailSenderListener.php
-.. _variadic: http://php.net/manual/en/functions.arguments.php
+.. _variadic: https://www.php.net/manual/en/functions.arguments.php#functions.variable-arg-list

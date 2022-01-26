@@ -7,7 +7,7 @@ Cache Invalidation
 
 Cache invalidation is the process of removing all cached items related to a
 change in the state of your model. The most basic kind of invalidation is direct
-items deletion. But when the state of a primary resource has spread across
+item deletion. But when the state of a primary resource has spread across
 several cached items, keeping them in sync can be difficult.
 
 The Symfony Cache component provides two mechanisms to help solve this problem:
@@ -47,7 +47,7 @@ you can invalidate the cached items by calling
     // if you know the cache key, you can also delete the item directly
     $cache->delete('cache_key');
 
-Using tags invalidation is very useful when tracking cache keys becomes difficult.
+Using tag invalidation is very useful when tracking cache keys becomes difficult.
 
 Tag Aware Adapters
 ~~~~~~~~~~~~~~~~~~
@@ -57,6 +57,12 @@ To store tags, you need to wrap a cache adapter with the
 :class:`Symfony\\Contracts\\Cache\\TagAwareCacheInterface` and its
 :method:`Symfony\\Component\\Cache\\Adapter\\TagAwareAdapterInterface::invalidateTags`
 method.
+
+.. note::
+
+    When using a Redis backend, consider using :ref:`RedisTagAwareAdapter <redis-tag-aware-adapter>`
+    which is optimized for this purpose. When using filesystem, likewise consider to use
+    :ref:`FilesystemTagAwareAdapter <filesystem-tag-aware-adapter>`.
 
 The :class:`Symfony\\Component\\Cache\\Adapter\\TagAwareAdapter` class implements
 instantaneous invalidation (time complexity is ``O(N)`` where ``N`` is the number
@@ -81,7 +87,7 @@ your fronts and have very fast invalidation checks::
 
 .. note::
 
-    Since Symfony 3.4, :class:`Symfony\\Component\\Cache\\Adapter\\TagAwareAdapter`
+    :class:`Symfony\\Component\\Cache\\Adapter\\TagAwareAdapter`
     implements :class:`Symfony\\Component\\Cache\\PruneableInterface`,
     enabling manual
     :ref:`pruning of expired cache entries <component-cache-cache-pool-prune>` by

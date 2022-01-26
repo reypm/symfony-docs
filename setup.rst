@@ -17,19 +17,30 @@ Technical Requirements
 
 Before creating your first Symfony application you must:
 
-* Install PHP 7.2.9 or higher and these PHP extensions (which are installed and
+* Install PHP 7.2.5 or higher and these PHP extensions (which are installed and
   enabled by default in most PHP 7 installations): `Ctype`_, `iconv`_, `JSON`_,
   `PCRE`_, `Session`_, `SimpleXML`_, and `Tokenizer`_;
-* `Install Composer`_, which is used to install PHP packages;
-* `Install Symfony`_, which creates in your computer a binary called ``symfony``
-  that provides all the tools you need to develop your application locally.
 
-The ``symfony`` binary provides a tool to check if your computer meets these
+  * Note that all newer, released versions of PHP will be supported during the
+    lifetime of each Symfony release (including new major versions).
+    For example, PHP 8.0 is supported.
+* `Install Composer`_, which is used to install PHP packages.
+
+Optionally, you can also `install Symfony CLI`_. This creates a binary called
+``symfony`` that provides all the tools you need to develop and run your
+Symfony application locally.
+
+The ``symfony`` binary also provides a tool to check if your computer meets all
 requirements. Open your console terminal and run this command:
 
 .. code-block:: terminal
 
     $ symfony check:requirements
+
+.. note::
+
+    The Symfony CLI is written in Go and you can contribute to it in the
+    `symfony-cli/symfony-cli GitHub repository`_.
 
 .. _creating-symfony-applications:
 
@@ -42,28 +53,30 @@ application:
 .. code-block:: terminal
 
     # run this if you are building a traditional web application
-    $ symfony new my_project_name --full
+    $ symfony new my_project_directory --version=5.4 --webapp
 
     # run this if you are building a microservice, console application or API
-    $ symfony new my_project_name
+    $ symfony new my_project_directory --version=5.4
 
 The only difference between these two commands is the number of packages
-installed by default. The ``--full`` option installs all the packages that you
+installed by default. The ``--webapp`` option installs all the packages that you
 usually need to build web applications, so the installation size will be bigger.
 
-If you can't or don't want to `install Symfony`_ for any reason, run these
-commands to create the new Symfony application using Composer:
+If you're not using the Symfony binary, run these commands to create the new
+Symfony application using Composer:
 
 .. code-block:: terminal
 
     # run this if you are building a traditional web application
-    $ composer create-project symfony/website-skeleton my_project_name
+    $ composer create-project symfony/skeleton:"^5.4" my_project_directory
+    $ cd my_project_directory
+    $ composer require webapp
 
     # run this if you are building a microservice, console application or API
-    $ composer create-project symfony/skeleton my_project_name
+    $ composer create-project symfony/skeleton:"^5.4" my_project_directory
 
 No matter which command you run to create the Symfony application. All of them
-will create a new ``my_project_name/`` directory, download some dependencies
+will create a new ``my_project_directory/`` directory, download some dependencies
 into it and even generate the basic directories and files you'll need to get
 started. In other words, your new application is ready!
 
@@ -72,30 +85,6 @@ started. In other words, your new application is ready!
     The project's cache and logs directory (by default, ``<project>/var/cache/``
     and ``<project>/var/log/``) must be writable by the web server. If you have
     any issue, read how to :doc:`set up permissions for Symfony applications </setup/file_permissions>`.
-
-Running Symfony Applications
-----------------------------
-
-On production, you should use a web server like Nginx or Apache (see
-:doc:`configuring a web server to run Symfony </setup/web_server_configuration>`).
-But for development, it's more convenient to use the
-:doc:`local web server </setup/symfony_server>` provided by Symfony.
-
-This local server provides support for HTTP/2, TLS/SSL, automatic generation of
-security certificates and many other features. It works with any PHP application,
-not only Symfony projects, so it's a very useful development tool.
-
-Open your console terminal, move into your new project directory and start the
-local web server as follows:
-
-.. code-block:: terminal
-
-    $ cd my-project/
-    $ symfony server:start
-
-Open your browser and navigate to ``http://localhost:8000/``. If everything is
-working, you'll see a welcome page. Later, when you are finished working, stop
-the server by pressing ``Ctrl+C`` from your terminal.
 
 .. _install-existing-app:
 
@@ -126,6 +115,44 @@ to run this command which displays information about the project:
 
     $ php bin/console about
 
+Running Symfony Applications
+----------------------------
+
+In production, you should install a web server like Nginx or Apache and
+:doc:`configure it to run Symfony </setup/web_server_configuration>`. This
+method can also be used if you're not using the Symfony local web server for
+development.
+
+.. _symfony-binary-web-server:
+
+However for local development, the most convenient way of running Symfony is by
+using the :doc:`local web server </setup/symfony_server>` provided by the
+``symfony`` binary. This local server provides among other things support for
+HTTP/2, concurrent requests, TLS/SSL and automatic generation of security
+certificates.
+
+Open your console terminal, move into your new project directory and start the
+local web server as follows:
+
+.. code-block:: terminal
+
+    $ cd my-project/
+    $ symfony server:start
+
+Open your browser and navigate to ``http://localhost:8000/``. If everything is
+working, you'll see a welcome page. Later, when you are finished working, stop
+the server by pressing ``Ctrl+C`` from your terminal.
+
+.. tip::
+
+    The web server works with any PHP application, not only Symfony projects,
+    so it's a very useful generic development tool.
+
+Symfony Docker Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you'd like to use Docker with Symfony, see :doc:`setup/docker`
+
 .. _symfony-flex:
 
 Installing Packages
@@ -155,14 +182,16 @@ following example:
     $ cd my-project/
     $ composer require logger
 
-If you execute that command in a Symfony application which doesn't use Flex,
-you'll see a Composer error explaining that ``logger`` is not a valid package
-name. However, if the application has Symfony Flex installed, that command
-installs and enables all the packages needed to use the official Symfony logger.
+If you run that command in a Symfony application which doesn't use Flex, you'll
+see a Composer error explaining that ``logger`` is not a valid package name.
+However, if the application has Symfony Flex installed, that command installs
+and enables all the packages needed to use the official Symfony logger.
+
+.. _recipes-description:
 
 This is possible because lots of Symfony packages/bundles define **"recipes"**,
 which are a set of automated instructions to install and enable packages into
-Symfony applications. Flex keeps tracks of the recipes it installed in a
+Symfony applications. Flex keeps track of the recipes it installed in a
 ``symfony.lock`` file, which must be committed to your code repository.
 
 Symfony Flex recipes are contributed by the community and they are stored in
@@ -193,20 +222,19 @@ For example, to add debugging features in your application, you can run the
 which in turn installs several packages like ``symfony/debug-bundle``,
 ``symfony/monolog-bundle``, ``symfony/var-dumper``, etc.
 
-By default, when installing Symfony packs, your ``composer.json`` file shows the
-pack dependency (e.g. ``"symfony/debug-pack": "^1.0"``) instead of the actual
-packages installed. To show the packages, add the ``--unpack`` option when
-installing a pack (e.g. ``composer require debug --dev --unpack``) or run this
-command to unpack the already installed packs: ``composer unpack PACK_NAME``
-(e.g. ``composer unpack debug``).
+You won't see the ``symfony/debug-pack`` dependency in your ``composer.json``,
+as Flex automatically unpacks the pack. This means that it only adds the real
+packages as dependencies (e.g. you will see a new ``symfony/var-dumper`` in
+``require-dev``). While it is not recommended, you can use the ``composer
+require --no-unpack ...`` option to disable unpacking.
 
 .. _security-checker:
 
 Checking Security Vulnerabilities
 ---------------------------------
 
-The ``symfony`` binary created when you `install Symfony`_ provides a command to
-check whether your project's dependencies contain any known security
+The ``symfony`` binary created when you `install Symfony CLI`_ provides a command
+to check whether your project's dependencies contain any known security
 vulnerability:
 
 .. code-block:: terminal
@@ -215,37 +243,48 @@ vulnerability:
 
 A good security practice is to execute this command regularly to be able to
 update or replace compromised dependencies as soon as possible. The security
-check is done locally by cloning the public `PHP security advisories database`_,
+check is done locally by fetching the public `PHP security advisories database`_,
 so your ``composer.lock`` file is not sent on the network.
+
+The ``check:security`` command terminates with a non-zero exit code if any of
+your dependencies is affected by a known security vulnerability. This way you
+can add it to your project build process and your continuous integration
+workflows to make them fail when there are vulnerabilities.
 
 .. tip::
 
-    The ``check:security`` command terminates with a non-zero exit code if
-    any of your dependencies is affected by a known security vulnerability.
-    This way you can add it to your project build process and your continuous
-    integration workflows to make them fail when there are vulnerabilities.
+    In continuous integration services you can check security vulnerabilities
+    using a different stand-alone project called `Local PHP Security Checker`_.
+    This is the same project used internally by ``check:security`` but much
+    smaller in size than the entire Symfony CLI.
 
 Symfony LTS Versions
 --------------------
 
 According to the :doc:`Symfony release process </contributing/community/releases>`,
 "long-term support" (or LTS for short) versions are published every two years.
-Check out the `Symfony roadmap`_ to know which is the latest LTS version.
+Check out the `Symfony releases`_ to know which is the latest LTS version.
 
 By default, the command that creates new Symfony applications uses the latest
 stable version. If you want to use an LTS version, add the ``--version`` option:
 
 .. code-block:: terminal
 
-    # use the most recent 'lts' version
-    $ symfony new my_project_name --version=lts
+    # use the most recent LTS version
+    $ symfony new my_project_directory --version=lts
 
     # use the 'next' Symfony version to be released (still in development)
-    $ symfony new my_project_name --version=next
+    $ symfony new my_project_directory --version=next
 
-    #  use a specific Symfony version
-    $ symfony new my_project_name --version=3.3.10
-    $ symfony new my_project_name --version=4.3.1
+    # you can also select an exact specific Symfony version
+    $ symfony new my_project_directory --version=5.4
+
+The ``lts`` and ``next`` shortcuts are only available when using Symfony to
+create new projects. If you use Composer, you need to tell the exact version:
+
+.. code-block:: terminal
+
+    $ composer create-project symfony/skeleton:"^5.4" my_project_directory
 
 The Symfony Demo application
 ----------------------------
@@ -258,7 +297,7 @@ Run this command to create a new project based on the Symfony Demo application:
 
 .. code-block:: terminal
 
-    $ symfony new my_project_name --demo
+    $ symfony new my_project_directory --demo
 
 Start Coding!
 -------------
@@ -277,25 +316,27 @@ Learn More
     :maxdepth: 1
     :glob:
 
+    setup/docker
     setup/homestead
     setup/web_server_configuration
     setup/*
 
 .. _`Stellar Development with Symfony`: https://symfonycasts.com/screencast/symfony
 .. _`Install Composer`: https://getcomposer.org/download/
-.. _`Install Symfony`: https://symfony.com/download
-.. _`install Symfony`: https://symfony.com/download
+.. _`install Symfony CLI`: https://symfony.com/download
+.. _`symfony-cli/symfony-cli GitHub repository`: https://github.com/symfony-cli/symfony-cli
 .. _`The Symfony Demo Application`: https://github.com/symfony/demo
 .. _`Symfony Flex`: https://github.com/symfony/flex
 .. _`PHP security advisories database`: https://github.com/FriendsOfPHP/security-advisories
-.. _`Symfony roadmap`: https://symfony.com/roadmap
+.. _`Local PHP Security Checker`: https://github.com/fabpot/local-php-security-checker
+.. _`Symfony releases`: https://symfony.com/releases
 .. _`Main recipe repository`: https://github.com/symfony/recipes
 .. _`Contrib recipe repository`: https://github.com/symfony/recipes-contrib
 .. _`Symfony Recipes documentation`: https://github.com/symfony/recipes/blob/master/README.rst
-.. _`iconv`: https://php.net/book.iconv
-.. _`JSON`: https://php.net/book.json
-.. _`Session`: https://php.net/book.session
-.. _`Ctype`: https://php.net/book.ctype
-.. _`Tokenizer`: https://php.net/book.tokenizer
-.. _`SimpleXML`: https://php.net/book.simplexml
-.. _`PCRE`: https://php.net/book.pcre
+.. _`iconv`: https://www.php.net/book.iconv
+.. _`JSON`: https://www.php.net/book.json
+.. _`Session`: https://www.php.net/book.session
+.. _`Ctype`: https://www.php.net/book.ctype
+.. _`Tokenizer`: https://www.php.net/book.tokenizer
+.. _`SimpleXML`: https://www.php.net/book.simplexml
+.. _`PCRE`: https://www.php.net/book.pcre

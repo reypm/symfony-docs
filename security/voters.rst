@@ -6,30 +6,33 @@
 How to Use Voters to Check User Permissions
 ===========================================
 
-Security voters are the most granular way of checking permissions (e.g. "can this
-specific user edit the given item?"). This article explains voters in detail.
+Voters are Symfony's most powerful way of managing permissions. They allow you
+to centralize all permission logic, then reuse them in many places.
 
-.. tip::
+However, if you don't reuse permissions or your rules are basic, you can always
+put that logic directly into your controller instead. Here's an example how
+this could look like, if you want to make a route accessible to the "owner" only::
 
-    Take a look at the
-    :doc:`authorization </components/security/authorization>`
-    article for an even deeper understanding on voters.
+    // src/Controller/PostController.php
+    // ...
 
-How Symfony Uses Voters
------------------------
+    // inside your controller action
+    if ($post->getOwner() !== $this->getUser()) {
+        throw $this->createAccessDeniedException();
+    }
 
-In order to use voters, you have to understand how Symfony works with them.
-All voters are called each time you use the ``isGranted()`` method on Symfony's
-authorization checker or call ``denyAccessUnlessGranted()`` in a controller (which
-uses the authorization checker), or by
-:ref:`access controls <security-access-control-enforcement-options>`.
+In that sense, the following example used throughout this page is a minimal
+example for voters.
+
+Here's how Symfony works with voters: All voters are called each time you
+use the ``isGranted()`` method on Symfony's authorization checker or call
+``denyAccessUnlessGranted()`` in a controller (which uses the authorization
+checker), or by :ref:`access controls <security-access-control-enforcement-options>`.
 
 Ultimately, Symfony takes the responses from all voters and makes the final
-decision (to allow or deny access to the resource) according to the strategy defined
-in the application, which can be: affirmative, consensus or unanimous.
-
-For more information take a look at
-:ref:`the section about access decision managers <components-security-access-decision-manager>`.
+decision (to allow or deny access to the resource) according to
+:ref:`the strategy defined in the application <security-voters-change-strategy>`,
+which can be: affirmative, consensus, unanimous or priority.
 
 The Voter Interface
 -------------------
@@ -44,11 +47,23 @@ which makes creating a voter even easier::
 
     abstract class Voter implements VoterInterface
     {
-        abstract protected function supports($attribute, $subject);
-        abstract protected function voteOnAttribute($attribute, $subject, TokenInterface $token);
+        abstract protected function supports(string $attribute, $subject);
+        abstract protected function voteOnAttribute(string $attribute, $subject, TokenInterface $token);
     }
 
 .. _how-to-use-the-voter-in-a-controller:
+
+.. tip::
+
+    Checking each voter several times can be time consumming for applications
+    that perform a lot of permission checks. To improve performance in those cases,
+    you can make your voters implement the :class:`Symfony\\Component\\Security\\Core\\Authorization\\Voter\\CacheableVoterInterface`.
+    This allows the access decision manager to remember the attribute and type
+    of subject supported by the voter, to only call the needed voters each time.
+
+    .. versionadded:: 5.4
+
+        The ``CacheableVoterInterface`` interface was introduced in Symfony 5.4.
 
 Setup: Checking for Access in a Controller
 ------------------------------------------
@@ -58,14 +73,14 @@ user can *edit* or *view* the object. In your controller, you'll check access wi
 code like this::
 
     // src/Controller/PostController.php
-    // ...
 
+    // ...
     class PostController extends AbstractController
     {
         /**
          * @Route("/posts/{id}", name="post_show")
          */
-        public function show($id)
+        public function show($id): Response
         {
             // get a Post object - e.g. query for it
             $post = ...;
@@ -79,7 +94,7 @@ code like this::
         /**
          * @Route("/posts/{id}/edit", name="post_edit")
          */
-        public function edit($id)
+        public function edit($id): Response
         {
             // get a Post object - e.g. query for it
             $post = ...;
@@ -118,14 +133,14 @@ would look like this::
         const VIEW = 'view';
         const EDIT = 'edit';
 
-        protected function supports($attribute, $subject)
+        protected function supports(string $attribute, $subject): bool
         {
             // if the attribute isn't one we support, return false
             if (!in_array($attribute, [self::VIEW, self::EDIT])) {
                 return false;
             }
 
-            // only vote on Post objects inside this voter
+            // only vote on `Post` objects
             if (!$subject instanceof Post) {
                 return false;
             }
@@ -133,7 +148,7 @@ would look like this::
             return true;
         }
 
-        protected function voteOnAttribute($attribute, $subject, TokenInterface $token)
+        protected function voteOnAttribute(string $attribute, $subject, TokenInterface $token): bool
         {
             $user = $token->getUser();
 
@@ -142,7 +157,7 @@ would look like this::
                 return false;
             }
 
-            // you know $subject is a Post object, thanks to supports
+            // you know $subject is a Post object, thanks to `supports()`
             /** @var Post $post */
             $post = $subject;
 
@@ -156,22 +171,20 @@ would look like this::
             throw new \LogicException('This code should not be reached!');
         }
 
-        private function canView(Post $post, User $user)
+        private function canView(Post $post, User $user): bool
         {
             // if they can edit, they can view
             if ($this->canEdit($post, $user)) {
                 return true;
             }
 
-            // the Post object could have, for example, a method isPrivate()
-            // that checks a boolean $private property
+            // the Post object could have, for example, a method `isPrivate()`
             return !$post->isPrivate();
         }
 
-        private function canEdit(Post $post, User $user)
+        private function canEdit(Post $post, User $user): bool
         {
-            // this assumes that the data object has a getOwner() method
-            // to get the entity of the user who owns this data object
+            // this assumes that the Post object has a `getOwner()` method
             return $user === $post->getOwner();
         }
     }
@@ -180,7 +193,7 @@ That's it! The voter is done! Next, :ref:`configure it <declaring-the-voter-as-a
 
 To recap, here's what's expected from the two abstract methods:
 
-``Voter::supports($attribute, $subject)``
+``Voter::supports(string $attribute, $subject)``
     When ``isGranted()`` (or ``denyAccessUnlessGranted()``) is called, the first
     argument is passed here as ``$attribute`` (e.g. ``ROLE_USER``, ``edit``) and
     the second argument (if any) is passed as ``$subject`` (e.g. ``null``, a ``Post``
@@ -190,9 +203,9 @@ To recap, here's what's expected from the two abstract methods:
     return ``true`` if the attribute is ``view`` or ``edit`` and if the object is
     a ``Post`` instance.
 
-``voteOnAttribute($attribute, $subject, TokenInterface $token)``
+``voteOnAttribute(string $attribute, $subject, TokenInterface $token)``
     If you return ``true`` from ``supports()``, then this method is called. Your
-    job is simple: return ``true`` to allow access and ``false`` to deny access.
+    job is to return ``true`` to allow access and ``false`` to deny access.
     The ``$token`` can be used to find the current user object (if any). In this
     example, all of the complex business logic is included to determine access.
 
@@ -206,7 +219,7 @@ and tag it with ``security.voter``. But if you're using the
 :ref:`default services.yaml configuration <service-container-services-load-example>`,
 that's done automatically for you! When you
 :ref:`call isGranted() with view/edit and pass a Post object <how-to-use-the-voter-in-a-controller>`,
-your voter will be executed and you can control access.
+your voter will be called and you can control access.
 
 Checking for Roles inside a Voter
 ---------------------------------
@@ -233,7 +246,7 @@ with ``ROLE_SUPER_ADMIN``::
             $this->security = $security;
         }
 
-        protected function voteOnAttribute($attribute, $subject, TokenInterface $token)
+        protected function voteOnAttribute($attribute, $subject, TokenInterface $token): bool
         {
             // ...
 
@@ -261,20 +274,31 @@ voters vote for one action and object. For instance, suppose you have one voter 
 checks if the user is a member of the site and a second one that checks if the user
 is older than 18.
 
-To handle these cases, the access decision manager uses an access decision
-strategy. You can configure this to suit your needs. There are three
-strategies available:
+To handle these cases, the access decision manager uses a "strategy" which you can configure.
+There are three strategies available:
 
 ``affirmative`` (default)
     This grants access as soon as there is *one* voter granting access;
 
 ``consensus``
-    This grants access if there are more voters granting access than denying;
+    This grants access if there are more voters granting access than
+    denying. In case of a tie the decision is based on the
+    ``allow_if_equal_granted_denied`` config option (defaulting to ``true``);
 
 ``unanimous``
-    This only grants access if there is no voter denying access. If all voters
-    abstained from voting, the decision is based on the ``allow_if_all_abstain``
-    config option (which defaults to ``false``).
+    This only grants access if there is no voter denying access.
+
+``priority``
+    This grants or denies access by the first voter that does not abstain,
+    based on their service priority;
+
+    .. versionadded:: 5.1
+
+        The ``priority`` version strategy was introduced in Symfony 5.1.
+
+Regardless the chosen strategy, if all voters abstained from voting, the
+decision is based on the ``allow_if_all_abstain`` config option (which
+defaults to ``false``).
 
 In the above scenario, both voters should grant access in order to grant access
 to the user to read the post. In this case, the default strategy is no longer
@@ -299,7 +323,9 @@ security configuration:
             xmlns:srv="http://symfony.com/schema/dic/services"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd"
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd"
         >
 
             <config>
@@ -310,9 +336,109 @@ security configuration:
     .. code-block:: php
 
         // config/packages/security.php
-        $container->loadFromExtension('security', [
-            'access_decision_manager' => [
-                'strategy' => 'unanimous',
-                'allow_if_all_abstain' => false,
-            ],
-        ]);
+        use Symfony\Config\SecurityConfig;
+
+        return static function (SecurityConfig $security) {
+            $security->accessDecisionManager()
+                ->strategy('unanimous')
+                ->allowIfAllAbstain(false)
+            ;
+        };
+
+Custom Access Decision Strategy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+    The ``strategy_service`` option was introduced in Symfony 5.4.
+
+If none of the built-in strategies fits your use case, define the ``strategy_service``
+option to use a custom service (your service must implement the
+:class:`Symfony\\Component\\Security\\Core\Authorization\\Strategy\\AccessDecisionStrategyInterface`):
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # config/packages/security.yaml
+        security:
+            access_decision_manager:
+                strategy_service: App\Security\MyCustomAccessDecisionStrategy
+                # ...
+
+    .. code-block:: xml
+
+        <!-- config/packages/security.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <srv:container xmlns="http://symfony.com/schema/dic/security"
+            xmlns:srv="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd"
+        >
+
+            <config>
+                <access-decision-manager
+                    strategy-service="App\Security\MyCustomAccessDecisionStrategy"/>
+            </config>
+        </srv:container>
+
+    .. code-block:: php
+
+        // config/packages/security.php
+        use App\Security\MyCustomAccessDecisionStrategy;
+        use Symfony\Config\SecurityConfig;
+
+        return static function (SecurityConfig $security) {
+            $security->accessDecisionManager()
+                ->strategyService(MyCustomAccessDecisionStrategy::class)
+                // ...
+            ;
+        };
+
+Custom Access Decision Manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you need to provide an entirely custom access decision manager, define the ``service``
+option to use a custom service as the Access Decision Manager (your service
+must implement the :class:`Symfony\\Component\\Security\\Core\\Authorization\\AccessDecisionManagerInterface`):
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # config/packages/security.yaml
+        security:
+            access_decision_manager:
+                service: App\Security\MyCustomAccessDecisionManager
+                # ...
+
+    .. code-block:: xml
+
+        <!-- config/packages/security.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <srv:container xmlns="http://symfony.com/schema/dic/security"
+            xmlns:srv="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd"
+        >
+
+            <config>
+                <access-decision-manager
+                    service="App\Security\MyCustomAccessDecisionManager"/>
+            </config>
+        </srv:container>
+
+    .. code-block:: php
+
+        // config/packages/security.php
+        use App\Security\MyCustomAccessDecisionManager;
+        use Symfony\Config\SecurityConfig;
+
+        return static function (SecurityConfig $security) {
+            $security->accessDecisionManager()
+                ->service(MyCustomAccessDecisionManager::class)
+                // ...
+            ;
+        };

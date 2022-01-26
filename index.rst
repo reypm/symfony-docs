@@ -42,13 +42,17 @@ Topics
     forms
     frontend
     http_cache
+    http_client
+    lock
     logging
     mailer
     mercure
     messenger
     migration
+    notifier
     performance
     profiler
+    rate_limiter
     routing
     security
     session
@@ -67,9 +71,9 @@ Components
 .. toctree::
     :hidden:
 
-    components/index
+    components/
 
-Read the :doc:`Components </components/index>` documentation.
+Read the :doc:`Components </components/>` documentation.
 
 Reference Documents
 -------------------

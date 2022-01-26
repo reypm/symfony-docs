@@ -4,7 +4,7 @@
 
 .. _component-cache-files-adapter:
 
-Php Files Cache Adapter
+PHP Files Cache Adapter
 =======================
 
 Similarly to :ref:`Filesystem Adapter <component-cache-filesystem-adapter>`, this cache
@@ -63,8 +63,8 @@ directory path as constructor arguments::
 
 .. note::
 
-    Since Symfony 3.4, this adapter implements :class:`Symfony\\Component\\Cache\\PruneableInterface`,
+    This adapter implements :class:`Symfony\\Component\\Cache\\PruneableInterface`,
     allowing for manual :ref:`pruning of expired cache entries <component-cache-cache-pool-prune>` by
     calling its ``prune()`` method.
 
-.. _`OPcache`: http://php.net/manual/en/book.opcache.php
+.. _`OPcache`: https://www.php.net/manual/en/book.opcache.php

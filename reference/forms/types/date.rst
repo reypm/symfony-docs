@@ -10,46 +10,19 @@ different HTML elements.
 This field can be rendered in a variety of different ways via the `widget`_ option
 and can understand a number of different input formats via the `input`_ option.
 
-+----------------------+-----------------------------------------------------------------------------+
-| Underlying Data Type | can be ``DateTime``, string, timestamp, or array (see the ``input`` option) |
-+----------------------+-----------------------------------------------------------------------------+
-| Rendered as          | single text box or three select fields                                      |
-+----------------------+-----------------------------------------------------------------------------+
-| Options              | - `choice_translation_domain`_                                              |
-|                      | - `days`_                                                                   |
-|                      | - `placeholder`_                                                            |
-|                      | - `format`_                                                                 |
-|                      | - `html5`_                                                                  |
-|                      | - `input`_                                                                  |
-|                      | - `input_format`_                                                           |
-|                      | - `model_timezone`_                                                         |
-|                      | - `months`_                                                                 |
-|                      | - `view_timezone`_                                                          |
-|                      | - `widget`_                                                                 |
-|                      | - `years`_                                                                  |
-+----------------------+-----------------------------------------------------------------------------+
-| Overridden options   | - `by_reference`_                                                           |
-|                      | - `compound`_                                                               |
-|                      | - `data_class`_                                                             |
-|                      | - `error_bubbling`_                                                         |
-+----------------------+-----------------------------------------------------------------------------+
-| Inherited            | - `attr`_                                                                   |
-| options              | - `data`_                                                                   |
-|                      | - `disabled`_                                                               |
-|                      | - `error_mapping`_                                                          |
-|                      | - `help`_                                                                   |
-|                      | - `help_attr`_                                                              |
-|                      | - `help_html`_                                                              |
-|                      | - `inherit_data`_                                                           |
-|                      | - `invalid_message`_                                                        |
-|                      | - `invalid_message_parameters`_                                             |
-|                      | - `mapped`_                                                                 |
-|                      | - `row_attr`_                                                               |
-+----------------------+-----------------------------------------------------------------------------+
-| Parent type          | :doc:`FormType </reference/forms/types/form>`                               |
-+----------------------+-----------------------------------------------------------------------------+
-| Class                | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\DateType`          |
-+----------------------+-----------------------------------------------------------------------------+
++---------------------------+-----------------------------------------------------------------------------+
+| Underlying Data Type      | can be ``DateTime``, string, timestamp, or array (see the ``input`` option) |
++---------------------------+-----------------------------------------------------------------------------+
+| Rendered as               | single text box or three select fields                                      |
++---------------------------+-----------------------------------------------------------------------------+
+| Default invalid message   | Please enter a valid date.                                                  |
++---------------------------+-----------------------------------------------------------------------------+
+| Legacy invalid message    | The value {{ value }} is not valid.                                         |
++---------------------------+-----------------------------------------------------------------------------+
+| Parent type               | :doc:`FormType </reference/forms/types/form>`                               |
++---------------------------+-----------------------------------------------------------------------------+
+| Class                     | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\DateType`          |
++---------------------------+-----------------------------------------------------------------------------+
 
 .. include:: /reference/forms/types/options/_debug_form.rst.inc
 
@@ -70,7 +43,7 @@ field as **three different choice fields**::
         'widget' => 'choice',
     ]);
 
-If your underlying date is *not* a ``DateTime`` object (e.g. it's a unix
+If your underlying date is *not* a ``DateTime`` object (e.g. it's a Unix
 timestamp or a ``DateTimeImmutable`` object), configure the `input`_ option::
 
     $builder->add('publishedAt', DateType::class, [
@@ -78,8 +51,8 @@ timestamp or a ``DateTimeImmutable`` object), configure the `input`_ option::
         'input'  => 'datetime_immutable'
     ]);
 
-Rendering a single HTML5 Textbox
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Rendering a single HTML5 Text Box
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For a better user experience, you may want to render a single text field and use
 some kind of "date picker" to help your user fill in the right format. To do that,
@@ -143,12 +116,10 @@ that Symfony should expect via the `format`_ option.
 Field Options
 -------------
 
-.. include:: /reference/forms/types/options/choice_translation_domain.rst.inc
-
 .. include:: /reference/forms/types/options/days.rst.inc
 
-placeholder
-~~~~~~~~~~~
+``placeholder``
+~~~~~~~~~~~~~~~
 
 **type**: ``string`` | ``array``
 
@@ -166,7 +137,7 @@ values for the year, month and day fields::
     $builder->add('dueDate', DateType::class, [
         'placeholder' => [
             'year' => 'Year', 'month' => 'Month', 'day' => 'Day',
-        ]
+        ],
     ]);
 
 .. _reference-forms-type-date-format:
@@ -194,21 +165,25 @@ values for the year, month and day fields::
 Overridden Options
 ------------------
 
-by_reference
-~~~~~~~~~~~~
+``by_reference``
+~~~~~~~~~~~~~~~~
 
 **default**: ``false``
 
 The ``DateTime`` classes are treated as immutable objects.
 
+.. include:: /reference/forms/types/options/choice_translation_domain_disabled.rst.inc
+
 .. include:: /reference/forms/types/options/compound_type.rst.inc
 
 .. include:: /reference/forms/types/options/data_class_date.rst.inc
 
-error_bubbling
-~~~~~~~~~~~~~~
+``error_bubbling``
+~~~~~~~~~~~~~~~~~~
 
 **default**: ``false``
+
+.. include:: /reference/forms/types/options/invalid_message.rst.inc
 
 Inherited Options
 -----------------
@@ -231,8 +206,6 @@ These options inherit from the :doc:`FormType </reference/forms/types/form>`:
 
 .. include:: /reference/forms/types/options/inherit_data.rst.inc
 
-.. include:: /reference/forms/types/options/invalid_message.rst.inc
-
 .. include:: /reference/forms/types/options/invalid_message_parameters.rst.inc
 
 .. include:: /reference/forms/types/options/mapped.rst.inc
@@ -242,15 +215,15 @@ These options inherit from the :doc:`FormType </reference/forms/types/form>`:
 Field Variables
 ---------------
 
-+--------------+------------+----------------------------------------------------------------------+
-| Variable     | Type       | Usage                                                                |
-+==============+============+======================================================================+
-| widget       | ``mixed``  | The value of the `widget`_ option.                                   |
-+--------------+------------+----------------------------------------------------------------------+
-| type         | ``string`` | Only present when widget is ``single_text`` and HTML5 is activated,  |
-|              |            | contains the input type to use (``datetime``, ``date`` or ``time``). |
-+--------------+------------+----------------------------------------------------------------------+
-| date_pattern | ``string`` | A string with the date format to use.                                |
-+--------------+------------+----------------------------------------------------------------------+
++------------------+------------+----------------------------------------------------------------------+
+| Variable         | Type       | Usage                                                                |
++==================+============+======================================================================+
+| ``widget``       | ``mixed``  | The value of the `widget`_ option.                                   |
++------------------+------------+----------------------------------------------------------------------+
+| ``type``         | ``string`` | Only present when widget is ``single_text`` and HTML5 is activated,  |
+|                  |            | contains the input type to use (``datetime``, ``date`` or ``time``). |
++------------------+------------+----------------------------------------------------------------------+
+| ``date_pattern`` | ``string`` | A string with the date format to use.                                |
++------------------+------------+----------------------------------------------------------------------+
 
-.. _`Bootstrap Datepicker`: https://github.com/eternicode/bootstrap-datepicker
+.. _`Bootstrap Datepicker`: https://github.com/uxsolutions/bootstrap-datepicker

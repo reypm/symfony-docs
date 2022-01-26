@@ -9,7 +9,7 @@ Although this server is not intended for production use, it supports HTTP/2,
 TLS/SSL, automatic generation of security certificates, local domains, and many
 other features that sooner or later you'll need when developing web projects.
 Moreover, the server is not tied to Symfony and you can also use it with any
-PHP application and even with HTML/SPA (single page applications).
+PHP application and even with HTML or single page applications.
 
 Installation
 ------------
@@ -19,8 +19,8 @@ The Symfony server is part of the ``symfony`` binary created when you
 
 .. note::
 
-    If you want to report a bug or suggest a new feature, please create an issue
-    on `symfony/cli`_.
+   You can view and contribute to the Symfony CLI source in the
+   `symfony-cli/symfony-cli GitHub repository`_.
 
 Getting Started
 ---------------
@@ -55,6 +55,28 @@ run the Symfony server in the background:
 
     # show the latest log messages
     $ symfony server:log
+
+Enabling PHP-FPM
+----------------
+
+.. note::
+
+    PHP-FPM must be installed locally for the Symfony server to utilize.
+
+When the server starts, it checks for ``web/index_dev.php``, ``web/index.php``,
+``public/app_dev.php``, ``public/app.php`` in that order. If one is found, the
+server will automatically start with PHP-FPM enabled. Otherwise the server will
+start without PHP-FPM and will show a ``Page not found`` page when trying to
+access a ``.php`` file in the browser.
+
+.. tip::
+
+    When an ``index.html`` and a front controller like e.g. ``index.php`` are
+    both present the server will still start with PHP-FPM enabled but the
+    ``index.html`` will take precedence over the front controller. This means
+    when an ``index.html`` file is present in ``public`` or ``web``, it will be
+    displayed instead of the ``index.php`` which would show e.g. the Symfony
+    application.
 
 Enabling TLS
 ------------
@@ -91,10 +113,10 @@ root directory:
     $ cd my-project/
 
     # use a specific PHP version
-    $ echo "7.2" > .php-version
+    $ echo 7.4 > .php-version
 
-    # use any PHP 7.x version available
-    $ echo "7" > .php-version
+    # use any PHP 8.x version available
+    $ echo 8 > .php-version
 
 .. tip::
 
@@ -133,7 +155,7 @@ to override:
 Running Commands with Different PHP Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When running different PHP versions it's useful to use the main ``symfony``
+When running different PHP versions, it is useful to use the main ``symfony``
 command as a wrapper for the ``php`` command. This allows you to always select
 the most appropriate PHP version according to the project which is running the
 commands. It also loads the env vars automatically, which is important when
@@ -147,20 +169,6 @@ running non-Symfony commands:
     # runs the command with the PHP version selected by the project
     # (or the default PHP version if the project didn't select one)
     $ symfony php -r "..."
-
-If you are using this wrapper frequently, consider aliasing the ``php`` command
-to it:
-
-.. code-block:: terminal
-
-    $ cd ~/.symfony/bin
-    $ cp symfony php
-    # now you can run "php ..." and the "symfony" command will be executed instead
-
-    # other PHP commands can be wrapped too using this trick
-    $ cp symfony php-config
-    $ cp symfony pear
-    $ cp symfony pecl
 
 Local Domain Names
 ------------------
@@ -176,19 +184,30 @@ local IP. However, sometimes it is preferable to associate a domain name to them
 Setting up the Local Proxy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Local domains are possible thanks to a local proxy provided by the Symfony
-server. First, start the proxy:
+Local domains are possible thanks to a local proxy provided by the Symfony server.
+If this is the first time you run the proxy, you must configure it as follows:
+
+#. Open the **proxy settings** of your operating system:
+
+   * `Proxy settings in Windows`_;
+   * `Proxy settings in macOS`_;
+   * `Proxy settings in Ubuntu`_.
+
+#. Set the following URL as the value of the **Automatic Proxy Configuration**:
+   ``http://127.0.0.1:7080/proxy.pac``
+
+Now run this command to start the proxy:
 
 .. code-block:: terminal
 
     $ symfony proxy:start
 
-If this is the first time you run the proxy, you must configure it as follows:
+.. note::
 
-* Open the **proxy settings** of your operating system (`proxy settings in Windows`_,
-  `proxy settings in macOS`_, `proxy settings in Ubuntu`_);
-* Set the following URL as the value of the **Automatic Proxy Configuration**:
-  ``http://127.0.0.1:7080/proxy.pac``
+    Some browsers (e.g. Chrome) require to re-apply proxy settings (clicking on
+    ``Re-apply settings`` button on the ``chrome://net-internals/#proxy`` page)
+    or a full restart after starting the proxy. Otherwise, you'll see a
+    *"This webpage is not available"* error (``ERR_NAME_NOT_RESOLVED``).
 
 Defining the Local Domain
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,12 +229,18 @@ new custom domain.
     Browse the http://127.0.0.1:7080 URL to get the full list of local project
     directories, their custom domains, and port numbers.
 
-When running console commands, add the ``HTTPS_PROXY`` env var to make custom
+When running console commands, add the ``https_proxy`` env var to make custom
 domains work:
 
 .. code-block:: terminal
 
-    $ HTTPS_PROXY=http://127.0.0.1:7080 curl https://my-domain.wip
+    $ https_proxy=http://127.0.0.1:7080 curl https://my-domain.wip
+
+.. note::
+
+    Although env var names are always defined in uppercase, the ``https_proxy``
+    env var `is treated differently`_ than other env vars and its name must be
+    spelled in lowercase.
 
 .. tip::
 
@@ -249,15 +274,20 @@ server provides a ``run`` command to wrap them as follows:
     # stop the web server (and all the associated commands) when you are finished
     $ symfony server:stop
 
+.. _symfony-server-docker:
+
 Docker Integration
 ------------------
 
 The local Symfony server provides full `Docker`_ integration for projects that
-use it.
+use it. To learn more about Docker & Symfony, see :doc:`docker`.
 
 When the web server detects that Docker Compose is running for the project, it
-automatically exposes environment variables according to the exposed port and
-the name of the ``docker-compose`` services.
+automatically exposes some environment variables.
+
+Via the ``docker-compose`` API, it looks for exposed ports used for common
+services. When it detects one it knows about, it uses the service name to
+expose environment variables.
 
 Consider the following configuration:
 
@@ -272,6 +302,9 @@ The web server detects that a service exposing port ``3306`` is running for the
 project. It understands that this is a MySQL service and creates environment
 variables accordingly with the service name (``database``) as a prefix:
 ``DATABASE_URL``, ``DATABASE_HOST``, ...
+
+If the service is not in the supported list below, generic environment
+variables are set: ``PORT``, ``IP``, and ``HOST``.
 
 If the ``docker-compose.yaml`` names do not match Symfony's conventions, add a
 label to override the environment variables prefix:
@@ -293,28 +326,36 @@ to ``DATABASE``, the web server creates environment variables starting with
 Here is the list of supported services with their ports and default Symfony
 prefixes:
 
-============= ===== ======================
-Service       Port  Symfony default prefix
-============= ===== ======================
-MySQL         3306  ``DATABASE_``
-PostgreSQL    5432  ``DATABASE_``
-Redis         6379  ``REDIS_``
-RabbitMQ      5672  ``RABBITMQ_`` (set user and pass via Docker ``RABBITMQ_DEFAULT_USER`` and ``RABBITMQ_DEFAULT_PASS`` env var)
-ElasticSearch 9200  ``ELASTICSEARCH_``
-MongoDB       27017 ``MONGODB_`` (set the database via a Docker ``MONGO_DATABASE`` env var)
-Kafka         9092  ``KAFKA_``
-============= ===== ======================
+============= ========= ======================
+Service       Port      Symfony default prefix
+============= ========= ======================
+MySQL         3306      ``DATABASE_``
+PostgreSQL    5432      ``DATABASE_``
+Redis         6379      ``REDIS_``
+Memcached     11211     ``MEMCACHED_``
+RabbitMQ      5672      ``RABBITMQ_`` (set user and pass via Docker ``RABBITMQ_DEFAULT_USER`` and ``RABBITMQ_DEFAULT_PASS`` env var)
+Elasticsearch 9200      ``ELASTICSEARCH_``
+MongoDB       27017     ``MONGODB_`` (set the database via a Docker ``MONGO_DATABASE`` env var)
+Kafka         9092      ``KAFKA_``
+MailCatcher   1025/1080 ``MAILER_``
+              or 25/80
+Blackfire     8707      ``BLACKFIRE_``
+Mercure       80        Always exposes ``MERCURE_PUBLIC_URL`` and ``MERCURE_URL`` (only works with the ``dunglas/mercure`` Docker image)
+============= ========= ======================
 
-The server also supports Mailcatcher images (including
-``schickling/mailcatcher``). When ports ``1025`` and ``1080`` are detected,
-``MAILER_*`` environment variables are added to support both Symfony Mailer and
-Swiftmailer. To access the web mailer, use ``symfony open:local:webmail`` or
-click on the "Webmail" link in the web debug toolbar.
+You can open web management interfaces for the services that expose them:
+
+.. code-block:: bash
+
+    $ symfony open:local:webmail
+    $ symfony open:local:rabbitmq
+
+Or click on the links in the "Server" section of the web debug toolbar.
 
 .. tip::
 
     To debug and list all exported environment variables, run ``symfony
-    var:export``.
+    var:export --debug``.
 
 .. tip::
 
@@ -328,6 +369,47 @@ When Docker services are running, browse a page of your Symfony application and
 check the "Symfony Server" section in the web debug toolbar; you'll see that
 "Docker Compose" is "Up".
 
+.. note::
+
+    If you don't want environment variables to be exposed for a service, set
+    the ``com.symfony.server.service-ignore`` label to ``true``:
+
+    .. code-block:: yaml
+
+        # docker-compose.yaml
+        services:
+            db:
+                ports: [3306]
+                labels:
+                    com.symfony.server.service-ignore: true
+
+If your Docker Compose file is not at the root of the project, use the
+``COMPOSE_FILE`` and ``COMPOSE_PROJECT_NAME`` environment variables to define
+its location, same as for ``docker-compose``:
+
+.. code-block:: bash
+
+    # start your containers:
+    COMPOSE_FILE=docker/docker-compose.yaml COMPOSE_PROJECT_NAME=project_name docker-compose up -d
+
+    # run any Symfony CLI command:
+    COMPOSE_FILE=docker/docker-compose.yaml COMPOSE_PROJECT_NAME=project_name symfony var:export
+
+.. note::
+
+    If you have more than one Docker Compose file, you can provide them all
+    separated by ``:`` as explained in the `Docker compose CLI env var reference`_.
+
+.. caution::
+
+    When using the Symfony binary with ``php bin/console`` (``symfony console ...``),
+    the binary will **always** use environment variables detected via Docker and will
+    ignore local environment variables.
+    For example if you set up a different database name in your ``.env.test`` file
+    (``DATABASE_URL=mysql://db_user:db_password@127.0.0.1:3306/test``) and if you run
+    ``symfony console doctrine:database:drop --force --env=test``, the command will drop the database
+    defined in your Docker configuration and not the "test" one.
+
 SymfonyCloud Integration
 ------------------------
 
@@ -340,10 +422,12 @@ debug any issues.
 `Read SymfonyCloud technical docs`_.
 
 .. _`install Symfony`: https://symfony.com/download
-.. _`symfony/cli`: https://github.com/symfony/cli
+.. _`symfony-cli/symfony-cli GitHub repository`: https://github.com/symfony-cli/symfony-cli
 .. _`Docker`: https://en.wikipedia.org/wiki/Docker_(software)
 .. _`SymfonyCloud`: https://symfony.com/cloud/
 .. _`Read SymfonyCloud technical docs`: https://symfony.com/doc/master/cloud/intro.html
-.. _`proxy settings in Windows`: https://www.dummies.com/computers/operating-systems/windows-10/how-to-set-up-a-proxy-in-windows-10/
-.. _`proxy settings in macOS`: https://support.apple.com/guide/mac-help/enter-proxy-server-settings-on-mac-mchlp2591/mac
-.. _`proxy settings in Ubuntu`: https://help.ubuntu.com/stable/ubuntu-help/net-proxy.html.en
+.. _`Proxy settings in Windows`: https://www.dummies.com/computers/operating-systems/windows-10/how-to-set-up-a-proxy-in-windows-10/
+.. _`Proxy settings in macOS`: https://support.apple.com/guide/mac-help/enter-proxy-server-settings-on-mac-mchlp2591/mac
+.. _`Proxy settings in Ubuntu`: https://help.ubuntu.com/stable/ubuntu-help/net-proxy.html.en
+.. _`is treated differently`: https://ec.haxx.se/usingcurl/usingcurl-proxies#http_proxy-in-lower-case-only
+.. _`Docker compose CLI env var reference`: https://docs.docker.com/compose/reference/envvars/

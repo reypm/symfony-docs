@@ -50,10 +50,10 @@ you can also set the current progress by calling the
 
     If your platform doesn't support ANSI codes, updates to the progress
     bar are added as new lines. To prevent the output from being flooded,
-    use the method :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::preventRedrawFasterThan`
-    (it writes to the output after every N seconds) and the method
-    :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::setRedrawFrequency`
-    (it writes to the output every N iterations). By default, redraw frequency is
+    use the :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::minSecondsBetweenRedraws`
+    method to limit the number of redraws and the
+    :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::setRedrawFrequency` method
+    to redraw every N iterations. By default, redraw frequency is
     **100ms** or **10%** of your ``max``.
 
 If you don't know the exact number of steps in advance, set it to a reasonable
@@ -105,13 +105,19 @@ which starts, advances and finishes the progress bar automatically::
 
     $progressBar = new ProgressBar($output);
 
-    // $iterable can be for example an array ([1, 2, 3, ...]) or a generator
-    // $iterable = function () { yield 1; yield 2; ... };
+    // $iterable can be array
+    $iterable = [1, 2];
     foreach ($progressBar->iterate($iterable) as $value) {
         // ... do some work
     }
 
-If ``$iterable = [1, 2]``, the previous code will output the following:
+    // or a generator
+    function iterable() { yield 1; yield 2; ... };
+    foreach ($progressBar->iterate(iterable()) as $value) {
+        // ... do some work
+    }
+
+The previous code will output:
 
 .. code-block:: text
 
@@ -141,9 +147,9 @@ level of verbosity of the ``OutputInterface`` instance:
      3/3 [============================] 100%  1 sec
 
     # OutputInterface::VERBOSITY_VERY_VERBOSE (-vv)
-     0/3 [>---------------------------]   0%  1 sec
-     1/3 [=========>------------------]  33%  1 sec
-     3/3 [============================] 100%  1 sec
+     0/3 [>---------------------------]   0%  1 sec/1 sec
+     1/3 [=========>------------------]  33%  1 sec/1 sec
+     3/3 [============================] 100%  1 sec/1 sec
 
     # OutputInterface::VERBOSITY_DEBUG (-vvv)
      0/3 [>---------------------------]   0%  1 sec/1 sec  1.0 MB
@@ -269,7 +275,7 @@ the example above.
 Bar Settings
 ~~~~~~~~~~~~
 
-Amongst the placeholders, ``bar`` is a bit special as all the characters used
+Among the placeholders, ``bar`` is a bit special as all the characters used
 to display it can be customized::
 
     // the finished part of the bar
@@ -286,20 +292,19 @@ to display it can be customized::
 
 .. caution::
 
-    For performance reasons, Symfony redraws screen every 100ms. If this is too
-    fast or to slow for your application, use these methods:
-    :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::preventRedrawFasterThan`
-    :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::setRedrawFrequency`
-    :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::forceRedrawSlowerThan`::
+    For performance reasons, Symfony redraws the screen once every 100ms. If this is too
+    fast or to slow for your application, use the methods
+    :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::minSecondsBetweenRedraws` and
+    :method:`Symfony\\Component\\Console\\Helper\\ProgressBar::maxSecondsBetweenRedraws`::
 
         $progressBar = new ProgressBar($output, 50000);
         $progressBar->start();
 
         // this redraws the screen every 100 iterations, but sets additional limits:
-        // don't redraw slower than 100ms (0.1) or faster than 200ms (0.2)
+        // don't redraw slower than 200ms (0.2) or faster than 100ms (0.1)
         $progressBar->setRedrawFrequency(100);
-        $progressBar->forceRedrawSlowerThan(0.2);
-        $progressBar->preventRedrawFasterThan(0.1);
+        $progressBar->maxSecondsBetweenRedraws(0.2);
+        $progressBar->minSecondsBetweenRedraws(0.1);
 
         $i = 0;
         while ($i++ < 50000) {
@@ -343,8 +348,8 @@ placeholder before displaying the progress bar::
     $progressBar->start();
     // 0/100 -- Start
 
-    $progressBar->advance();
     $progressBar->setMessage('Task is in progress...');
+    $progressBar->advance();
     // 1/100 -- Task is in progress...
 
 Messages can be combined with custom placeholders too. In this example, the

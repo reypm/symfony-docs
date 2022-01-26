@@ -155,7 +155,7 @@ Array Nodes
 ~~~~~~~~~~~
 
 It is possible to add a deeper level to the hierarchy, by adding an array
-node. The array node itself, may have a pre-defined set of variable nodes::
+node. The array node itself, may have a predefined set of variable nodes::
 
     $rootNode
         ->children()
@@ -193,7 +193,7 @@ above, it is possible to have multiple connection arrays (containing a ``driver`
 ``host``, etc.).
 
 Sometimes, to improve the user experience of your application or bundle, you may
-allow to use a simple string or numeric value where an array value is required.
+allow the use of a simple string or numeric value where an array value is required.
 Use the ``castToArray()`` helper to turn those variables into arrays::
 
     ->arrayNode('hosts')
@@ -346,6 +346,13 @@ In order to maintain the array keys use the ``useAttributeAsKey()`` method::
         ->end()
     ;
 
+.. note::
+
+    In YAML, the ``'name'`` argument of ``useAttributeAsKey()`` has a special
+    meaning and refers to the key of the map (``sf_connection`` and ``default``
+    in this example). If a child node was defined for the ``connections`` node
+    with the key ``name``, then that key of the map would be lost.
+
 The argument of this method (``name`` in the example above) defines the name of
 the attribute added to each XML node to differentiate them. Now you can use the
 same YAML configuration shown before or the following XML configuration:
@@ -428,6 +435,13 @@ The following example shows these methods in practice::
 Deprecating the Option
 ----------------------
 
+.. versionadded:: 5.1
+
+    The signature of the ``setDeprecated()`` method changed from
+    ``setDeprecated(?string $message)`` to
+    ``setDeprecated(string $package, string $version, ?string $message)``
+    in Symfony 5.1.
+
 You can deprecate options using the
 :method:`Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition::setDeprecated`
 method::
@@ -436,11 +450,15 @@ method::
         ->children()
             ->integerNode('old_option')
                 // this outputs the following generic deprecation message:
-                // The child node "old_option" at path "..." is deprecated.
-                ->setDeprecated()
+                // Since acme/package 1.2: The child node "old_option" at path "..." is deprecated.
+                ->setDeprecated('acme/package', '1.2')
 
                 // you can also pass a custom deprecation message (%node% and %path% placeholders are available):
-                ->setDeprecated('The "%node%" option is deprecated. Use "new_config_option" instead.')
+                ->setDeprecated(
+                    'acme/package',
+                    '1.2',
+                    'The "%node%" option is deprecated. Use "new_config_option" instead.'
+                )
             ->end()
         ->end()
     ;
@@ -732,7 +750,7 @@ By changing a string value into an associative array with ``name`` as the key::
                     ->then(function ($v) { return ['name' => $v]; })
                 ->end()
                 ->children()
-                    ->scalarNode('name')->isRequired()
+                    ->scalarNode('name')->isRequired()->end()
                     // ...
                 ->end()
             ->end()
@@ -809,7 +827,8 @@ character (``.``)::
 
     $node = $treeBuilder->buildTree();
     $children = $node->getChildren();
-    $path = $children['driver']->getPath();
+    $childChildren = $children['connection']->getChildren();
+    $path = $childChildren['driver']->getPath();
     // $path = 'database.connection.driver'
 
 Use the ``setPathSeparator()`` method on the config builder to change the path
@@ -820,7 +839,8 @@ separator::
     $treeBuilder->setPathSeparator('/');
     $node = $treeBuilder->buildTree();
     $children = $node->getChildren();
-    $path = $children['driver']->getPath();
+    $childChildren = $children['connection']->getChildren();
+    $path = $childChildren['driver']->getPath();
     // $path = 'database/connection/driver'
 
 Processing Configuration Values

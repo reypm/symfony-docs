@@ -1,30 +1,34 @@
 Encore: Setting up your Project
 ===============================
 
-After :doc:`installing Encore </frontend/encore/installation>`, your app already has one
-CSS and one JS file, organized into an ``assets/`` directory:
+After :doc:`installing Encore </frontend/encore/installation>`, your app already
+has a few files, organized into an ``assets/`` directory:
 
-* ``assets/js/app.js``
-* ``assets/css/app.css``
+* ``assets/app.js``
+* ``assets/bootstrap.js``
+* ``assets/controllers.json``
+* ``assets/styles/app.css``
+* ``assets/controllers/hello_controller.js``
 
 With Encore, think of your ``app.js`` file like a standalone JavaScript
 application: it will *require* all of the dependencies it needs (e.g. jQuery or React),
-*including* any CSS. Your ``app.js`` file is already doing this with a special
-``require()`` function:
+*including* any CSS. Your ``app.js`` file is already doing this with a JavaScript
+``import`` statement:
 
 .. code-block:: javascript
 
-    // assets/js/app.js
+    // assets/app.js
     // ...
 
-    require('../css/app.css');
+    import './styles/app.css';
 
-    // var $ = require('jquery');
-
-Encore's job (via Webpack) is simple: to read and follow *all* of the ``require()``
+Encore's job (via Webpack) is simple: to read and follow *all* of the ``import``
 statements and create one final ``app.js`` (and ``app.css``) that contains *everything*
 your app needs. Encore can do a lot more: minify files, pre-process Sass/LESS,
 support React, Vue.js, etc.
+
+The other files - ``bootstrap.js``, ``controllers.json`` and ``hello_controller.js``
+relate to a topic you'll learn about soon: `Stimulus & Symfony UX`_.
 
 Configuring Encore/Webpack
 --------------------------
@@ -35,7 +39,7 @@ of your project. It already holds the basic config you need:
 .. code-block:: javascript
 
     // webpack.config.js
-    var Encore = require('@symfony/webpack-encore');
+    const Encore = require('@symfony/webpack-encore');
 
     Encore
         // directory where compiled assets will be stored
@@ -43,32 +47,43 @@ of your project. It already holds the basic config you need:
         // public path used by the web server to access the output path
         .setPublicPath('/build')
 
-        .addEntry('app', './assets/js/app.js')
+        .addEntry('app', './assets/app.js')
 
-        // ...
+        // uncomment this if you want use jQuery in the following example
+        .autoProvidejQuery()
     ;
 
     // ...
 
-They *key* part is ``addEntry()``: this tells Encore to load the ``assets/js/app.js``
+The *key* part is ``addEntry()``: this tells Encore to load the ``assets/app.js``
 file and follow *all* of the ``require()`` statements. It will then package everything
 together and - thanks to the first ``app`` argument - output final ``app.js`` and
 ``app.css`` files into the ``public/build`` directory.
 
 .. _encore-build-assets:
 
-To build the assets, run:
+To build the assets, run the following if you use the Yarn package manager:
 
 .. code-block:: terminal
 
-    # compile assets once
-    $ yarn encore dev
+    # compile assets and automatically re-compile when files change
+    $ yarn watch
 
-    # or, recompile assets automatically when files change
-    $ yarn encore dev --watch
+    # if using npm, use "npm run" and then any of these commands
+    $ npm run watch
+
+    # or, run a dev-server that can sometimes update your code without refreshing the page
+    $ yarn dev-server
+
+    # compile assets once
+    $ yarn dev
 
     # on deploy, create a production build
-    $ yarn encore production
+    $ yarn build
+
+All of these commands - e.g. ``dev`` or ``watch`` - are shortcuts that are defined
+in your ``package.json`` file. If you use the npm package manager, replace ``yarn``
+with ``npm run``.
 
 .. note::
 
@@ -80,8 +95,15 @@ Congrats! You now have three new files:
 * ``public/build/app.css`` (holds all the CSS for your "app" entry)
 * ``public/build/runtime.js`` (a file that helps Webpack do its job)
 
-Next, include these in your base layout file. Two Twig helpers from WebpackEncoreBundle
-can do most of the work for you:
+.. note::
+
+    In reality, you probably have a few *more* files in ``public/build``. Some of
+    these are due to :doc:`code splitting </frontend/encore/split-chunks>`, an optimization
+    that helps performance, but doesn't affect how things work. Others help Encore
+    do its work.
+
+Next, to include these in your base layout, you can leverage two Twig helpers from
+WebpackEncoreBundle:
 
 .. code-block:: html+twig
 
@@ -98,53 +120,58 @@ can do most of the work for you:
                 <!-- Renders a link tag (if your module requires any CSS)
                      <link rel="stylesheet" href="/build/app.css"> -->
             {% endblock %}
-        </head>
-        <body>
-            <!-- ... -->
 
             {% block javascripts %}
                 {{ encore_entry_script_tags('app') }}
 
                 <!-- Renders app.js & a webpack runtime.js file
-                    <script src="/build/runtime.js"></script>
-                    <script src="/build/app.js"></script> -->
+                    <script src="/build/runtime.js" defer></script>
+                    <script src="/build/app.js" defer></script>
+                    See note below about the "defer" attribute -->
             {% endblock %}
-        </body>
+        </head>
+
+        <!-- ... -->
     </html>
 
 .. _encore-entrypointsjson-simple-description:
 
 That's it! When you refresh your page, all of the JavaScript from
-``assets/js/app.js`` - as well as any other JavaScript files it included - will
+``assets/app.js`` - as well as any other JavaScript files it included - will
 be executed. All the CSS files that were required will also be displayed.
 
 The ``encore_entry_link_tags()`` and ``encore_entry_script_tags()`` functions
-read from an ``entrypoints.json`` file that's generated by Encore to know the exact
+read from a ``public/build/entrypoints.json`` file that's generated by Encore to know the exact
 filename(s) to render. This file is *especially* useful because you can
-:doc:`enable versioning</frontend/encore/versioning>` or
-:doc:`point assets to a CDN</frontend/encore/cdn>` without making *any* changes to your
+:doc:`enable versioning </frontend/encore/versioning>` or
+:doc:`point assets to a CDN </frontend/encore/cdn>` without making *any* changes to your
 template: the paths in ``entrypoints.json`` will always be the final, correct paths.
+And if you use :doc:`splitEntryChunks() </frontend/encore/split-chunks>` (where Webpack splits the output into even
+more files), all the necessary ``script`` and ``link`` tags will render automatically.
 
 If you're *not* using Symfony, you can ignore the ``entrypoints.json`` file and
 point to the final, built file directly. ``entrypoints.json`` is only required for
 some optional features.
 
-.. versionadded:: 0.21.0
+.. versionadded:: 1.9.0
 
-    The ``encore_entry_link_tags()`` comes from WebpackEncoreBundle and relies
-    on a feature in Encore that was first introduced in version 0.21.0. Previously,
-    the ``asset()`` function was used to point directly to the file.
+    The ``defer`` attribute on the ``script`` tags delays the execution of the
+    JavaScript until the page loads (similar to putting the ``script`` at the
+    bottom of the page). The ability to always add this attribute was introduced
+    in WebpackEncoreBundle 1.9.0 and is automatically enabled in that bundle's
+    recipe in the ``config/packages/webpack_encore.yaml`` file. See
+    `WebpackEncoreBundle Configuration`_ for more details.
 
 Requiring JavaScript Modules
 ----------------------------
 
-Webpack is a module bundler, which means that you can ``require`` other JavaScript
-files. First, create a file that exports a function:
+Webpack is a module bundler, which means that you can ``import`` other JavaScript
+files. First, create a file that exports a function, class or any other value:
 
 .. code-block:: javascript
 
-    // assets/js/greet.js
-    module.exports = function(name) {
+    // assets/greet.js
+    export default function(name) {
         return `Yo yo ${name} - welcome to Encore!`;
     };
 
@@ -152,21 +179,25 @@ We'll use jQuery to print this message on the page. Install it via:
 
 .. code-block:: terminal
 
+    # if you use the Yarn package manager
     $ yarn add jquery --dev
 
-Great! Use ``require()`` to import ``jquery`` and ``greet.js``:
+    # if you use the npm package manager
+    $ npm install jquery --save-dev
+
+Great! Use ``import`` to import ``jquery`` and ``greet.js``:
 
 .. code-block:: diff
 
-    // assets/js/app.js
-    // ...
+      // assets/app.js
+      // ...
 
     + // loads the jquery package from node_modules
-    + var $ = require('jquery');
+    + import $ from 'jquery';
 
     + // import the function from greet.js (the .js extension is optional)
     + // ./ (or ../) means to look for a local file
-    + var greet = require('./greet');
+    + import greet from './greet';
 
     + $(document).ready(function() {
     +     $('body').prepend('<h1>'+greet('jill')+'</h1>');
@@ -176,75 +207,155 @@ That's it! If you previously ran ``encore dev --watch``, your final, built files
 have already been updated: jQuery and ``greet.js`` have been automatically
 added to the output file (``app.js``). Refresh to see the message!
 
-The import and export Statements
---------------------------------
+Stimulus & Symfony UX
+---------------------
 
-Instead of using ``require()`` and ``module.exports`` like shown above, JavaScript
-provides an alternate syntax based on the `ECMAScript 6 modules`_ that includes
-the ability to use dynamic imports.
+As simple as the above example is, instead of building your application inside of
+``app.js``, we recommend `Stimulus`_: a small JavaScript framework that makes it
+easy to attach behavior to HTML. It's powerful, and you will love it! Symfony
+even provides packages to add more features to Stimulus. These are called the
+`Symfony UX Packages`_.
 
-To export values using the alternate syntax, use ``export``:
+If you followed the setup instructions, you should already have Stimulus installed
+and ready to go! In fact, that's the purpose of the ``assets/bootstrap.js`` file:
+to initialize Stimulus and automatically load any "controllers" from the
+``assets/controllers/`` directory.
 
-.. code-block:: diff
+Let's look at a simple Stimulus example. In a Twig template, suppose you have:
 
-    // assets/js/greet.js
-    - module.exports = function(name) {
-    + export default function(name) {
-        return `Yo yo ${name} - welcome to Encore!`;
-    };
+.. code-block:: twig
 
-To import values, use ``import``:
+    <div {{ stimulus_controller('say-hello') }}>
+        <input type="text" {{ stimulus_target('say-hello', 'name') }}>
 
-.. code-block:: diff
+        <button {{ stimulus_action('say-hello', 'greet') }}>
+            Greet
+        </button>
 
-    // assets/js/app.js
-    - require('../css/app.css');
-    + import '../css/app.css';
+        <div {{ stimulus_target('say-hello', 'output') }}></div>
+    </div>
 
-    - var $ = require('jquery');
-    + import $ from 'jquery';
+The ``stimulus_controller('say-hello')`` renders a ``data-controller="say-hello"``
+attribute. Whenever this element appears on the page, Stimulus will automatically
+look for and initialize a controller called ``say-hello-controller.js``. Create
+that in your ``assets/controllers/`` directory:
 
-    - var greet = require('./greet');
-    + import greet from './greet';
+.. code-block:: javascript
+
+    // assets/controllers/say-hello-controller.js
+    import { Controller } from '@hotwired/stimulus';
+
+    export default class extends Controller {
+        static targets = ['name', 'output']
+
+        greet() {
+          this.outputTarget.textContent = `Hello, ${this.nameTarget.value}!`
+        }
+    }
+
+The result? When you click the "Greet" button, it prints your name! And if
+more ``{{ stimulus_controller('say-hello') }}`` elements are added to the page - like
+via Ajax - those will instantly work: no need to reinitialize anything.
+
+Ready to learn more about Stimulus?
+
+* Read the `Stimulus Documentation`_
+* Check out the `Symfony UX Packages`_
+* Learn more about the `Symfony Stimulus Bridge`_ - including the superpower of
+  making your controllers load lazily!
+
+  .. admonition:: Screencast
+      :class: screencast
+
+      Or check out the `Stimulus Screencast`_ on SymfonyCasts.
+
+Turbo: Lightning Fast Single-Page-Application Experience
+--------------------------------------------------------
+
+Symfony comes with tight integration with another JavaScript library called `Turbo`_.
+Turbo automatically transforms all link clicks and form submits into an Ajax call,
+with zero (or nearly zero) changes to your Symfony code! The result? You get the
+speed of a single page application without having to write any JavaScript.
+
+To learn more, check out the `symfony/ux-turbo`_ package.
+
+.. admonition:: Screencast
+    :class: screencast
+
+    Or check out the `Turbo Screencast`_ on SymfonyCasts.
+
+Page-Specific JavaScript or CSS
+-------------------------------
+
+So far, you only have one final JavaScript file: ``app.js``. Encore may be split
+into multiple files for performance (see :doc:`split chunks </frontend/encore/split-chunks>`),
+but all of that code is still downloaded on every page.
+
+What if you have some extra JavaScript or CSS (e.g. for performance) that you only
+want to include on *certain* pages?
+
+Lazy Controllers
+~~~~~~~~~~~~~~~~
+
+One very nice solution if you're using Stimulus is to leverage `lazy controllers`_.
+To activate this on a controller, add a special ``stimulusFetch: 'lazy'`` above
+your controller class:
+
+.. code-block:: javascript
+
+    // assets/controllers/lazy-example-controller.js
+    import { Controller } from '@hotwired/stimulus';
+
+    /* stimulusFetch: 'lazy' */
+    export default class extends Controller {
+        // ...
+    }
+
+That's it! This controller's code - and any modules that it imports - will be
+split to *separate* files by Encore. Then, those files won't be downloaded until
+the moment a matching element (e.g. ``<div data-controller="lazy-example">``)
+appears on the page!
 
 .. _multiple-javascript-entries:
 
-Page-Specific JavaScript or CSS (Multiple Entries)
---------------------------------------------------
+Multiple Entries
+~~~~~~~~~~~~~~~~
 
-So far, you only have one final JavaScript file: ``app.js``. For small applications
-or SPA's (Single Page Applications), that might be fine! However, as your app grows,
-you may want to have page-specific JavaScript or CSS (e.g. checkout, account,
+Another option is to create page-specific JavaScript or CSS (e.g. checkout, account,
 etc.). To handle this, create a new "entry" JavaScript file for each page:
 
 .. code-block:: javascript
 
-    // assets/js/checkout.js
+    // assets/checkout.js
     // custom code for your checkout page
 
 .. code-block:: javascript
 
-    // assets/js/account.js
+    // assets/account.js
     // custom code for your account page
 
 Next, use ``addEntry()`` to tell Webpack to read these two new files when it builds:
 
 .. code-block:: diff
 
-    // webpack.config.js
-    Encore
-        // ...
-        .addEntry('app', './assets/js/app.js')
-    +     .addEntry('checkout', './assets/js/checkout.js')
-    +     .addEntry('account', './assets/js/account.js')
-        // ...
+      // webpack.config.js
+      Encore
+          // ...
+          .addEntry('app', './assets/app.js')
+    +     .addEntry('checkout', './assets/checkout.js')
+    +     .addEntry('account', './assets/account.js')
+          // ...
 
 And because you just changed the ``webpack.config.js`` file, make sure to stop
 and restart Encore:
 
 .. code-block:: terminal
 
-    $ yarn run encore dev --watch
+    # if you use the Yarn package manager
+    $ yarn watch
+
+    # if you use the npm package manager
+    $ npm run watch
 
 Webpack will now output a new ``checkout.js`` file and a new ``account.js`` file
 in your build directory. And, if any of those files require/import CSS, Webpack
@@ -255,8 +366,8 @@ you need them:
 
 .. code-block:: diff
 
-    {# templates/.../checkout.html.twig #}
-    {% extends 'base.html.twig' %}
+      {# templates/.../checkout.html.twig #}
+      {% extends 'base.html.twig' %}
 
     + {% block stylesheets %}
     +     {{ parent() }}
@@ -269,10 +380,10 @@ you need them:
     + {% endblock %}
 
 Now, the checkout page will contain all the JavaScript and CSS for the ``app`` entry
-(because this is included in ``base.html.twig``) *and* your ``checkout`` entry.
-
-See :doc:`/frontend/encore/page-specific-assets` for more details. To avoid duplicating
-the same code in different entry files, see :doc:`/frontend/encore/split-chunks`.
+(because this is included in ``base.html.twig`` and there is the ``{{ parent() }}`` call)
+*and* your ``checkout`` entry. With this, JavaScript & CSS needed for every page
+can live inside the ``app`` entry and code needed only for the checkout page can
+live inside ``checkout``.
 
 Using Sass/LESS/Stylus
 ----------------------
@@ -284,36 +395,41 @@ file to ``app.scss`` and update the ``import`` statement:
 
 .. code-block:: diff
 
-    // assets/js/app.js
-    - import '../css/app.css';
-    + import '../css/app.scss';
+      // assets/app.js
+    - import './styles/app.css';
+    + import './styles/app.scss';
 
-Then, tell Encore to enable the Sass pre-processor:
+Then, tell Encore to enable the Sass preprocessor:
 
 .. code-block:: diff
 
-    // webpack.config.js
-    Encore
-        // ...
+      // webpack.config.js
+      Encore
+          // ...
 
     +    .enableSassLoader()
-    ;
+      ;
 
 Because you just changed your ``webpack.config.js`` file, you'll need to restart
 Encore. When you do, you'll see an error!
 
 .. code-block:: terminal
 
-    >   Error: Install sass-loader & node-sass to use enableSassLoader()
-    >     yarn add sass-loader@^7.0.1 node-sass --dev
+    >   Error: Install sass-loader & sass to use enableSassLoader()
+    >     yarn add sass-loader@^12.0.0 sass --dev
 
 Encore supports many features. But, instead of forcing all of them on you, when
 you need a feature, Encore will tell you what you need to install. Run:
 
 .. code-block:: terminal
 
-    $ yarn add sass-loader@^7.0.1 node-sass --dev
+    # if you use the Yarn package manager
+    $ yarn add sass-loader@^12.0.0 sass --dev
     $ yarn encore dev --watch
+
+    # if you use the npm package manager
+    $ npm install sass-loader@^12.0.0 sass --save-dev
+    $ npm run watch
 
 Your app now supports Sass. Encore also supports LESS and Stylus. See
 :doc:`/frontend/encore/css-preprocessors`.
@@ -331,11 +447,11 @@ If you want to only compile a CSS file, that's possible via ``addStyleEntry()``:
 
 .. code-block:: javascript
 
-    // webpack/config.js
+    // webpack.config.js
     Encore
         // ...
 
-        .addStyleEntry('some_page', './assets/css/some_page.css')
+        .addStyleEntry('some_page', './assets/styles/some_page.css')
     ;
 
 This will output a new ``some_page.css``.
@@ -347,4 +463,13 @@ Encore supports many more features! For a full list of what you can do, see
 `Encore's index.js file`_. Or, go back to :ref:`list of Encore articles <encore-toc>`.
 
 .. _`Encore's index.js file`: https://github.com/symfony/webpack-encore/blob/master/index.js
-.. _`ECMAScript 6 modules`: https://hacks.mozilla.org/2015/08/es6-in-depth-modules/
+.. _`WebpackEncoreBundle Configuration`: https://github.com/symfony/webpack-encore-bundle#configuration
+.. _`Stimulus`: https://stimulus.hotwired.dev/
+.. _`Stimulus Documentation`: https://stimulus.hotwired.dev/handbook/introduction
+.. _`Symfony UX Packages`: https://github.com/symfony/ux
+.. _`Symfony Stimulus Bridge`: https://github.com/symfony/stimulus-bridge
+.. _`Turbo`: https://turbo.hotwired.dev/
+.. _`symfony/ux-turbo`: https://github.com/symfony/ux/tree/2.x/src/Turbo
+.. _`Stimulus Screencast`: https://symfonycasts.com/screencast/stimulus
+.. _`Turbo Screencast`: https://symfonycasts.com/screencast/turbo
+.. _`lazy controllers`: https://github.com/symfony/stimulus-bridge#lazy-controllers

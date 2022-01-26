@@ -19,6 +19,7 @@ The component supports:
 * **hashes** - using JSON-like notation (e.g. ``{ foo: 'bar' }``)
 * **booleans** - ``true`` and ``false``
 * **null** - ``null``
+* **exponential** - also known as scientific (e.g. ``1.99E+3`` or ``1e-2``)
 
 .. caution::
 
@@ -190,7 +191,7 @@ Comparison Operators
 
         $expressionLanguage->evaluate('not ("foo" matches "/bar/")'); // returns true
 
-    You must use parenthesis because the unary operator ``not`` has precedence
+    You must use parentheses because the unary operator ``not`` has precedence
     over the binary operator ``matches``.
 
 Examples::
@@ -199,7 +200,6 @@ Examples::
         'life == everything',
         [
             'life' => 10,
-            'universe' => 10,
             'everything' => 22,
         ]
     );
@@ -208,7 +208,6 @@ Examples::
         'life > everything',
         [
             'life' => 10,
-            'universe' => 10,
             'everything' => 22,
         ]
     );
@@ -308,3 +307,14 @@ Ternary Operators
 * ``foo ? 'yes' : 'no'``
 * ``foo ?: 'no'`` (equal to ``foo ? foo : 'no'``)
 * ``foo ? 'yes'`` (equal to ``foo ? 'yes' : ''``)
+
+Built-in Objects and Variables
+------------------------------
+
+When using this component inside a Symfony application, certain objects and
+variables are automatically injected by Symfony so you can use them in your
+expressions (e.g. the request, the current user, etc.):
+
+* :doc:`Variables available in security expressions </security/expressions>`;
+* :doc:`Variables available in service container expressions </service_container/expression_language>`;
+* :ref:`Variables available in routing expressions <routing-matching-expressions>`.

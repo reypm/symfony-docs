@@ -13,8 +13,6 @@ type guessers.
 
     Symfony also provides some form type guessers in the bridges:
 
-    * :class:`Symfony\\Bridge\\Propel1\\Form\\PropelTypeGuesser` provided by
-      the Propel1 bridge;
     * :class:`Symfony\\Bridge\\Doctrine\\Form\\DoctrineOrmTypeGuesser`
       provided by the Doctrine bridge.
 
@@ -42,22 +40,24 @@ Start by creating the class and these methods. Next, you'll learn how to fill ea
     namespace App\Form\TypeGuesser;
 
     use Symfony\Component\Form\FormTypeGuesserInterface;
+    use Symfony\Component\Form\Guess\TypeGuess;
+    use Symfony\Component\Form\Guess\ValueGuess;
 
     class PHPDocTypeGuesser implements FormTypeGuesserInterface
     {
-        public function guessType($class, $property)
+        public function guessType(string $class, string $property): ?TypeGuess
         {
         }
 
-        public function guessRequired($class, $property)
+        public function guessRequired(string $class, string $property): ?ValueGuess
         {
         }
 
-        public function guessMaxLength($class, $property)
+        public function guessMaxLength(string $class, string $property): ?ValueGuess
         {
         }
 
-        public function guessPattern($class, $property)
+        public function guessPattern(string $class, string $property): ?ValueGuess
         {
         }
     }
@@ -84,6 +84,7 @@ The ``TypeGuess`` constructor requires three options:
 With this knowledge, you can implement the ``guessType()`` method of the
 ``PHPDocTypeGuesser``::
 
+    // src/Form/TypeGuesser/PHPDocTypeGuesser.php
     namespace App\Form\TypeGuesser;
 
     use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -95,12 +96,12 @@ With this knowledge, you can implement the ``guessType()`` method of the
 
     class PHPDocTypeGuesser implements FormTypeGuesserInterface
     {
-        public function guessType($class, $property)
+        public function guessType(string $class, string $property): ?TypeGuess
         {
             $annotations = $this->readPhpDocAnnotations($class, $property);
 
             if (!isset($annotations['var'])) {
-                return; // guess nothing if the @var annotation is not available
+                return null; // guess nothing if the @var annotation is not available
             }
 
             // otherwise, base the type on the @var annotation
@@ -130,7 +131,7 @@ With this knowledge, you can implement the ``guessType()`` method of the
             }
         }
 
-        protected function readPhpDocAnnotations($class, $property)
+        protected function readPhpDocAnnotations(string $class, string $property): array
         {
             $reflectionProperty = new \ReflectionProperty($class, $property);
             $phpdoc = $reflectionProperty->getDocComment();
@@ -146,7 +147,7 @@ With this knowledge, you can implement the ``guessType()`` method of the
     }
 
 This type guesser can now guess the field type for a property if it has
-PHPdoc!
+PHPDoc!
 
 Guessing Field Options
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -223,7 +224,7 @@ and tag it with ``form.type_guesser``:
     :method:`Symfony\\Component\\Form\\FormFactoryBuilder::addTypeGuessers` of
     the ``FormFactoryBuilder`` to register new type guessers::
 
-        use Acme\Form\PHPDocTypeGuesser;
+        use App\Form\TypeGuesser\PHPDocTypeGuesser;
         use Symfony\Component\Form\Forms;
 
         $formFactory = Forms::createFormFactoryBuilder()

@@ -18,13 +18,6 @@ and that extra keys are not present.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `allowExtraFields`_
-            - `allowMissingFields`_
-            - `extraFieldsMessage`_
-            - `fields`_
-            - `groups`_
-            - `missingFieldsMessage`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\Collection`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\CollectionValidator`
 ==========  ===================================================================
@@ -88,6 +81,35 @@ following:
             ];
         }
 
+    .. code-block:: php-attributes
+
+        // src/Entity/Author.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        // IMPORTANT: nested attributes requires PHP 8.1 or higher
+        class Author
+        {
+            #[Assert\Collection(
+                fields: [
+                    'personal_email' => new Assert\Email,
+                    'short_bio' => [
+                        new Assert\NotBlank,
+                        new Assert\Length(
+                            max: 100,
+                            maxMessage: 'Your short bio is too long!'
+                        )
+                    ]
+                ],
+                allowMissingFields: true,
+            )]
+            protected $profileData = [
+                'personal_email' => '...',
+                'short_bio' => '...',
+            ];
+        }
+
     .. code-block:: yaml
 
         # config/validator/validation.yaml
@@ -96,7 +118,7 @@ following:
                 profileData:
                     - Collection:
                         fields:
-                            personal_email: 
+                            personal_email:
                                 - Email: ~
                             short_bio:
                                 - NotBlank: ~
@@ -162,6 +184,11 @@ following:
             }
         }
 
+.. versionadded:: 5.4
+
+    The ``#[Collection]`` PHP attribute was introduced in Symfony 5.4 and
+    requires PHP 8.1 (which added nested attribute support).
+
 Presence and Absence of Fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -209,7 +236,7 @@ you can do the following:
              *     }
              * )
              */
-            protected $profileData = ['personal_email'];
+            protected $profileData = ['personal_email' => 'email@example.com'];
         }
 
     .. code-block:: yaml
@@ -289,30 +316,64 @@ However, if the ``personal_email`` field does not exist in the array,
 the ``NotBlank`` constraint will still be applied (since it is wrapped in
 ``Required``) and you will receive a constraint violation.
 
+When you define groups in nested constraints they are automatically added to
+the ``Collection`` constraint itself so it can be traversed for all nested
+groups. Take the following example::
+
+    use Symfony\Component\Validator\Constraints as Assert;
+
+    $constraint = new Assert\Collection([
+        'fields' => [
+            'name' => new Assert\NotBlank(['groups' => 'basic']),
+            'email' => new Assert\NotBlank(['groups' => 'contact']),
+        ],
+    ]);
+
+This will result in the following configuration::
+
+    $constraint = new Assert\Collection([
+        'fields' => [
+            'name' => new Assert\Required([
+                'constraints' => new Assert\NotBlank(['groups' => 'basic']),
+                'groups' => ['basic', 'strict'],
+            ]),
+            'email' => new Assert\Required([
+                "constraints" => new Assert\NotBlank(['groups' => 'contact']),
+                'groups' => ['basic', 'strict'],
+            ]),
+        ],
+        'groups' => ['basic', 'strict'],
+    ]);
+
+The default ``allowMissingFields`` option requires the fields in all groups.
+So when validating in ``contact`` group, ``$name`` can be empty but the key is
+still required. If this is not the intended behavior, use the ``Optional``
+constraint explicitly instead of ``Required``.
+
 Options
 -------
 
-allowExtraFields
-~~~~~~~~~~~~~~~~
+``allowExtraFields``
+~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``boolean`` **default**: false
 
 If this option is set to ``false`` and the underlying collection contains
 one or more elements that are not included in the `fields`_ option, a validation
-error will be returned. If set to ``true``, extra fields are ok.
+error will be returned. If set to ``true``, extra fields are OK.
 
-allowMissingFields
-~~~~~~~~~~~~~~~~~~
+``allowMissingFields``
+~~~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``boolean`` **default**: false
 
 If this option is set to ``false`` and one or more fields from the `fields`_
 option are not present in the underlying collection, a validation error
-will be returned. If set to ``true``, it's ok if some fields in the `fields`_
+will be returned. If set to ``true``, it's OK if some fields in the `fields`_
 option are not present in the underlying collection.
 
-extraFieldsMessage
-~~~~~~~~~~~~~~~~~~
+``extraFieldsMessage``
+~~~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This field was not expected.``
 
@@ -327,8 +388,8 @@ Parameter        Description
 ``{{ field }}``  The key of the extra field detected
 ===============  ==============================================================
 
-fields
-~~~~~~
+``fields``
+~~~~~~~~~~
 
 **type**: ``array`` [:ref:`default option <validation-default-option>`]
 
@@ -338,8 +399,8 @@ be executed against that element of the collection.
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-missingFieldsMessage
-~~~~~~~~~~~~~~~~~~~~
+``missingFieldsMessage``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This field is missing.``
 

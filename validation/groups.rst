@@ -8,7 +8,7 @@ By default, when validating an object all constraints of this class will
 be checked whether or not they actually pass. In some cases, however, you
 will need to validate an object against only *some* constraints on that class.
 To do this, you can organize each constraint into one or more "validation
-groups" and then apply validation against just one group of constraints.
+groups" and then apply validation against one group of constraints.
 
 For example, suppose you have a ``User`` class, which is used both when a
 user registers and when a user updates their contact information later:
@@ -39,6 +39,27 @@ user registers and when a user updates their contact information later:
             /**
              * @Assert\Length(min=2)
              */
+            private $city;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/User.php
+        namespace App\Entity;
+
+        use Symfony\Component\Security\Core\User\UserInterface;
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class User implements UserInterface
+        {
+            #[Assert\Email(groups: ['registration'])]
+            private $email;
+
+            #[Assert\NotBlank(groups: ['registration'])]
+            #[Assert\Length(min: 7, groups: ['registration'])]
+            private $password;
+
+            #[Assert\Length(min: 2)]
             private $city;
         }
 
@@ -123,7 +144,7 @@ user registers and when a user updates their contact information later:
                 ]));
 
                 $metadata->addPropertyConstraint('city', new Assert\Length([
-                    "min" => 2,
+                    'min' => 2,
                 ]));
             }
         }
@@ -142,7 +163,7 @@ With this configuration, there are three validation groups:
 
 ``registration``
     This is a custom validation group, so it only contains the constraints
-    explicitly associated to it. In this example, only the ``email`` and
+    that are explicitly associated with it. In this example, only the ``email`` and
     ``password`` fields.
 
 Constraints in the ``Default`` group of a class are the constraints that have

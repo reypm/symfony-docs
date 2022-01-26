@@ -21,7 +21,7 @@ Usage
 -----
 
 The entry point of this component is the
-:method:`PropertyAccess::createPropertyAccessor<Symfony\\Component\\PropertyAccess\\PropertyAccess::createPropertyAccessor>`
+:method:`Symfony\\Component\\PropertyAccess\\PropertyAccess::createPropertyAccessor`
 factory. This factory will create a new instance of the
 :class:`Symfony\\Component\\PropertyAccess\\PropertyAccessor` class with the
 default configuration::
@@ -34,8 +34,8 @@ Reading from Arrays
 -------------------
 
 You can read an array with the
-:method:`PropertyAccessor::getValue<Symfony\\Component\\PropertyAccess\\PropertyAccessor::getValue>`
-method. This is done using the index notation that is used in PHP::
+:method:`Symfony\\Component\\PropertyAccess\\PropertyAccessor::getValue` method.
+This is done using the index notation that is used in PHP::
 
     // ...
     $person = [
@@ -72,7 +72,7 @@ You can also use multi dimensional arrays::
         ],
         [
             'first_name' => 'Ryan',
-        ]
+        ],
     ];
 
     var_dump($propertyAccessor->getValue($persons, '[0][first_name]')); // 'Wouter'
@@ -112,9 +112,9 @@ Using Getters
 ~~~~~~~~~~~~~
 
 The ``getValue()`` method also supports reading using getters. The method will
-be created using common naming conventions for getters. It camelizes the
-property name (``first_name`` becomes ``FirstName``) and prefixes it with
-``get``. So the actual method becomes ``getFirstName()``::
+be created using common naming conventions for getters. It transforms the
+property name to camelCase (``first_name`` becomes ``FirstName``) and prefixes
+it with ``get``. So the actual method becomes ``getFirstName()``::
 
     // ...
     class Person
@@ -158,19 +158,19 @@ getters, this means that you can do something like this::
     $person = new Person();
 
     if ($propertyAccessor->getValue($person, 'author')) {
-        var_dump('He is an author');
+        var_dump('This person is an author');
     }
     if ($propertyAccessor->getValue($person, 'children')) {
-        var_dump('He has children');
+        var_dump('This person has children');
     }
 
-This will produce: ``He is an author``
+This will produce: ``This person is an author``
 
 Accessing a non Existing Property Path
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default a :class:`Symfony\\Component\\PropertyAccess\\Exception\\NoSuchPropertyException`
-is thrown if the property path passed to :method:`PropertyAccessor::getValue<Symfony\\Component\\PropertyAccess\\PropertyAccessor::getValue>`
+is thrown if the property path passed to :method:`Symfony\\Component\\PropertyAccess\\PropertyAccessor::getValue`
 does not exist. You can change this behavior using the
 :method:`Symfony\\Component\\PropertyAccess\\PropertyAccessorBuilder::disableExceptionOnInvalidPropertyPath`
 method::
@@ -190,6 +190,8 @@ method::
     // instead of throwing an exception the following code returns null
     $value = $propertyAccessor->getValue($person, 'birthday');
 
+
+.. _components-property-access-magic-get:
 
 Magic ``__get()`` Method
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -213,12 +215,17 @@ The ``getValue()`` method can also use the magic ``__get()`` method::
 
     var_dump($propertyAccessor->getValue($person, 'Wouter')); // [...]
 
+.. versionadded:: 5.2
+
+    The magic ``__get()`` method can be disabled since in Symfony 5.2.
+    see `Enable other Features`_.
+
 .. _components-property-access-magic-call:
 
 Magic ``__call()`` Method
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-At last, ``getValue()`` can use the magic ``__call()`` method, but you need to
+Lastly, ``getValue()`` can use the magic ``__call()`` method, but you need to
 enable this feature by using :class:`Symfony\\Component\\PropertyAccess\\PropertyAccessorBuilder`::
 
     // ...
@@ -232,9 +239,7 @@ enable this feature by using :class:`Symfony\\Component\\PropertyAccess\\Propert
         {
             $property = lcfirst(substr($name, 3));
             if ('get' === substr($name, 0, 3)) {
-                return isset($this->children[$property])
-                    ? $this->children[$property]
-                    : null;
+                return $this->children[$property] ?? null;
             } elseif ('set' === substr($name, 0, 3)) {
                 $value = 1 == count($args) ? $args[0] : null;
                 $this->children[$property] = $value;
@@ -254,7 +259,7 @@ enable this feature by using :class:`Symfony\\Component\\PropertyAccess\\Propert
 .. caution::
 
     The ``__call()`` feature is disabled by default, you can enable it by calling
-    :method:`PropertyAccessorBuilder::enableMagicCall<Symfony\\Component\\PropertyAccess\\PropertyAccessorBuilder::enableMagicCall>`
+    :method:`Symfony\\Component\\PropertyAccess\\PropertyAccessorBuilder::enableMagicCall`
     see `Enable other Features`_.
 
 Writing to Arrays
@@ -262,8 +267,7 @@ Writing to Arrays
 
 The ``PropertyAccessor`` class can do more than just read an array, it can
 also write to an array. This can be achieved using the
-:method:`PropertyAccessor::setValue<Symfony\\Component\\PropertyAccess\\PropertyAccessor::setValue>`
-method::
+:method:`Symfony\\Component\\PropertyAccess\\PropertyAccessor::setValue` method::
 
     // ...
     $person = [];
@@ -273,6 +277,8 @@ method::
     var_dump($propertyAccessor->getValue($person, '[first_name]')); // 'Wouter'
     // or
     // var_dump($person['first_name']); // 'Wouter'
+
+.. _components-property-access-writing-to-objects:
 
 Writing to Objects
 ------------------
@@ -330,9 +336,7 @@ see `Enable other Features`_::
         {
             $property = lcfirst(substr($name, 3));
             if ('get' === substr($name, 0, 3)) {
-                return isset($this->children[$property])
-                    ? $this->children[$property]
-                    : null;
+                return $this->children[$property] ?? null;
             } elseif ('set' === substr($name, 0, 3)) {
                 $value = 1 == count($args) ? $args[0] : null;
                 $this->children[$property] = $value;
@@ -351,6 +355,11 @@ see `Enable other Features`_::
     $propertyAccessor->setValue($person, 'wouter', [...]);
 
     var_dump($person->getWouter()); // [...]
+
+.. versionadded:: 5.2
+
+    The magic ``__set()`` method can be disabled since in Symfony 5.2.
+    see `Enable other Features`_.
 
 Writing to Array Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -390,19 +399,57 @@ properties through *adder* and *remover* methods::
 The PropertyAccess component checks for methods called ``add<SingularOfThePropertyName>()``
 and ``remove<SingularOfThePropertyName>()``. Both methods must be defined.
 For instance, in the previous example, the component looks for the ``addChild()``
-and ``removeChild()`` methods to access to the ``children`` property.
+and ``removeChild()`` methods to access the ``children`` property.
 `The Inflector component`_ is used to find the singular of a property name.
 
 If available, *adder* and *remover* methods have priority over a *setter* method.
+
+Using non-standard adder/remover methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes, adder and remover methods don't use the standard ``add`` or ``remove`` prefix, like in this example::
+
+    // ...
+    class PeopleList
+    {
+        // ...
+
+        public function joinPeople(string $people): void
+        {
+            $this->peoples[] = $people;
+        }
+
+        public function leavePeople(string $people): void
+        {
+            foreach ($this->peoples as $id => $item) {
+                if ($people === $item) {
+                    unset($this->peoples[$id]);
+                    break;
+                }
+            }
+        }
+    }
+
+    use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
+    use Symfony\Component\PropertyAccess\PropertyAccessor;
+
+    $list = new PeopleList();
+    $reflectionExtractor = new ReflectionExtractor(null, null, ['join', 'leave']);
+    $propertyAccessor = new PropertyAccessor(PropertyAccessor::DISALLOW_MAGIC_METHODS, PropertyAccessor::THROW_ON_INVALID_PROPERTY_PATH, null, $reflectionExtractor, $reflectionExtractor);
+    $propertyAccessor->setValue($person, 'peoples', ['kevin', 'wouter']);
+
+    var_dump($person->getPeoples()); // ['kevin', 'wouter']
+
+Instead of calling ``add<SingularOfThePropertyName>()`` and ``remove<SingularOfThePropertyName>()``, the PropertyAccess
+component will call ``join<SingularOfThePropertyName>()`` and ``leave<SingularOfThePropertyName>()`` methods.
 
 Checking Property Paths
 -----------------------
 
 When you want to check whether
-:method:`PropertyAccessor::getValue<Symfony\\Component\\PropertyAccess\\PropertyAccessor::getValue>`
-can safely be called without actually calling that method, you can use
-:method:`PropertyAccessor::isReadable<Symfony\\Component\\PropertyAccess\\PropertyAccessor::isReadable>`
-instead::
+:method:`Symfony\\Component\\PropertyAccess\\PropertyAccessor::getValue` can
+safely be called without actually calling that method, you can use
+:method:`Symfony\\Component\\PropertyAccess\\PropertyAccessor::isReadable` instead::
 
     $person = new Person();
 
@@ -410,9 +457,8 @@ instead::
         // ...
     }
 
-The same is possible for :method:`PropertyAccessor::setValue<Symfony\\Component\\PropertyAccess\\PropertyAccessor::setValue>`:
-Call the
-:method:`PropertyAccessor::isWritable<Symfony\\Component\\PropertyAccess\\PropertyAccessor::isWritable>`
+The same is possible for :method:`Symfony\\Component\\PropertyAccess\\PropertyAccessor::setValue`:
+Call the :method:`Symfony\\Component\\PropertyAccess\\PropertyAccessor::isWritable`
 method to find out whether a property path can be updated::
 
     $person = new Person();
@@ -464,14 +510,20 @@ configured to enable extra features. To do that you could use the
     // ...
     $propertyAccessorBuilder = PropertyAccess::createPropertyAccessorBuilder();
 
-    // enables magic __call
-    $propertyAccessorBuilder->enableMagicCall();
+    $propertyAccessorBuilder->enableMagicCall(); // enables magic __call
+    $propertyAccessorBuilder->enableMagicGet(); // enables magic __get
+    $propertyAccessorBuilder->enableMagicSet(); // enables magic __set
+    $propertyAccessorBuilder->enableMagicMethods(); // enables magic __get, __set and __call
 
-    // disables magic __call
-    $propertyAccessorBuilder->disableMagicCall();
+    $propertyAccessorBuilder->disableMagicCall(); // disables magic __call
+    $propertyAccessorBuilder->disableMagicGet(); // disables magic __get
+    $propertyAccessorBuilder->disableMagicSet(); // disables magic __set
+    $propertyAccessorBuilder->disableMagicMethods(); // disables magic __get, __set and __call
 
-    // checks if magic __call handling is enabled
+    // checks if magic __call, __get or __set handling are enabled
     $propertyAccessorBuilder->isMagicCallEnabled(); // true or false
+    $propertyAccessorBuilder->isMagicGetEnabled(); // true or false
+    $propertyAccessorBuilder->isMagicSetEnabled(); // true or false
 
     // At the end get the configured property accessor
     $propertyAccessor = $propertyAccessorBuilder->getPropertyAccessor();
@@ -483,7 +535,7 @@ configured to enable extra features. To do that you could use the
 
 Or you can pass parameters directly to the constructor (not the recommended way)::
 
-    // ...
-    $propertyAccessor = new PropertyAccessor(true); // this enables handling of magic __call
+    // enable handling of magic __call, __set but not __get:
+    $propertyAccessor = new PropertyAccessor(PropertyAccessor::MAGIC_CALL | PropertyAccessor::MAGIC_SET);
 
 .. _The Inflector component: https://github.com/symfony/inflector

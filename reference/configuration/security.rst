@@ -4,7 +4,7 @@
 Security Configuration Reference (SecurityBundle)
 =================================================
 
-The SecurityBundle integrates the :doc:`Security component </components/security>`
+The SecurityBundle integrates the :doc:`Security component </security>`
 in Symfony applications. All these options are configured under the ``security``
 key in your application configuration.
 
@@ -39,7 +39,7 @@ Some of these options define tens of sub-options and they are explained in
 separate articles:
 
 * `access_control`_
-* `encoders`_
+* :ref:`hashers <passwordhasher-supported-algorithms>`
 * `firewalls`_
 * `providers`_
 * `role_hierarchy`_
@@ -50,12 +50,17 @@ access_denied_url
 **type**: ``string`` **default**: ``null``
 
 Defines the URL where the user is redirected after a ``403`` HTTP error (unless
-you define a custom access deny handler). Example: ``/no-permission``
+you define a custom access denial handler). Example: ``/no-permission``
 
 always_authenticate_before_granting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``boolean`` **default**: ``false``
+
+.. deprecated:: 5.4
+
+    The ``always_authenticate_before_granting`` option was deprecated in
+    Symfony 5.4 and it will be removed in Symfony 6.0.
 
 If ``true``, the user is asked to authenticate before each call to the
 ``isGranted()`` method in services and controllers or ``is_granted()`` from
@@ -79,8 +84,8 @@ If ``true``, when a user is not found a generic exception of type
 is thrown with the message "Bad credentials".
 
 If ``false``, the exception thrown is of type
-:class:`Symfony\\Component\\Security\\Core\\Exception\\UsernameNotFoundException`
-and it includes the given not found username.
+:class:`Symfony\\Component\\Security\\Core\\Exception\\UserNotFoundException`
+and it includes the given not found user identifier.
 
 session_fixation_strategy
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,197 +111,9 @@ access_control
 
 Defines the security protection of the URLs of your application. It's used for
 example to trigger the user authentication when trying to access to the backend
-and to allow anonymous users to the login form page.
+and to allow unauthenticated users to the login form page.
 
 This option is explained in detail in :doc:`/security/access_control`.
-
-encoders
---------
-
-This option defines the algorithm used to *encode* the password of the users.
-Although Symfony calls it *"password encoding"* for historical reasons, this is
-in fact, *"password hashing"*.
-
-If your app defines more than one user class, each of them can define its own
-encoding algorithm. Also, each algorithm defines different config options:
-
-.. configuration-block::
-
-    .. code-block:: yaml
-
-        # config/packages/security.yaml
-        security:
-            # ...
-
-            encoders:
-                # auto encoder with default options
-                App\Entity\User: 'auto'
-
-                # auto encoder with custom options
-                App\Entity\User:
-                    algorithm: 'auto'
-                    cost:      15
-
-                # Sodium encoder with default options
-                App\Entity\User: 'sodium'
-
-                # Sodium encoder with custom options
-                App\Entity\User:
-                    algorithm:   'sodium'
-                    memory_cost:  16384 # Amount in KiB. (16384 = 16 MiB)
-                    time_cost:    2     # Number of iterations
-
-                # PBKDF2 encoder using SHA512 hashing with default options
-                App\Entity\User: 'sha512'
-
-    .. code-block:: xml
-
-        <!-- config/packages/security.xml -->
-        <?xml version="1.0" charset="UTF-8" ?>
-        <srv:container xmlns="http://symfony.com/schema/dic/security"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xmlns:srv="http://symfony.com/schema/dic/services"
-            xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd">
-
-            <config>
-                <!-- ... -->
-                <!-- auto encoder with default options -->
-                <encoder
-                    class="App\Entity\User"
-                    algorithm="auto"
-                />
-
-                <!-- auto encoder with custom options -->
-                <encoder
-                    class="App\Entity\User"
-                    algorithm="auto"
-                    cost="15"
-                />
-
-                <!-- Sodium encoder with default options -->
-                <encoder
-                    class="App\Entity\User"
-                    algorithm="sodium"
-                />
-
-                <!-- Sodium encoder with custom options -->
-                <!-- memory_cost: amount in KiB. (16384 = 16 MiB)
-                     time_cost: number of iterations -->
-                <encoder
-                    class="App\Entity\User"
-                    algorithm="sodium"
-                    memory_cost="16384"
-                    time_cost="2"
-                />
-
-                <!-- PBKDF2 encoder using SHA512 hashing with default options -->
-                <encoder
-                    class="App\Entity\User"
-                    algorithm="sha512"
-                />
-            </config>
-        </srv:container>
-
-    .. code-block:: php
-
-        // config/packages/security.php
-        use App\Entity\User;
-
-        $container->loadFromExtension('security', [
-            // ...
-            'encoders' => [
-                // auto encoder with default options
-                User::class => [
-                    'algorithm' => 'auto',
-                ],
-
-                // auto encoder with custom options
-                User::class => [
-                    'algorithm' => 'auto',
-                    'cost'      => 15,
-                ],
-
-                // Sodium encoder with default options
-                User::class => [
-                    'algorithm' => 'sodium',
-                ],
-
-                // Sodium encoder with custom options
-                User::class => [
-                    'algorithm' => 'sodium',
-                    'memory_cost' => 16384, // Amount in KiB. (16384 = 16 MiB)
-                    'time_cost' => 2,       // Number of iterations
-                ],
-
-                // PBKDF2 encoder using SHA512 hashing with default options
-                User::class => [
-                    'algorithm' => 'sha512',
-                ],
-            ],
-        ]);
-
-.. tip::
-
-    You can also create your own password encoders as services and you can even
-    select a different password encoder for each user instance. Read
-    :doc:`this article </security/named_encoders>` for more details.
-
-.. _reference-security-sodium:
-.. _using-the-argon2i-password-encoder:
-
-Using the Sodium Password Encoder
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-It uses the `Argon2 key derivation function`_ and it's the encoder recommended
-by Symfony. Argon2 support was introduced in PHP 7.2, but if you use an earlier
-PHP version, you can install the `libsodium`_ PHP extension.
-
-The encoded passwords are ``96`` characters long, but due to the hashing
-requirements saved in the resulting hash this may change in the future, so make
-sure to allocate enough space for them to be persisted. Also, passwords include
-the `cryptographic salt`_ inside them (it's generated automatically for each new
-password) so you don't have to deal with it.
-
-.. _reference-security-encoder-auto:
-
-Using the "auto" Password Encoder
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-It selects automatically the best possible encoder. Currently, it tries to use
-Sodium by default and falls back to the `bcrypt password hashing function`_ if
-not possible. In the future, when PHP adds new hashing techniques, it may use
-different password hashers.
-
-It produces encoded passwords with ``60`` characters long, so make sure to
-allocate enough space for them to be persisted. Also, passwords include the
-`cryptographic salt`_ inside them (it's generated automatically for each new
-password) so you don't have to deal with it.
-
-Its only configuration option is ``cost``, which is an integer in the range of
-``4-31`` (by default, ``13``). Each single increment of the cost **doubles the
-time** it takes to encode a password. It's designed this way so the password
-strength can be adapted to the future improvements in computation power.
-
-You can change the cost at any time — even if you already have some passwords
-encoded using a different cost. New passwords will be encoded using the new
-cost, while the already encoded ones will be validated using a cost that was
-used back when they were encoded.
-
-.. tip::
-
-    A simple technique to make tests much faster when using BCrypt is to set
-    the cost to ``4``, which is the minimum value allowed, in the ``test``
-    environment configuration.
-
-.. _reference-security-pbkdf2:
-
-Using the PBKDF2 Encoder
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Using the `PBKDF2`_ encoder is no longer recommended since PHP added support for
-Sodium and BCrypt. Legacy application still using it are encouraged to upgrade
-to those newer encoding algorithms.
 
 firewalls
 ---------
@@ -324,12 +141,14 @@ application:
     .. code-block:: xml
 
         <!-- config/packages/security.xml -->
-        <?xml version="1.0" encoding="UTF-8"?>
+        <?xml version="1.0" encoding="UTF-8" ?>
         <srv:container xmlns="http://symfony.com/schema/dic/security"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:srv="http://symfony.com/schema/dic/services"
             xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd">
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd">
 
             <config>
                 <!-- ... -->
@@ -346,20 +165,20 @@ application:
     .. code-block:: php
 
         // config/packages/security.php
+        use Symfony\Config\SecurityConfig;
 
-        // ...
-        $container->loadFromExtension('security', [
-            'firewalls' => [
-                // 'main' is the name of the firewall (can be chosen freely)
-                'main' => [
-                    // 'pattern' is a regular expression matched against the incoming
-                    // request URL. If there's a match, authentication is triggered
-                    'pattern' => '^/admin',
-                    // the rest of options depend on the authentication mechanism
-                    // ...
-                ],
-            ],
-        ]);
+        return static function (SecurityConfig $security) {
+            // ...
+
+            // 'main' is the name of the firewall (can be chosen freely)
+            $security->firewall('main')
+                // 'pattern' is a regular expression matched against the incoming
+                // request URL. If there's a match, authentication is triggered
+                ->pattern('^/admin')
+                // the rest of options depend on the authentication mechanism
+                // ...
+            ;
+        };
 
 .. seealso::
 
@@ -381,8 +200,6 @@ depend on the authentication mechanism, which can be any of these:
                         # ...
                     remote_user:
                         # ...
-                    simple_preauth:
-                        # ...
                     guard:
                         # ...
                     form_login:
@@ -391,14 +208,32 @@ depend on the authentication mechanism, which can be any of these:
                         # ...
                     json_login:
                         # ...
-                    simple_form:
-                        # ...
                     http_basic:
                         # ...
                     http_basic_ldap:
                         # ...
                     http_digest:
                         # ...
+
+You can view actual information about the firewalls in your application with
+the ``debug:firewall`` command:
+
+.. code-block:: terminal
+
+    # displays a list of firewalls currently configured for your application
+    $ php bin/console debug:firewall
+
+    # displays the details of a specific firewall
+    $ php bin/console debug:firewall main
+
+    # displays the details of a specific firewall, including detailed information
+    # about the event listeners for the firewall
+    $ php bin/console debug:firewall main --events
+
+.. versionadded:: 5.3
+
+    The ``debug:firewall`` command was introduced in Symfony 5.3.
+
 
 .. _reference-security-firewall-form-login:
 
@@ -418,7 +253,7 @@ This is the route or path that the user will be redirected to (unless ``use_forw
 is set to ``true``) when they try to access a protected resource but isn't
 fully authenticated.
 
-This path **must** be accessible by a normal, un-authenticated user, else
+This path **must** be accessible by a normal, unauthenticated user, else
 you may create a redirect loop.
 
 check_path
@@ -494,6 +329,14 @@ target_path_parameter
 When using a login form, if you include an HTML element to set the target path,
 this option lets you change the name of the HTML element itself.
 
+failure_path_parameter
+......................
+
+**type**: ``string`` **default**: ``_failure_path``
+
+When using a login form, if you include an HTML element to set the failure path,
+this option lets you change the name of the HTML element itself.
+
 use_referer
 ...........
 
@@ -524,13 +367,41 @@ The ``invalidate_session`` option allows to redefine this behavior. Set this
 option to ``false`` in every firewall and the user will only be logged out from
 the current firewall and not the other ones.
 
+.. _reference-security-logout-success-handler:
+
+``path``
+~~~~~~~~
+
+**type**: ``string`` **default**: ``/logout``
+
+The path which triggers logout. If you change it from the default value ``/logout``,
+you need to set up a route with a matching path.
+
+target
+~~~~~~
+
+**type**: ``string`` **default**: ``/``
+
+The relative path (if the value starts with ``/``), or absolute URL (if it
+starts with ``http://`` or ``https://``) or the route name (otherwise) to
+redirect after logout.
+
 success_handler
 ~~~~~~~~~~~~~~~
+
+.. deprecated:: 5.1
+
+    This option is deprecated since Symfony 5.1. Register an
+    :doc:`event listener </event_dispatcher>` on the
+    :class:`Symfony\\Component\\Security\\Http\\Event\\LogoutEvent`
+    instead.
 
 **type**: ``string`` **default**: ``'security.logout.success_handler'``
 
 The service ID used for handling a successful logout. The service must implement
 :class:`Symfony\\Component\\Security\\Http\\Logout\\LogoutSuccessHandlerInterface`.
+
+If it is set, the logout ``target`` option will be ignored.
 
 .. _reference-security-logout-csrf:
 
@@ -554,8 +425,103 @@ csrf_token_id
 
 **type**: ``string`` **default**: ``'logout'``
 
-An arbitrary string used to generate the token value (and check its validity
-afterwards).
+An arbitrary string used to identify the token (and check its validity afterwards).
+
+.. _reference-security-firewall-json-login:
+
+JSON Login Authentication
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+check_path
+..........
+
+**type**: ``string`` **default**: ``/login_check``
+
+This is the URL or route name the system must post to authenticate using
+the JSON authenticator. The path must be covered by the firewall to which
+the user will authenticate.
+
+username_path
+.............
+
+**type**: ``string`` **default**: ``username``
+
+Use this and ``password_path`` to modify the expected request body
+structure of the JSON authenticator. For instance, if the JSON document has
+the following structure:
+
+.. code-block:: json
+
+    {
+        "security": {
+            "credentials": {
+                "login": "dunglas",
+                "password": "MyPassword"
+            }
+        }
+    }
+
+The security configuration should be:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # config/packages/security.yaml
+        security:
+            # ...
+
+            firewalls:
+                main:
+                    lazy: true
+                    json_login:
+                        check_path:    login
+                        username_path: security.credentials.login
+                        password_path: security.credentials.password
+
+    .. code-block:: xml
+
+        <!-- config/packages/security.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <srv:container xmlns="http://symfony.com/schema/dic/security"
+            xmlns:srv="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd">
+
+            <config>
+                <firewall name="main" lazy="true">
+                    <json-login check-path="login"
+                        username-path="security.credentials.login"
+                        password-path="security.credentials.password"/>
+                </firewall>
+            </config>
+        </srv:container>
+
+    .. code-block:: php
+
+        // config/packages/security.php
+        use Symfony\Config\SecurityConfig;
+
+        return static function (SecurityConfig $security) {
+            $mainFirewall = $security->firewall('main');
+            $mainFirewall->lazy(true);
+            $mainFirewall->jsonLogin()
+                ->checkPath('/login')
+                ->usernamePath('security.credentials.login')
+                ->passwordPath('security.credentials.password')
+            ;
+        };
+
+password_path
+.............
+
+**type**: ``string`` **default**: ``password``
+
+Use this option to modify the expected request body structure. See
+`username_path`_ for more details.
 
 .. _reference-security-ldap:
 
@@ -613,12 +579,157 @@ fetch your users from an LDAP server, you will need to use the
 :doc:`LDAP User Provider </security/ldap>` and any of these authentication
 providers: ``form_login_ldap`` or ``http_basic_ldap`` or ``json_login_ldap``.
 
+.. _reference-security-firewall-x509:
+
+X.509 Authentication
+~~~~~~~~~~~~~~~~~~~~
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # config/packages/security.yaml
+        security:
+            # ...
+
+            firewalls:
+                main:
+                    # ...
+                    x509:
+                        provider:    your_user_provider
+                        user:        SSL_CLIENT_S_DN_Email
+                        credentials: SSL_CLIENT_S_DN
+
+    .. code-block:: xml
+
+        <!-- config/packages/security.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <srv:container xmlns="http://symfony.com/schema/dic/security"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:srv="http://symfony.com/schema/dic/services"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd">
+
+            <config>
+                <!-- ... -->
+
+                <firewall name="main">
+                    <!-- ... -->
+                    <x509 provider="your_user_provider"
+                        user="SSL_CLIENT_S_DN_Email"
+                        credentials="SSL_CLIENT_S_DN"
+                    />
+                </firewall>
+            </config>
+        </srv:container>
+
+    .. code-block:: php
+
+        // config/packages/security.php
+        use Symfony\Config\SecurityConfig;
+
+        return static function (SecurityConfig $security) {
+            $mainFirewall = $security->firewall('main');
+            $mainFirewall->x509()
+                ->provider('your_user_provider')
+                ->user('SSL_CLIENT_S_DN_Email')
+                ->credentials('SSL_CLIENT_S_DN')
+            ;
+        };
+
+user
+....
+
+**type**: ``string`` **default**: ``SSL_CLIENT_S_DN_Email``
+
+The name of the ``$_SERVER`` parameter containing the user identifier used
+to load the user in Symfony. The default value is exposed by Apache.
+
+credentials
+...........
+
+**type**: ``string`` **default**: ``SSL_CLIENT_S_DN``
+
+If the ``user`` parameter is not available, the name of the ``$_SERVER``
+parameter containing the full "distinguished name" of the certificate
+(exposed by e.g. Nginx).
+
+Symfony identifies the value following ``emailAddress=`` in this parameter.
+
+.. _reference-security-firewall-remote-user:
+
+Remote User Authentication
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # config/packages/security.yaml
+        security:
+            firewalls:
+                main:
+                    # ...
+                    remote_user:
+                        provider: your_user_provider
+                        user:     REMOTE_USER
+
+    .. code-block:: xml
+
+        <!-- config/packages/security.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <srv:container xmlns="http://symfony.com/schema/dic/security"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:srv="http://symfony.com/schema/dic/services"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd">
+
+            <config>
+                <firewall name="main">
+                    <remote-user provider="your_user_provider"
+                        user="REMOTE_USER"/>
+                </firewall>
+            </config>
+        </srv:container>
+
+    .. code-block:: php
+
+        // config/packages/security.php
+        use Symfony\Config\SecurityConfig;
+
+        return static function (SecurityConfig $security) {
+            $mainFirewall = $security->firewall('main');
+            $mainFirewall->remoteUser()
+                ->provider('your_user_provider')
+                ->user('REMOTE_USER')
+            ;
+        };
+
+provider
+........
+
+**type**: ``string``
+
+The service ID of the user provider that should be used by this
+authenticator.
+
+user
+....
+
+**type**: ``string`` **default**: ``REMOTE_USER``
+
+The name of the ``$_SERVER`` parameter holding the user identifier.
+
 .. _reference-security-firewall-context:
 
 Firewall Context
 ~~~~~~~~~~~~~~~~
 
-Most applications will only need one :ref:`firewall <security-firewalls>`.
+Most applications will only need one :ref:`firewall <firewalls-authentication>`.
 But if your application *does* use multiple firewalls, you'll notice that
 if you're authenticated in one firewall, you're not automatically authenticated
 in another. In other words, the systems don't share a common "context":
@@ -648,12 +759,14 @@ multiple firewalls, the "context" could actually be shared:
     .. code-block:: xml
 
         <!-- config/packages/security.xml -->
-        <?xml version="1.0" charset="UTF-8" ?>
+        <?xml version="1.0" encoding="UTF-8" ?>
         <srv:container xmlns="http://symfony.com/schema/dic/security"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:srv="http://symfony.com/schema/dic/services"
             xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd">
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/security
+                https://symfony.com/schema/dic/security/security-1.0.xsd">
 
             <config>
                 <firewall name="somename" context="my_context">
@@ -668,18 +781,19 @@ multiple firewalls, the "context" could actually be shared:
     .. code-block:: php
 
         // config/packages/security.php
-        $container->loadFromExtension('security', [
-            'firewalls' => [
-                'somename' => [
-                    // ...
-                    'context' => 'my_context',
-                ],
-                'othername' => [
-                    // ...
-                    'context' => 'my_context',
-                ],
-            ],
-        ]);
+        use Symfony\Config\SecurityConfig;
+
+        return static function (SecurityConfig $security) {
+            $security->firewall('somename')
+                // ...
+                ->context('my_context')
+            ;
+
+            $security->firewall('othername')
+                // ...
+                ->context('my_context')
+            ;
+        };
 
 .. note::
 
@@ -701,13 +815,9 @@ providers
 ---------
 
 This options defines how the application users are loaded (from a database,
-an LDAP server, a configuration file, etc.) Read the following articles to learn
-more about each of those providers:
-
-* :ref:`Load users from a database <security-entity-user-provider>`
-* :ref:`Load users from an LDAP server <security-ldap-user-provider>`
-* :ref:`Load users from a configuration file <security-memory-user-provider>`
-* :ref:`Create your own user provider <custom-user-provider>`
+an LDAP server, a configuration file, etc.) Read
+:doc:`/security/user_providers` to learn more about each of those
+providers.
 
 role_hierarchy
 --------------
@@ -716,9 +826,4 @@ Instead of associating many roles to users, this option allows you to define
 role inheritance rules by creating a role hierarchy, as explained in
 :ref:`security-role-hierarchy`.
 
-.. _`PBKDF2`: https://en.wikipedia.org/wiki/PBKDF2
-.. _`libsodium`: https://pecl.php.net/package/libsodium
-.. _`Session Fixation`: https://www.owasp.org/index.php/Session_fixation
-.. _`Argon2 key derivation function`: https://en.wikipedia.org/wiki/Argon2
-.. _`bcrypt password hashing function`: https://en.wikipedia.org/wiki/Bcrypt
-.. _`cryptographic salt`: https://en.wikipedia.org/wiki/Salt_(cryptography)
+.. _`Session Fixation`: https://owasp.org/www-community/attacks/Session_fixation

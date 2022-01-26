@@ -12,49 +12,6 @@ objects from the database.
 +-------------+------------------------------------------------------------------+
 | Rendered as | can be various tags (see :ref:`forms-reference-choice-tags`)     |
 +-------------+------------------------------------------------------------------+
-| Options     | - `choice_label`_                                                |
-|             | - `class`_                                                       |
-|             | - `em`_                                                          |
-|             | - `query_builder`_                                               |
-+-------------+------------------------------------------------------------------+
-| Overridden  | - `choice_name`_                                                 |
-| options     | - `choice_value`_                                                |
-|             | - `choices`_                                                     |
-|             | - `data_class`_                                                  |
-+-------------+------------------------------------------------------------------+
-| Inherited   | from the :doc:`ChoiceType </reference/forms/types/choice>`:      |
-| options     |                                                                  |
-|             | - `choice_attr`_                                                 |
-|             | - `choice_translation_domain`_                                   |
-|             | - `expanded`_                                                    |
-|             | - `group_by`_                                                    |
-|             | - `multiple`_                                                    |
-|             | - `placeholder`_                                                 |
-|             | - `preferred_choices`_                                           |
-|             | - `translation_domain`_                                          |
-|             | - `trim`_                                                        |
-|             |                                                                  |
-|             | from the :doc:`FormType </reference/forms/types/form>`:          |
-|             |                                                                  |
-|             | - `attr`_                                                        |
-|             | - `data`_                                                        |
-|             | - `disabled`_                                                    |
-|             | - `empty_data`_                                                  |
-|             | - `error_bubbling`_                                              |
-|             | - `error_mapping`_                                               |
-|             | - `help`_                                                        |
-|             | - `help_attr`_                                                   |
-|             | - `help_html`_                                                   |
-|             | - `label`_                                                       |
-|             | - `label_attr`_                                                  |
-|             | - `label_format`_                                                |
-|             | - `mapped`_                                                      |
-|             | - `required`_                                                    |
-|             | - `row_attr`_                                                    |
-|             | - `label_translation_parameters`_                                |
-|             | - `attr_translation_parameters`_                                 |
-|             | - `help_translation_parameters`_                                 |
-+-------------+------------------------------------------------------------------+
 | Parent type | :doc:`ChoiceType </reference/forms/types/choice>`                |
 +-------------+------------------------------------------------------------------+
 | Class       | :class:`Symfony\\Bridge\\Doctrine\\Form\\Type\\EntityType`       |
@@ -144,8 +101,8 @@ then you can supply the ``choices`` option directly::
 Field Options
 -------------
 
-choice_label
-~~~~~~~~~~~~
+``choice_label``
+~~~~~~~~~~~~~~~~
 
 **type**: ``string``, ``callable`` or :class:`Symfony\\Component\\PropertyAccess\\PropertyPath`
 
@@ -182,7 +139,7 @@ more details, see the main :ref:`choice_label <reference-form-choice-label>` doc
 
     When passing a string, the ``choice_label`` option is a property path. So you
     can use anything supported by the
-    :doc:`PropertyAccessor component </components/property_access>`
+    :doc:`PropertyAccess component </components/property_access>`
 
     For example, if the translations property is actually an associative
     array of objects, each with a ``name`` property, then you could do this::
@@ -196,8 +153,8 @@ more details, see the main :ref:`choice_label <reference-form-choice-label>` doc
             'choice_label' => 'translations[en].name',
         ]);
 
-class
-~~~~~
+``class``
+~~~~~~~~~
 
 **type**: ``string`` **required**
 
@@ -205,16 +162,16 @@ The class of your entity (e.g. ``App:Category``). This can be
 a fully-qualified class name (e.g. ``App\Entity\Category``)
 or the short alias name (as shown prior).
 
-em
-~~
+``em``
+~~~~~~
 
-**type**: ``string`` | ``Doctrine\Common\Persistence\ObjectManager`` **default**: the default entity manager
+**type**: ``string`` | ``Doctrine\Persistence\ObjectManager`` **default**: the default entity manager
 
 If specified, this entity manager will be used to load the choices
 instead of the ``default`` entity manager.
 
-query_builder
-~~~~~~~~~~~~~
+``query_builder``
+~~~~~~~~~~~~~~~~~
 
 **type**: ``Doctrine\ORM\QueryBuilder`` or a ``callable`` **default**: ``null``
 
@@ -249,8 +206,8 @@ In the ``EntityType``, this is overridden to use the ``id`` by default. When the
 ``id`` is used, Doctrine only queries for the objects for the ids that were actually
 submitted.
 
-choices
-~~~~~~~
+``choices``
+~~~~~~~~~~~
 
 **type**:  ``array`` | ``\Traversable`` **default**: ``null``
 
@@ -258,8 +215,8 @@ Instead of allowing the `class`_ and `query_builder`_ options to fetch the
 entities to include for you, you can pass the ``choices`` option directly.
 See :ref:`reference-forms-entity-choices`.
 
-data_class
-~~~~~~~~~~
+``data_class``
+~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``null``
 
@@ -273,7 +230,7 @@ These options inherit from the :doc:`ChoiceType </reference/forms/types/choice>`
 
 .. include:: /reference/forms/types/options/choice_attr.rst.inc
 
-.. include:: /reference/forms/types/options/choice_translation_domain.rst.inc
+.. include:: /reference/forms/types/options/choice_translation_domain_disabled.rst.inc
 
 .. include:: /reference/forms/types/options/expanded.rst.inc
 
@@ -290,8 +247,8 @@ These options inherit from the :doc:`ChoiceType </reference/forms/types/choice>`
 
 .. include:: /reference/forms/types/options/placeholder.rst.inc
 
-preferred_choices
-~~~~~~~~~~~~~~~~~
+``preferred_choices``
+~~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``array`` or ``callable`` **default**: ``[]``
 
@@ -327,12 +284,13 @@ type:
 
 .. include:: /reference/forms/types/options/attr.rst.inc
 
+.. include:: /reference/forms/types/options/by_reference.rst.inc
+
 .. include:: /reference/forms/types/options/data.rst.inc
 
 .. include:: /reference/forms/types/options/disabled.rst.inc
 
-.. include:: /reference/forms/types/options/empty_data.rst.inc
-    :end-before: DEFAULT_PLACEHOLDER
+.. include:: /reference/forms/types/options/empty_data_declaration.rst.inc
 
 The actual default value of this option depends on other field options:
 
@@ -340,8 +298,7 @@ The actual default value of this option depends on other field options:
   (empty string);
 * Otherwise ``[]`` (empty array).
 
-.. include:: /reference/forms/types/options/empty_data.rst.inc
-    :start-after: DEFAULT_PLACEHOLDER
+.. include:: /reference/forms/types/options/empty_data_description.rst.inc
 
 .. include:: /reference/forms/types/options/error_bubbling.rst.inc
 

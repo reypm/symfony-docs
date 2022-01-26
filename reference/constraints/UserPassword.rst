@@ -10,11 +10,13 @@ password, but needs to enter their old password for security.
     This should **not** be used to validate a login form, since this is
     done automatically by the security system.
 
+.. note::
+
+    In order to use this constraint, you should have installed the
+    symfony/security-core component with Composer.
+
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `groups`_
-            - `message`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Security\\Core\\Validator\\Constraints\\UserPassword`
 Validator   :class:`Symfony\\Component\\Security\\Core\\Validator\\Constraints\\UserPasswordValidator`
 ==========  ===================================================================
@@ -43,6 +45,21 @@ the user's current password:
              *     message = "Wrong value for your current password"
              * )
              */
+            protected $oldPassword;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Form/Model/ChangePassword.php
+        namespace App\Form\Model;
+
+        use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
+
+        class ChangePassword
+        {
+            #[SecurityAssert\UserPassword(
+                message: 'Wrong value for your current password',
+            )]
             protected $oldPassword;
         }
 
@@ -100,8 +117,8 @@ Options
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``message`` **default**: ``This value should be the user current password.``
 

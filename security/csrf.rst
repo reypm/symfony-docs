@@ -51,9 +51,13 @@ for more information):
     .. code-block:: php
 
         // config/packages/framework.php
-        $container->loadFromExtension('framework', [
-            'csrf_protection' => null,
-        ]);
+        use Symfony\Config\FrameworkConfig;
+
+        return static function (FrameworkConfig $framework) {
+            $framework->csrfProtection()
+                ->enabled(true)
+            ;
+        };
 
 The tokens used for CSRF protection are meant to be different for every user and
 they are stored in the session. That's why a session is started automatically as
@@ -68,7 +72,7 @@ protected forms. As an alternative, you can:
   cache the rest of the page contents;
 * Cache the entire page and load the form via an uncached AJAX request;
 * Cache the entire page and use :doc:`hinclude.js </templating/hinclude>` to
-  load just the CSRF token with an uncached AJAX request and replace the form
+  load the CSRF token with an uncached AJAX request and replace the form
   field value with it.
 
 CSRF Protection in Symfony Forms
@@ -83,6 +87,9 @@ protected against CSRF attacks.
 By default Symfony adds the CSRF token in a hidden field called ``_token``, but
 this can be customized on a form-by-form basis::
 
+    // src/Form/TaskType.php
+    namespace App\Form;
+
     // ...
     use App\Entity\Task;
     use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -91,7 +98,7 @@ this can be customized on a form-by-form basis::
     {
         // ...
 
-        public function configureOptions(OptionsResolver $resolver)
+        public function configureOptions(OptionsResolver $resolver): void
         {
             $resolver->setDefaults([
                 'data_class'      => Task::class,
@@ -116,8 +123,8 @@ customize the entire form field contents).
 CSRF Protection in Login Forms
 ------------------------------
 
-See :doc:`/security/form_login_setup` for a login form that is protected from
-CSRF attacks. You can also configure the
+See :ref:`form_login-csrf` for a login form that is protected from CSRF
+attacks. You can also configure the
 :ref:`CSRF protection for the logout action <reference-security-logout-csrf>`.
 
 .. _csrf-protection-in-html-forms:
@@ -129,7 +136,7 @@ Although Symfony Forms provide automatic CSRF protection by default, you may
 need to generate and check CSRF tokens manually for example when using regular
 HTML forms not managed by the Symfony Form component.
 
-Consider a simple HTML form created to allow deleting items. First, use the
+Consider a HTML form created to allow deleting items. First, use the
 :ref:`csrf_token() Twig function <reference-twig-function-csrf-token>` to
 generate a CSRF token in the template and store it as a hidden form field:
 
@@ -144,12 +151,13 @@ generate a CSRF token in the template and store it as a hidden form field:
 
 Then, get the value of the CSRF token in the controller action and use the
 :method:`Symfony\\Bundle\\FrameworkBundle\\Controller\\AbstractController::isCsrfTokenValid`
-to check its validity::
+method to check its validity::
 
     use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\HttpFoundation\Response;
     // ...
 
-    public function delete(Request $request)
+    public function delete(Request $request): Response
     {
         $submittedToken = $request->request->get('token');
 
@@ -159,4 +167,19 @@ to check its validity::
         }
     }
 
-.. _`Cross-site request forgery`: http://en.wikipedia.org/wiki/Cross-site_request_forgery
+CSRF Tokens and Compression Side-Channel Attacks
+------------------------------------------------
+
+`BREACH`_ and `CRIME`_ are security exploits against HTTPS when using HTTP
+compression. Attackers can leverage information leaked by compression to recover
+targeted parts of the plaintext. To mitigate these attacks, and prevent an
+attacker from guessing the CSRF tokens, a random mask is prepended to the token
+and used to scramble it.
+
+.. versionadded:: 5.3
+
+    The randomization of tokens was introduced in Symfony 5.3
+
+.. _`Cross-site request forgery`: https://en.wikipedia.org/wiki/Cross-site_request_forgery
+.. _`BREACH`: https://en.wikipedia.org/wiki/BREACH
+.. _`CRIME`: https://en.wikipedia.org/wiki/CRIME

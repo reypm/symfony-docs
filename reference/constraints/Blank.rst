@@ -15,9 +15,6 @@ But be careful as ``NotBlank`` is *not* strictly the opposite of ``Blank``.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `groups`_
-            - `message`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\Blank`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\BlankValidator`
 ==========  ===================================================================
@@ -42,6 +39,19 @@ of an ``Author`` class were blank, you could do the following:
             /**
              * @Assert\Blank
              */
+            protected $firstName;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Author.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Author
+        {
+            #[Assert\Blank]
             protected $firstName;
         }
 
@@ -89,8 +99,8 @@ Options
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This value should be blank.``
 
@@ -102,6 +112,11 @@ You can use the following parameters in this message:
 Parameter        Description
 ===============  ==============================================================
 ``{{ value }}``  The current (invalid) value
+``{{ label }}``  Corresponding form field label
 ===============  ==============================================================
+
+.. versionadded:: 5.2
+
+    The ``{{ label }}`` parameter was introduced in Symfony 5.2.
 
 .. include:: /reference/constraints/_payload-option.rst.inc

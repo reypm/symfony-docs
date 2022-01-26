@@ -40,13 +40,28 @@ It is possible to define your own styles using the
     use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
     // ...
-    $outputStyle = new OutputFormatterStyle('red', 'yellow', ['bold', 'blink']);
+    $outputStyle = new OutputFormatterStyle('red', '#ff0', ['bold', 'blink']);
     $output->getFormatter()->setStyle('fire', $outputStyle);
 
     $output->writeln('<fire>foo</>');
 
-Available foreground and background colors are: ``black``, ``red``, ``green``,
-``yellow``, ``blue``, ``magenta``, ``cyan`` and ``white``.
+Any hex color is supported for foreground and background colors. Besides that, these named colors are supported:
+``black``, ``red``, ``green``, ``yellow``, ``blue``, ``magenta``, ``cyan``, ``white``,
+``gray``, ``bright-red``, ``bright-green``, ``bright-yellow``, ``bright-blue``,
+``bright-magenta``, ``bright-cyan`` and ``bright-white``.
+
+.. versionadded:: 5.2
+
+    True (hex) color support was introduced in Symfony 5.2
+
+.. versionadded:: 5.3
+
+    Support for bright colors was introduced in Symfony 5.3.
+
+.. note::
+
+    If the terminal doesn't support true colors, the nearest named color is used.
+    E.g. ``#c0392b`` is degraded to ``red`` or ``#f1c40f`` is degraded to ``yellow``.
 
 And available options are: ``bold``, ``underscore``, ``blink``, ``reverse``
 (enables the "reverse video" mode where the background and foreground colors
@@ -56,8 +71,11 @@ commonly used when asking the user to type sensitive information).
 
 You can also set these colors and options directly inside the tag name::
 
-    // green text
+    // using named colors
     $output->writeln('<fg=green>foo</>');
+
+    // using hexadecimal colors
+    $output->writeln('<fg=#c0392b>foo</>');
 
     // black text on a cyan background
     $output->writeln('<fg=black;bg=cyan>foo</>');

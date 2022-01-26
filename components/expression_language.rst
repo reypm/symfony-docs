@@ -102,10 +102,17 @@ PHP type (including objects)::
         [
             'fruit' => $apple,
         ]
-    ));
+    )); // displays "Honeycrisp"
 
-This will print "Honeycrisp". For more information, see the :doc:`/components/expression_language/syntax`
-entry, especially :ref:`component-expression-objects` and :ref:`component-expression-arrays`.
+For more information, see the :doc:`/components/expression_language/syntax`
+entry, especially :ref:`Working with Objects <component-expression-objects>` and :ref:`Working with Arrays <component-expression-arrays>`.
+
+.. caution::
+
+    When using variables in expressions, avoid passing untrusted data into the
+    array of variables. If you can't avoid that, sanitize non-alphanumeric
+    characters in untrusted data to prevent malicious users from injecting
+    control characters and altering the expression.
 
 Caching
 -------

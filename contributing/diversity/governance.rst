@@ -40,7 +40,7 @@ The project leader (Fabien Potencier) will have the right to veto any actionable
 item, regardless of the vote of the initiative's guidance team. The project
 leader may, at their discretion, also appoint other people from among the
 initiative's guidance team to also have the right to veto - in such a case these
-people are expected to use appropriate judgement to know when to use a "no" vote
+people are expected to use appropriate judgment to know when to use a "no" vote
 or a veto. Any single veto will reject an actionable item.
 
 The purpose of having members with the right to veto is to prevent a "people's
@@ -64,11 +64,11 @@ knowing that the responsibility they accept for said vote is justified.
 Voting
 ~~~~~~
 
-The guidance team have the right to vote on proposals for actionable items.
+The guidance team has the right to vote on proposals for actionable items.
 The quorum of "yes" or "no" votes required for a decision to be considered valid
 is at least 75% of active, appointed members of the guidance team - to abstain
 from voting means that vote will not be counted towards the quorum.
-For an actionable item to pass, approval from greater than 50% of the voting
+For an actionable item to pass, approval from more than 50% of the voting
 guidance team members is required. Use or management of finances/donations
 require at least a two-thirds majority to pass.
 

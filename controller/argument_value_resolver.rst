@@ -32,8 +32,8 @@ Symfony ships with the following value resolvers in the
     works like :doc:`autowiring </service_container/autowiring>`.
 
 :class:`Symfony\\Component\\HttpKernel\\Controller\\ArgumentResolver\\SessionValueResolver`
-    Injects the configured session class extending ``SessionInterface`` if
-    type-hinted with ``SessionInterface`` or a class extending
+    Injects the configured session class implementing ``SessionInterface`` if
+    type-hinted with ``SessionInterface`` or a class implementing
     ``SessionInterface``.
 
 :class:`Symfony\\Component\\HttpKernel\\Controller\\ArgumentResolver\\DefaultValueResolver`
@@ -51,7 +51,7 @@ In addition, some components and official bundles provide other value resolvers:
     Injects the object that represents the current logged in user if type-hinted
     with ``UserInterface``. Default value can be set to ``null`` in case
     the controller can be accessed by anonymous users. It requires installing
-    the :doc:`Security component </components/security>`.
+    the :doc:`SecurityBundle </security>`.
 
 ``Psr7ServerRequestResolver``
     Injects a `PSR-7`_ compliant version of the current request if type-hinted
@@ -65,6 +65,7 @@ In the next example, you'll create a value resolver to inject the object that
 represents the current user whenever a controller method type-hints an argument
 with the ``User`` class::
 
+    // src/Controller/UserController.php
     namespace App\Controller;
 
     use App\Entity\User;
@@ -74,7 +75,7 @@ with the ``User`` class::
     {
         public function index(User $user)
         {
-            return new Response('Hello '.$user->getUsername().'!');
+            return new Response('Hello '.$user->getUserIdentifier().'!');
         }
     }
 
@@ -101,7 +102,9 @@ type-hinted method arguments:
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:sensio-framework-extra="http://symfony.com/schema/dic/symfony_extra"
             xsi:schemaLocation="http://symfony.com/schema/dic/services
-                https://symfony.com/schema/dic/services/services-1.0.xsd">
+                https://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/symfony_extra
+                https://symfony.com/schema/dic/symfony_extra/symfony_extra-1.0.xsd">
 
             <sensio-framework-extra:config>
                 <request converters="true" auto-convert="false"/>
@@ -124,7 +127,7 @@ and defining a service for it. The interface defines two methods:
 
 ``supports()``
     This method is used to check whether the value resolver supports the
-    given argument. ``resolve()`` will only be executed when this returns ``true``.
+    given argument. ``resolve()`` will only be called when this returns ``true``.
 ``resolve()``
     This method will resolve the actual value for the argument. Once the value
     is resolved, you must `yield`_ the value to the ``ArgumentResolver``.
@@ -156,7 +159,7 @@ retrieved from the token storage::
             $this->security = $security;
         }
 
-        public function supports(Request $request, ArgumentMetadata $argument)
+        public function supports(Request $request, ArgumentMetadata $argument): bool
         {
             if (User::class !== $argument->getType()) {
                 return false;
@@ -165,7 +168,7 @@ retrieved from the token storage::
             return $this->security->getUser() instanceof User;
         }
 
-        public function resolve(Request $request, ArgumentMetadata $argument)
+        public function resolve(Request $request, ArgumentMetadata $argument): iterable
         {
             yield $this->security->getUser();
         }
@@ -206,7 +209,8 @@ and adding a priority.
         <?xml version="1.0" encoding="UTF-8" ?>
         <container xmlns="http://symfony.com/schema/dic/services"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-Instance"
-            xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                https://symfony.com/schema/dic/services/services-1.0.xsd">
 
             <services>
                 <!-- ... be sure autowiring is enabled -->
@@ -223,18 +227,25 @@ and adding a priority.
     .. code-block:: php
 
         // config/services.php
+        namespace Symfony\Component\DependencyInjection\Loader\Configurator;
+
         use App\ArgumentResolver\UserValueResolver;
 
-        $container->autowire(UserValueResolver::class)
-            ->addTag('controller.argument_value_resolver', ['priority' => 50]);
+        return static function (ContainerConfigurator $container) {
+            $services = $configurator->services();
+
+            $services->set(UserValueResolver::class)
+                ->tag('controller.argument_value_resolver', ['priority' => 50])
+            ;
+        };
 
 While adding a priority is optional, it's recommended to add one to make sure
-the expected value is injected. The ``RequestAttributeValueResolver`` has a
-priority of 100. As this one is responsible for fetching attributes from the
-``Request``, it's recommended to trigger your custom value resolver with a
-lower priority. This makes sure the argument resolvers are not triggered when
-the attribute is present. For instance, when passing the user along a
-subrequests.
+the expected value is injected. The built-in ``RequestAttributeValueResolver``,
+which fetches attributes from the ``Request``, has a priority of ``100``. If your
+resolver also fetches ``Request`` attributes, set a priority of ``100`` or more.
+Otherwise, set a priority lower than ``100`` to make sure the argument resolver
+is not triggered when the ``Request`` attribute is present (for example, when
+passing the user along sub-requests).
 
 .. tip::
 
@@ -248,6 +259,6 @@ subrequests.
     resolver and will use the default value if no value was already resolved.
 
 .. _`@ParamConverter`: https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html
-.. _`yield`: http://php.net/manual/en/language.generators.syntax.php
+.. _`yield`: https://www.php.net/manual/en/language.generators.syntax.php
 .. _`PSR-7`: https://www.php-fig.org/psr/psr-7/
 .. _`SensioFrameworkExtraBundle`: https://github.com/sensiolabs/SensioFrameworkExtraBundle

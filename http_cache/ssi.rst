@@ -33,7 +33,7 @@ Symfony manages only the ``#include virtual`` one.
 
 .. caution::
 
-    Be careful with SSI, your website may be victim of injections.
+    Be careful with SSI, your website may fall victim to injections.
     Please read this `OWASP article`_ first!
 
 When the web server reads an SSI directive, it requests the given URI or gives
@@ -76,15 +76,20 @@ First, to use SSI, be sure to enable it in your application configuration:
     .. code-block:: php
 
         // config/packages/framework.php
-        $container->loadFromExtension('framework', [
-            'ssi' => ['enabled' => true],
-        ]);
+        use Symfony\Config\FrameworkConfig;
+
+        return static function (FrameworkConfig $framework) {
+            $framework->ssi()
+                ->enabled(true)
+            ;
+        };
 
 Suppose you have a page with private content like a Profile page and you want
 to cache a static GDPR content block. With SSI, you can add some expiration
 on this block and keep the page private::
 
     // src/Controller/ProfileController.php
+    namespace App\Controller;
 
     // ...
     class ProfileController extends AbstractController
@@ -114,7 +119,7 @@ The profile index page has not public caching, but the GDPR block has
     {# templates/profile/index.html.twig #}
 
     {# you can use a controller reference #}
-    {{ render_ssi(controller('App\Controller\ProfileController::gdpr')) }}
+    {{ render_ssi(controller('App\\Controller\\ProfileController::gdpr')) }}
 
     {# ... or a URL #}
     {{ render_ssi(url('profile_gdpr')) }}
@@ -125,7 +130,7 @@ The ``render_ssi`` twig helper will generate something like:
 
     <!--#include virtual="/_fragment?_hash=abcdef1234&_path=_controller=App\Controller\ProfileController::gdpr" -->
 
-``render_ssi`` ensures that SSI directive are generated only if the request
+``render_ssi`` ensures that SSI directive is generated only if the request
 has the header requirement like ``Surrogate-Capability: device="SSI/1.0"``
 (normally given by the web server).
 Otherwise it will embed directly the sub-response.

@@ -6,10 +6,6 @@ that can be cast into a string) that follows a specific format.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `format`_
-            - `groups`_
-            - `message`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\DateTime`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\DateTimeValidator`
 ==========  ===================================================================
@@ -32,6 +28,22 @@ Basic Usage
              * @Assert\DateTime
              * @var string A "Y-m-d H:i:s" formatted value
              */
+            protected $createdAt;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Author.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Author
+        {
+            /**
+             * @var string A "Y-m-d H:i:s" formatted value
+             */
+            #[Assert\DateTime]
             protected $createdAt;
         }
 
@@ -84,18 +96,18 @@ Basic Usage
 Options
 -------
 
-format
-~~~~~~
+``format``
+~~~~~~~~~~
 
 **type**: ``string`` **default**: ``Y-m-d H:i:s``
 
-This option allows to validate a custom date format. See
+This option allows you to validate a custom date format. See
 :phpmethod:`DateTime::createFromFormat` for formatting options.
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This value is not a valid datetime.``
 
@@ -107,6 +119,11 @@ You can use the following parameters in this message:
 Parameter        Description
 ===============  ==============================================================
 ``{{ value }}``  The current (invalid) value
+``{{ label }}``  Corresponding form field label
 ===============  ==============================================================
+
+.. versionadded:: 5.2
+
+    The ``{{ label }}`` parameter was introduced in Symfony 5.2.
 
 .. include:: /reference/constraints/_payload-option.rst.inc

@@ -80,12 +80,12 @@ a relative or absolute path to the imported file:
         # config/services.yaml
         imports:
             - { resource: services/mailer.yaml }
-
+            # If you want to import a whole directory:
+            - { resource: services/ }
         services:
             _defaults:
                 autowire: true
                 autoconfigure: true
-                public: false
 
             App\:
                 resource: '../src/*'
@@ -104,14 +104,18 @@ a relative or absolute path to the imported file:
 
             <imports>
                 <import resource="services/mailer.xml"/>
+                <!-- If you want to import a whole directory: -->
+                <import resource="services/"/>
+            </imports>
 
-                <defaults autowire="true" autoconfigure="true" public="false"/>
+            <services>
+                <defaults autowire="true" autoconfigure="true"/>
 
                 <prototype namespace="App\" resource="../src/*"
                     exclude="../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}"/>
 
                 <!-- ... -->
-            </imports>
+            </services>
         </container>
 
     .. code-block:: php
@@ -121,12 +125,13 @@ a relative or absolute path to the imported file:
 
         return function(ContainerConfigurator $configurator) {
             $configurator->import('services/mailer.php');
+            // If you want to import a whole directory:
+            $configurator->import('services/');
 
             $services = $configurator->services()
                 ->defaults()
                     ->autowire()
                     ->autoconfigure()
-                    ->private()
             ;
 
             $services->load('App\\', '../src/*')

@@ -119,9 +119,7 @@ And it also works with user-defined streams::
 Files or Directories
 ~~~~~~~~~~~~~~~~~~~~
 
-By default, the Finder returns files and directories; but the
-:method:`Symfony\\Component\\Finder\\Finder::files` and
-:method:`Symfony\\Component\\Finder\\Finder::directories` methods control that::
+By default, the Finder returns both files and directories. If you need to find either files or directories only, use the :method:`Symfony\\Component\\Finder\\Finder::files` and :method:`Symfony\\Component\\Finder\\Finder::directories` methods::
 
     // look for files only; ignore directories
     $finder->files();
@@ -143,12 +141,25 @@ default when looking for files and directories, but you can change this with the
 
     $finder->ignoreVCS(false);
 
-If the search directory contains a ``.gitignore`` file, you can reuse those
-rules to exclude files and directories from the results with the
+If the search directory and its subdirectories contain ``.gitignore`` files, you
+can reuse those rules to exclude files and directories from the results with the
 :method:`Symfony\\Component\\Finder\\Finder::ignoreVCSIgnored` method::
 
     // excludes files/directories matching the .gitignore patterns
     $finder->ignoreVCSIgnored(true);
+
+The rules of a directory always override the rules of its parent directories.
+
+.. note::
+
+    Git looks for ``.gitignore`` files starting from the repository root directory.
+    Symfony's Finder behavior is different and it looks for ``.gitignore`` files
+    starting from the directory used to search files/directories. To be consistent
+    with Git behavior, you should explicitly search from the Git repository root.
+
+.. versionadded:: 5.4
+
+    Recursive support for ``.gitignore`` files was introduced in Symfony 5.4.
 
 File Name
 ~~~~~~~~~
@@ -212,7 +223,7 @@ Use the forward slash (i.e. ``/``) as the directory separator on all platforms,
 including Windows. The component makes the necessary conversion internally.
 
 The ``path()`` method accepts a string, a regular expression or an array of
-strings or regulars expressions::
+strings or regular expressions::
 
     $finder->path('foo/bar');
     $finder->path('/^foo\/bar/');
@@ -295,6 +306,7 @@ Directory Depth
 By default, the Finder recursively traverses directories. Restrict the depth of
 traversing with :method:`Symfony\\Component\\Finder\\Finder::depth`::
 
+    // this will only consider files/directories which are direct children
     $finder->depth('== 0');
     $finder->depth('< 3');
 
@@ -400,7 +412,7 @@ The contents of returned files can be read with
 .. _`fluent interface`: https://en.wikipedia.org/wiki/Fluent_interface
 .. _`symbolic links`: https://en.wikipedia.org/wiki/Symbolic_link
 .. _`Version Control Systems`: https://en.wikipedia.org/wiki/Version_control
-.. _`PHP wrapper for URL-style protocols`: https://php.net/manual/en/wrappers.php
-.. _`PHP streams`: https://php.net/streams
+.. _`PHP wrapper for URL-style protocols`: https://www.php.net/manual/en/wrappers.php
+.. _`PHP streams`: https://www.php.net/streams
 .. _`IEC standard`: https://physics.nist.gov/cuu/Units/binary.html
 .. _`natural sort order`: https://en.wikipedia.org/wiki/Natural_sort_order

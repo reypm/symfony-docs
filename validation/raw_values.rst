@@ -4,7 +4,7 @@
 How to Validate Raw Values (Scalar Values and Arrays)
 =====================================================
 
-Usually you will be validating entire objects. But sometimes, you just want
+Usually you will be validating entire objects. But sometimes, you want
 to validate a simple value - like to verify that a string is a valid email
 address. From inside a controller, it looks like this::
 
@@ -25,7 +25,7 @@ address. From inside a controller, it looks like this::
             $emailConstraint
         );
 
-        if (0 === count($errors)) {
+        if (!$errors->count()) {
             // ... this IS a valid email address, do something
         } else {
             // this is *not* a valid email address
@@ -88,7 +88,7 @@ Validation of arrays is possible using the ``Collection`` constraint::
                 new Assert\Collection([
                     'slug' => [
                         new Assert\NotBlank(),
-                        new Assert\Type(['type' => 'string'])
+                        new Assert\Type(['type' => 'string']),
                     ],
                     'label' => [
                         new Assert\NotBlank(),
@@ -102,6 +102,13 @@ Validation of arrays is possible using the ``Collection`` constraint::
     $violations = $validator->validate($input, $constraint, $groups);
 
 The ``validate()`` method returns a :class:`Symfony\\Component\\Validator\\ConstraintViolationList`
-object, which acts just like an array of errors. Each error in the collection
+object, which acts like an array of errors. Each error in the collection
 is a :class:`Symfony\\Component\\Validator\\ConstraintViolation` object,
 which holds the error message on its ``getMessage()`` method.
+
+.. note::
+
+    When using groups with the
+    :doc:`Collection </reference/constraints/Collection>` constraint, be sure to
+    use the ``Optional`` constraint when appropriate as explained in its
+    reference documentation.

@@ -47,18 +47,18 @@ tests significantly. That's why Symfony disables it by default:
     .. code-block:: php
 
         // config/packages/test/web_profiler.php
+        use Symfony\Config\FrameworkConfig;
 
-        // ...
-        $container->loadFromExtension('framework', [
+        return static function (FrameworkConfig $framework) {
             // ...
-            'profiler' => [
-                'enabled' => true,
-                'collect' => false,
-            ],
-        ]);
+            $framework->profiler()
+                ->enabled(true)
+                ->collect(false)
+            ;
+        };
 
 Setting ``collect`` to ``true`` enables the profiler for all tests. However, if
-you need the profiler just in a few tests, you can keep it disabled globally and
+you need the profiler only in a few tests, you can keep it disabled globally and
 enable the profiler individually on each test by calling
 ``$client->enableProfiler()``.
 
@@ -68,6 +68,9 @@ Testing the Profiler Information
 The data collected by the Symfony Profiler can be used to check the number of
 database calls, the time spent in the framework, etc. All this information is
 provided by the collectors obtained through the ``$client->getProfile()`` call::
+
+    // tests/Controller/LuckyControllerTest.php
+    namespace App\Tests\Controller;
 
     use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 

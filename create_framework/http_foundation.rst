@@ -11,7 +11,7 @@ top of the Symfony components is better than creating a framework from scratch.
 
     We won't talk about the traditional benefits of using a framework when
     working on big applications with more than a few developers; the Internet
-    has already plenty of good resources on that topic.
+    already has plenty of good resources on that topic.
 
 Even if the "application" we wrote in the previous chapter was simple enough,
 it suffers from a few problems::
@@ -25,7 +25,7 @@ First, if the ``name`` query parameter is not defined in the URL query string,
 you will get a PHP warning; so let's fix it::
 
     // framework/index.php
-    $name = isset($_GET['name']) ? $_GET['name'] : 'World';
+    $name = $_GET['name'] ?? 'World';
 
     printf('Hello %s', $name);
 
@@ -33,7 +33,7 @@ Then, this *application is not secure*. Can you believe it? Even this simple
 snippet of PHP code is vulnerable to one of the most widespread Internet
 security issue, XSS (Cross-Site Scripting). Here is a more secure version::
 
-    $name = isset($_GET['name']) ? $_GET['name'] : 'World';
+    $name = $_GET['name'] ?? 'World';
 
     header('Content-Type: text/html; charset=utf-8');
 
@@ -141,7 +141,7 @@ Now, let's rewrite our application by using the ``Request`` and the
 
     $request = Request::createFromGlobals();
 
-    $name = $request->get('name', 'World');
+    $name = $request->attributes->get('name', 'World');
 
     $response = new Response(sprintf('Hello %s', htmlspecialchars($name, ENT_QUOTES, 'UTF-8')));
 
@@ -265,7 +265,7 @@ So, the ``getClientIp()`` method works securely in all circumstances. You can
 use it in all your projects, whatever the configuration is, it will behave
 correctly and safely. That's one of the goals of using a framework. If you were
 to write a framework from scratch, you would have to think about all these
-cases by yourself. Why not using a technology that already works?
+cases by yourself. Why not use a technology that already works?
 
 .. note::
 
@@ -273,7 +273,7 @@ cases by yourself. Why not using a technology that already works?
     a look at the ``Symfony\Component\HttpFoundation`` API or read
     its dedicated :doc:`documentation </components/http_foundation>`.
 
-Believe or not but we have our first framework. You can stop now if you want.
+Believe it or not but we have our first framework. You can stop now if you want.
 Using just the Symfony HttpFoundation component already allows you to write
 better and more testable code. It also allows you to write code faster as many
 day-to-day problems have already been solved for you.
@@ -282,7 +282,7 @@ As a matter of fact, projects like Drupal have adopted the HttpFoundation
 component; if it works for them, it will probably work for you. Don't reinvent
 the wheel.
 
-I've almost forgot to talk about one added benefit: using the HttpFoundation
+I've almost forgotten to talk about one added benefit: using the HttpFoundation
 component is the start of better interoperability between all frameworks and
 `applications using it`_ (like `Symfony`_, `Drupal 8`_, `phpBB 3`_, `Laravel`_
 and `ezPublish 5`_,  and `more`_).
@@ -292,10 +292,10 @@ and `ezPublish 5`_,  and `more`_).
 .. _`audited`: https://symfony.com/blog/symfony2-security-audit
 .. _`applications using it`: https://symfony.com/components/HttpFoundation
 .. _`Symfony`: https://symfony.com/
-.. _`Drupal 8`: https://drupal.org/
+.. _`Drupal 8`: https://www.drupal.org/
 .. _`phpBB 3`: https://www.phpbb.com/
 .. _`ezPublish 5`: https://ez.no/
 .. _`Laravel`: https://laravel.com/
-.. _`autoloaded`: https://php.net/autoload
+.. _`autoloaded`: https://www.php.net/autoload
 .. _`PSR-4`: https://www.php-fig.org/psr/psr-4/
 .. _`more`: https://symfony.com/components/HttpFoundation

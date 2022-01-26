@@ -21,7 +21,7 @@ Consider for example the code used to display the title of the following command
     {
         // ...
 
-        protected function execute(InputInterface $input, OutputInterface $output)
+        protected function execute(InputInterface $input, OutputInterface $output): int
         {
             $output->writeln([
                 '<info>Lorem Ipsum Dolor Sit Amet</>',
@@ -62,7 +62,7 @@ title of the command::
     {
         // ...
 
-        protected function execute(InputInterface $input, OutputInterface $output)
+        protected function execute(InputInterface $input, OutputInterface $output): int
         {
             $io = new SymfonyStyle($input, $output);
             $io->title('Lorem Ipsum Dolor Sit Amet');
@@ -158,12 +158,21 @@ Content Methods
         $io->definitionList(
             'This is a title',
             ['foo1' => 'bar1'],
-            ['foo2' => 'bar2']
-            ['foo3' => 'bar3']
+            ['foo2' => 'bar2'],
+            ['foo3' => 'bar3'],
             new TableSeparator(),
             'This is another title',
             ['foo4' => 'bar4']
         );
+
+:method:`Symfony\\Component\\Console\\Style\\SymfonyStyle::createTable`
+    Creates an instance of :class:`Symfony\\Component\\Console\\Helper\\Table`
+    styled according to the Symfony Style Guide, which allows you to use
+    features such as dynamically appending rows.
+
+.. versionadded:: 5.4
+
+    The ``createTable()`` method was introduced in Symfony 5.4.
 
 :method:`Symfony\\Component\\Console\\Style\\SymfonyStyle::newLine`
     It displays a blank line in the command output. Although it may seem useful,
@@ -242,6 +251,24 @@ Progress Bar Methods
     length is known)::
 
         $io->progressFinish();
+
+:method:`Symfony\\Component\\Console\\Style\\SymfonyStyle::progressIterate`
+    If your progress bar loops over an iterable collection, use the
+    ``progressIterate()`` helper::
+
+        $iterable = [1, 2];
+
+        foreach ($io->progressIterate($iterable) as $value) {
+            // ... do some work
+        }
+
+.. versionadded:: 5.4
+
+    The ``progressIterate`` method was introduced in Symfony 5.4.
+
+:method:`Symfony\\Component\\Console\\Style\\SymfonyStyle::createProgressBar`
+    Creates an instance of :class:`Symfony\\Component\\Console\\Helper\\ProgressBar`
+    styled according to the Symfony Style Guide.
 
 User Input Methods
 ~~~~~~~~~~~~~~~~~~
@@ -325,6 +352,27 @@ Result Methods
             'Consectetur adipiscing elit',
         ]);
 
+:method:`Symfony\\Component\\Console\\Style\\SymfonyStyle::info`
+    It's similar to the ``success()`` method (the given string or array of strings
+    are displayed with a green background) but the ``[OK]`` label is not prefixed.
+    It's meant to be used once to display the final result of executing the given
+    command, without showing the result as a successful or failed one::
+
+        // use simple strings for short info messages
+        $io->info('Lorem ipsum dolor sit amet');
+
+        // ...
+
+        // consider using arrays when displaying long info messages
+        $io->info([
+            'Lorem ipsum dolor sit amet',
+            'Consectetur adipiscing elit',
+        ]);
+
+.. versionadded:: 5.2
+
+    The ``info()`` method was introduced in Symfony 5.2.
+
 :method:`Symfony\\Component\\Console\\Style\\SymfonyStyle::warning`
     It displays the given string or array of strings highlighted as a warning
     message (with a red background and the ``[WARNING]`` label). It's meant to be
@@ -391,7 +439,7 @@ of your commands to change their appearance::
     {
         // ...
 
-        protected function execute(InputInterface $input, OutputInterface $output)
+        protected function execute(InputInterface $input, OutputInterface $output): int
         {
             // Before
             $io = new SymfonyStyle($input, $output);

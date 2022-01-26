@@ -15,7 +15,7 @@ There are **two** main relationship/association types:
 ``ManyToOne`` / ``OneToMany``
     The most common relationship, mapped in the database with a foreign
     key column (e.g. a ``category_id`` column on the ``product`` table). This is
-    actually just *one* association type, but seen from the two different *sides*
+    actually only *one* association type, but seen from the two different *sides*
     of the relation.
 
 ``ManyToMany``
@@ -41,7 +41,7 @@ In this case, you'll need a ``Category`` class, and a way to relate a
 
 Start by creating a ``Category`` entity with a ``name`` field:
 
-.. code-block:: terminal
+.. code-block:: bash
 
     $ php bin/console make:entity Category
 
@@ -64,6 +64,8 @@ Start by creating a ``Category`` entity with a ``name`` field:
 This will generate your new entity class::
 
     // src/Entity/Category.php
+    namespace App\Entity;
+
     // ...
 
     class Category
@@ -99,7 +101,7 @@ the ``ManyToOne`` annotation. You can do this by hand, or by using the ``make:en
 command, which will ask you several questions about your relationship. If you're
 not sure of the answer, don't worry! You can always change the settings later:
 
-.. code-block:: terminal
+.. code-block:: bash
 
     $ php bin/console make:entity
 
@@ -144,6 +146,7 @@ the ``Product`` entity (and getter & setter methods):
     .. code-block:: php-annotations
 
         // src/Entity/Product.php
+        namespace App\Entity;
 
         // ...
         class Product
@@ -153,6 +156,32 @@ the ``Product`` entity (and getter & setter methods):
             /**
              * @ORM\ManyToOne(targetEntity="App\Entity\Category", inversedBy="products")
              */
+            private $category;
+
+            public function getCategory(): ?Category
+            {
+                return $this->category;
+            }
+
+            public function setCategory(?Category $category): self
+            {
+                $this->category = $category;
+
+                return $this;
+            }
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Product.php
+        namespace App\Entity;
+
+        // ...
+        class Product
+        {
+            // ...
+
+            #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: "products")]
             private $category;
 
             public function getCategory(): ?Category
@@ -214,6 +243,7 @@ class that will hold these objects:
     .. code-block:: php-annotations
 
         // src/Entity/Category.php
+        namespace App\Entity;
 
         // ...
         use Doctrine\Common\Collections\ArrayCollection;
@@ -226,6 +256,38 @@ class that will hold these objects:
             /**
              * @ORM\OneToMany(targetEntity="App\Entity\Product", mappedBy="category")
              */
+            private $products;
+
+            public function __construct()
+            {
+                $this->products = new ArrayCollection();
+            }
+
+            /**
+             * @return Collection|Product[]
+             */
+            public function getProducts(): Collection
+            {
+                return $this->products;
+            }
+
+            // addProduct() and removeProduct() were also added
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Category.php
+        namespace App\Entity;
+
+        // ...
+        use Doctrine\Common\Collections\ArrayCollection;
+        use Doctrine\Common\Collections\Collection;
+
+        class Category
+        {
+            // ...
+
+            #[ORM\OneToMany(targetEntity: Product::class, mappedBy: "category")]
             private $products;
 
             public function __construct()
@@ -291,11 +353,11 @@ config.
 
     The code inside ``__construct()`` is important: The ``$products`` property must
     be a collection object that implements Doctrine's ``Collection`` interface.
-    In this case, an ``ArrayCollection`` object is used. This looks and acts almost
-    *exactly* like an array, but has some added flexibility. Just imagine that it's
-    an ``array`` and you'll be in good shape.
+    In this case, an `ArrayCollection`_ object is used. This looks and acts almost
+    *exactly* like an array, but has some added flexibility. Just imagine that
+    it is an ``array`` and you'll be in good shape.
 
-Your database is setup! Now, execute the migrations like normal:
+Your database is set up! Now, run the migrations like normal:
 
 .. code-block:: terminal
 
@@ -310,10 +372,13 @@ Saving Related Entities
 
 Now you can see this new code in action! Imagine you're inside a controller::
 
-    // ...
+    // src/Controller/ProductController.php
+    namespace App\Controller;
 
+    // ...
     use App\Entity\Category;
     use App\Entity\Product;
+    use Doctrine\Persistence\ManagerRegistry;
     use Symfony\Component\HttpFoundation\Response;
 
     class ProductController extends AbstractController
@@ -321,7 +386,7 @@ Now you can see this new code in action! Imagine you're inside a controller::
         /**
          * @Route("/product", name="product")
          */
-        public function index()
+        public function index(ManagerRegistry $doctrine): Response
         {
             $category = new Category();
             $category->setName('Computer Peripherals');
@@ -334,7 +399,7 @@ Now you can see this new code in action! Imagine you're inside a controller::
             // relates this product to the category
             $product->setCategory($category);
 
-            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager = $doctrine->getManager();
             $entityManager->persist($category);
             $entityManager->persist($product);
             $entityManager->flush();
@@ -368,28 +433,31 @@ Doctrine takes care of the rest when saving.
 Fetching Related Objects
 ------------------------
 
-When you need to fetch associated objects, your workflow looks just like it
-did before. First, fetch a ``$product`` object and then access its related
+When you need to fetch associated objects, your workflow looks like it did
+before. First, fetch a ``$product`` object and then access its related
 ``Category`` object::
+
+    // src/Controller/ProductController.php
+    namespace App\Controller;
 
     use App\Entity\Product;
     // ...
 
-    public function show($id)
+    class ProductController extends AbstractController
     {
-        $product = $this->getDoctrine()
-            ->getRepository(Product::class)
-            ->find($id);
+        public function show(ManagerRegistry $doctrine, int $id): Response
+        {
+            $product = $doctrine->getRepository(Product::class)->find($id);
+            // ...
 
-        // ...
+            $categoryName = $product->getCategory()->getName();
 
-        $categoryName = $product->getCategory()->getName();
-
-        // ...
+            // ...
+        }
     }
 
 In this example, you first query for a ``Product`` object based on the product's
-``id``. This issues a query for *just* the product data and hydrates the
+``id``. This issues a query to fetch *only* the product data and hydrates the
 ``$product``. Later, when you call ``$product->getCategory()->getName()``,
 Doctrine silently makes a second query to find the ``Category`` that's related
 to this ``Product``. It prepares the ``$category`` object and returns it to
@@ -405,15 +473,19 @@ the category (i.e. it's "lazily loaded").
 Because we mapped the optional ``OneToMany`` side, you can also query in the other
 direction::
 
-    public function showProducts($id)
+    // src/Controller/ProductController.php
+
+    // ...
+    class ProductController extends AbstractController
     {
-        $category = $this->getDoctrine()
-            ->getRepository(Category::class)
-            ->find($id);
+        public function showProducts(ManagerRegistry $doctrine, int $id): Response
+        {
+            $category = $doctrine->getRepository(Category::class)->find($id);
 
-        $products = $category->getProducts();
+            $products = $category->getProducts();
 
-        // ...
+            // ...
+        }
     }
 
 In this case, the same things occur: you first query for a single ``Category``
@@ -427,9 +499,7 @@ by adding JOINs.
     a "proxy" object in place of the true object. Look again at the above
     example::
 
-        $product = $this->getDoctrine()
-            ->getRepository(Product::class)
-            ->find($id);
+        $product = $doctrine->getRepository(Product::class)->find($id);
 
         $category = $product->getCategory();
 
@@ -469,35 +539,44 @@ can avoid the second query by issuing a join in the original query. Add the
 following method to the ``ProductRepository`` class::
 
     // src/Repository/ProductRepository.php
-    public function findOneByIdJoinedToCategory($productId)
+
+    // ...
+    class ProductRepository extends ServiceEntityRepository
     {
-        $entityManager = $this->getEntityManager();
+        public function findOneByIdJoinedToCategory(int $productId): ?Product
+        {
+            $entityManager = $this->getEntityManager();
 
-        $query = $entityManager->createQuery(
-            'SELECT p, c
-            FROM App\Entity\Product p
-            INNER JOIN p.category c
-            WHERE p.id = :id'
-        )->setParameter('id', $productId);
+            $query = $entityManager->createQuery(
+                'SELECT p, c
+                FROM App\Entity\Product p
+                INNER JOIN p.category c
+                WHERE p.id = :id'
+            )->setParameter('id', $productId);
 
-        return $query->getOneOrNullResult();
+            return $query->getOneOrNullResult();
+        }
     }
 
 This will *still* return an array of ``Product`` objects. But now, when you call
 ``$product->getCategory()`` and use that data, no second query is made.
 
 Now, you can use this method in your controller to query for a ``Product``
-object and its related ``Category`` with just one query::
+object and its related ``Category`` in one query::
 
-    public function show($id)
+    // src/Controller/ProductController.php
+
+    // ...
+    class ProductController extends AbstractController
     {
-        $product = $this->getDoctrine()
-            ->getRepository(Product::class)
-            ->findOneByIdJoinedToCategory($id);
+        public function show(ManagerRegistry $doctrine, int $id): Response
+        {
+            $product = $doctrine->getRepository(Product::class)->findOneByIdJoinedToCategory($id);
 
-        $category = $product->getCategory();
+            $category = $product->getCategory();
 
-        // ...
+            // ...
+        }
     }
 
 .. _associations-inverse-side:
@@ -542,6 +621,7 @@ What about *removing* a ``Product`` from a ``Category``? The ``make:entity`` com
 also generated a ``removeProduct()`` method::
 
     // src/Entity/Category.php
+    namespace App\Entity;
 
     // ...
     class Category
@@ -567,16 +647,30 @@ on that ``Product`` will be set to ``null`` in the database.
 
 But, instead of setting the ``category_id`` to null, what if you want the ``Product``
 to be *deleted* if it becomes "orphaned" (i.e. without a ``Category``)? To choose
-that behavior, use the `orphanRemoval`_ option inside ``Category``::
+that behavior, use the `orphanRemoval`_ option inside ``Category``:
 
-    // src/Entity/Category.php
+.. configuration-block::
 
-    // ...
+    .. code-block:: php-annotations
 
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Product", mappedBy="category", orphanRemoval=true)
-     */
-    private $products;
+        // src/Entity/Category.php
+
+        // ...
+
+        /**
+         * @ORM\OneToMany(targetEntity="App\Entity\Product", mappedBy="category", orphanRemoval=true)
+         */
+        private $products;
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Category.php
+
+        // ...
+
+        #[ORM\OneToMany(targetEntity: Product::class, mappedBy: "category", orphanRemoval: true)]
+        private $products;
+
 
 Thanks to this, if the ``Product`` is removed from the ``Category``, it will be
 removed from the database entirely.
@@ -595,6 +689,7 @@ Doctrine's `Association Mapping Documentation`_.
     ``@ORM\`` (e.g. ``@ORM\OneToMany``), which is not reflected in Doctrine's
     documentation.
 
-.. _`Association Mapping Documentation`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/association-mapping.html
-.. _`orphanRemoval`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/working-with-associations.html#orphan-removal
+.. _`Association Mapping Documentation`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/association-mapping.html
+.. _`orphanRemoval`: https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/working-with-associations.html#orphan-removal
 .. _`Mastering Doctrine Relations`: https://symfonycasts.com/screencast/doctrine-relations
+.. _`ArrayCollection`: https://www.doctrine-project.org/projects/doctrine-collections/en/1.6/index.html

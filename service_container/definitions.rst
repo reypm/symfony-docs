@@ -89,14 +89,18 @@ fetched from the container::
 
     // gets a specific argument
     $firstArgument = $definition->getArgument(0);
+    
+    // adds a new named argument
+    // '$argumentName' = the name of the argument in the constructor, including the '$' symbol
+    $definition = $definition->setArgument('$argumentName', $argumentValue);
 
     // adds a new argument
-    $definition->addArgument($argument);
+    $definition->addArgument($argumentValue);
 
     // replaces argument on a specific index (0 = first argument)
     $definition->replaceArgument($index, $argument);
 
-    // replace all previously configured arguments with the passed array
+    // replaces all previously configured arguments with the passed array
     $definition->setArguments($arguments);
 
 .. caution::
@@ -116,6 +120,9 @@ any method calls in the definitions as well::
 
     // configures a new method call
     $definition->addMethodCall('setLogger', [new Reference('logger')]);
+
+    // configures an immutable-setter
+    $definition->addMethodCall('withLogger', [new Reference('logger')], true);
 
     // replaces all previously configured method calls with the passed array
     $definition->setMethodCalls($methodCalls);

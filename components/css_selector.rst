@@ -5,7 +5,7 @@
 The CssSelector Component
 =========================
 
-    The CssSelector component converts CSS selectors to XPath expressions.
+    The CssSelector component converts CSS selectors to `XPath`_ expressions.
 
 Installation
 ------------
@@ -25,11 +25,11 @@ Usage
     component in any PHP application. Read the :ref:`Symfony Functional Tests <functional-tests>`
     article to learn about how to use it when creating Symfony tests.
 
-Why to Use CSS selectors?
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Why Use CSS selectors?
+~~~~~~~~~~~~~~~~~~~~~~
 
 When you're parsing an HTML or an XML document, by far the most powerful
-method is XPath.
+method is `XPath`_.
 
 XPath expressions are incredibly flexible, so there is almost always an
 XPath expression that will find the element you need. Unfortunately, they
@@ -40,7 +40,7 @@ long and unwieldy expressions.
 Many developers -- particularly web developers -- are more comfortable
 using CSS selectors to find elements. As well as working in stylesheets,
 CSS selectors are used in JavaScript with the ``querySelectorAll()`` function
-and in popular JavaScript libraries such as jQuery, Prototype and MooTools.
+and in popular JavaScript libraries such as jQuery.
 
 CSS selectors are less powerful than XPath, but far easier to write, read
 and understand. Since they are less powerful, almost all CSS selectors can
@@ -77,7 +77,7 @@ You can use this expression with, for instance, :phpclass:`DOMXPath` or
 Limitations of the CssSelector Component
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Not all CSS selectors can be converted to XPath equivalents.
+Not all CSS selectors can be converted to `XPath`_ equivalents.
 
 There are several CSS selectors that only make sense in the context of a
 web-browser.
@@ -103,3 +103,5 @@ Learn more
 
 * :doc:`/testing`
 * :doc:`/components/dom_crawler`
+
+.. _`XPath`: https://en.wikipedia.org/wiki/XPath

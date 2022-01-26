@@ -1,6 +1,12 @@
 Proposing a Change
 ==================
 
+.. admonition:: Screencast
+    :class: screencast
+
+    Do you prefer video tutorials? Check out the `Contributing Back To Symfony`_
+    screencast series.
+
 A pull request, "PR" for short, is the best way to provide a bug fix or to
 propose enhancements to Symfony.
 
@@ -11,7 +17,7 @@ Before working on a change, check to see if someone else also raised the topic
 or maybe even started working on a PR by `searching on GitHub`_.
 
 If you are unsure or if you have any questions during this entire process,
-please ask your questions on the #contribs channel on `Symfony Slack`_.
+please ask your questions on the ``#contribs`` channel on `Symfony Slack`_.
 
 .. _step-1-setup-your-environment:
 
@@ -25,7 +31,7 @@ Before working on Symfony, setup a friendly environment with the following
 software:
 
 * Git;
-* PHP version 5.5.9 or above.
+* PHP version 7.2.5 or above.
 
 Configure Git
 ~~~~~~~~~~~~~
@@ -101,12 +107,6 @@ Check that the current Tests Pass
 Now that Symfony is installed, check that all unit tests pass for your
 environment as explained in the dedicated :doc:`document <tests>`.
 
-.. tip::
-
-    If tests are failing, check on `Travis-CI`_ if the same test is
-    failing there as well. In that case you do not need to be concerned
-    about the test failing locally.
-
 .. _step-2-work-on-your-patch:
 
 Step 3: Work on your Pull Request
@@ -124,25 +124,25 @@ Choose the right Branch
 Before working on a PR, you must determine on which branch you need to
 work:
 
-* ``3.4``, if you are fixing a bug for an existing feature or want to make a
+* ``4.4``, if you are fixing a bug for an existing feature or want to make a
   change that falls into the :doc:`list of acceptable changes in patch versions
   </contributing/code/maintenance>` (you may have to choose a higher branch if
   the feature you are fixing was introduced in a later version);
 
-* ``master``, if you are adding a new feature.
+* ``5.x``, if you are adding a new feature.
 
   The only exception is when a new :doc:`major Symfony version </contributing/community/releases>`
-  (4.0, 5.0, etc.) comes out every two years. Because of the
+  (5.0, 6.0, etc.) comes out every two years. Because of the
   :ref:`special development process <major-version-development>` of those versions,
-  you need to use the previous minor version for the features (e.g. use ``3.4``
-  instead of ``4.0``, use ``4.4`` instead of ``5.0``, etc.)
+  you need to use the previous minor version for the features (e.g. use ``4.4``
+  instead of ``5.0``, use ``5.4`` instead of ``6.0``, etc.)
 
 .. note::
 
     All bug fixes merged into maintenance branches are also merged into more
     recent branches on a regular basis. For instance, if you submit a PR
-    for the ``3.4`` branch, the PR will also be applied by the core team on
-    the ``master`` branch.
+    for the ``4.4`` branch, the PR will also be applied by the core team on
+    the ``5.x`` branch.
 
 Create a Topic Branch
 ~~~~~~~~~~~~~~~~~~~~~
@@ -152,20 +152,20 @@ topic branch:
 
 .. code-block:: terminal
 
-    $ git checkout -b BRANCH_NAME master
+    $ git checkout -b BRANCH_NAME 5.x
 
-Or, if you want to provide a bug fix for the ``3.4`` branch, first track the remote
-``3.4`` branch locally:
-
-.. code-block:: terminal
-
-    $ git checkout -t origin/3.4
-
-Then create a new branch off the ``3.4`` branch to work on the bug fix:
+Or, if you want to provide a bug fix for the ``4.4`` branch, first track the remote
+``4.4`` branch locally:
 
 .. code-block:: terminal
 
-    $ git checkout -b BRANCH_NAME 3.4
+    $ git checkout --track origin/4.4
+
+Then create a new branch off the ``4.4`` branch to work on the bug fix:
+
+.. code-block:: terminal
+
+    $ git checkout -b BRANCH_NAME 4.4
 
 .. tip::
 
@@ -190,6 +190,14 @@ uses, and replaces them by symbolic links to the ones in the Git repository.
 
 Before running the ``link`` command, be sure that the dependencies of the project you
 want to debug are installed by running ``composer install`` inside it.
+
+.. tip::
+
+    If symlinks to your local Symfony fork cannot be resolved inside your project due to
+    your dev environment (for instance when using Vagrant where only the current project
+    directory is mounted), you can alternatively use the ``--copy`` option.
+    When finishing testing your Symfony code into your project, you can use
+    the ``--rollback`` option to make your project back to its original dependencies.
 
 .. _work-on-your-patch:
 
@@ -216,7 +224,20 @@ in mind the following:
 * Never fix coding standards in some existing code as it makes the code review
   more difficult;
 
-* Write good commit messages (see the tip below).
+.. _commit-messages:
+
+* Write good commit messages: Start by a short subject line (the first line),
+  followed by a blank line and a more detailed description.
+
+  The subject line should start with the Component, Bridge or Bundle you are
+  working on in square brackets (``[DependencyInjection]``,
+  ``[FrameworkBundle]``, ...).
+
+  Then, capitalize the sentence, do not end with a period, and use an
+  imperative verb to start.
+
+  Here is a full example of a subject line: ``[MagicBundle] Add `MagicConfig`
+  that allows configuring things``.
 
 .. tip::
 
@@ -225,16 +246,7 @@ in mind the following:
     as defined in `PSR-1`_ and `PSR-2`_.
 
     A status is posted below the pull request description with a summary
-    of any problems it detects or any `Travis-CI`_ build failures.
-
-.. tip::
-
-    A good commit message is composed of a summary (the first line),
-    optionally followed by a blank line and a more detailed description. The
-    summary should start with the Component you are working on in square
-    brackets (``[DependencyInjection]``, ``[FrameworkBundle]``, ...). Use a
-    verb (``fixed ...``, ``added ...``, ...) to start the summary and don't
-    add a period at the end.
+    of any problems it detects or any GitHub Actions build failures.
 
 .. _prepare-your-patch-for-submission:
 
@@ -269,15 +281,15 @@ while to finish your changes):
 
 .. code-block:: terminal
 
-    $ git checkout master
+    $ git checkout 5.x
     $ git fetch upstream
-    $ git merge upstream/master
+    $ git merge upstream/5.x
     $ git checkout BRANCH_NAME
-    $ git rebase master
+    $ git rebase 5.x
 
 .. tip::
 
-    Replace ``master`` with the branch you selected previously (e.g. ``3.4``)
+    Replace ``5.x`` with the branch you selected previously (e.g. ``4.4``)
     if you are working on a bug fix.
 
 When doing the ``rebase`` command, you might have to fix merge conflicts.
@@ -304,8 +316,8 @@ You can now make a pull request on the ``symfony/symfony`` GitHub repository.
 
 .. tip::
 
-    Take care to point your pull request towards ``symfony:3.4`` if you want
-    the core team to pull a bug fix based on the ``3.4`` branch.
+    Take care to point your pull request towards ``symfony:4.4`` if you want
+    the core team to pull a bug fix based on the ``4.4`` branch.
 
 To ease the core team work, always include the modified components in your
 pull request message, like in:
@@ -358,8 +370,7 @@ because you want early feedback on your work, add an item to todo-list:
     - [ ] gather feedback for my changes
 
 As long as you have items in the todo-list, please prefix the pull request
-title with "[WIP]". If you do not yet want to trigger the automated tests,
-you can also set the PR to `draft status`_.
+title with "[WIP]".
 
 In the pull request description, give as much detail as possible about your
 changes (don't hesitate to give code examples to illustrate your points). If
@@ -380,7 +391,7 @@ We ask all contributors to follow some
 to ensure a constructive feedback process.
 
 If you think someone fails to keep this advice in mind and you want another
-perspective, please join the #contribs channel on `Symfony Slack`_. If you
+perspective, please join the ``#contribs`` channel on `Symfony Slack`_. If you
 receive feedback you find abusive please contact the
 :doc:`CARE team </contributing/code_of_conduct/care_team>`.
 
@@ -388,25 +399,117 @@ The :doc:`core team </contributing/code/core_team>` is responsible for deciding
 which PR gets merged, so their feedback is the most relevant. So do not feel
 pressured to refactor your code immediately when someone provides feedback.
 
+Automated Feedback
+~~~~~~~~~~~~~~~~~~
+
+There are many automated scripts that will provide feedback on a pull request.
+
+fabbot
+""""""
+
+`fabbot`_ will review code style, check for common typos and make sure the git
+history looks good. If there are any issues, fabbot will often suggest what changes
+that should be done. Most of the time you get a command to run to automatically
+fix the changes.
+
+It is rare, but fabbot could be wrong. One should verify if the suggested changes
+make sense and that they are related to the pull request.
+
+Psalm
+"""""
+
+`Psalm`_ will make a comment on a pull request if it discovers any potential
+type errors. The Psalm errors are not always correct, but each should be reviewed
+and discussed. A pull request should not update the Psalm baseline nor add ``@psalm-``
+annotations.
+
+After the `Psalm phar is installed`_, the analysis can be run locally with:
+
+.. code-block:: terminal
+
+    $ psalm.phar src/Symfony/Component/Workflow
+
+Automated Tests
+~~~~~~~~~~~~~~~
+
+A series of automated tests will run when submitting the pull request.
+These test the code under different conditions, to be sure nothing
+important is broken. Test failures can be unrelated to your changes. If you
+think this is the case, you can check if the target branch has the same
+errors and leave a comment on your PR.
+
+Otherwise, the test failure might be caused by your changes. The following
+test scenarios run on each change:
+
+``PHPUnit / Tests``
+    This job runs on Ubuntu using multiple PHP versions (each in their
+    own job). These jobs run the testsuite just like you would do locally.
+
+    A failure in these jobs often indicates a bug in the code.
+
+``PHPUnit / Tests (high-deps)``
+    This job checks each package (bridge, bundle or component) in ``src/``
+    individually by calling ``composer update`` and ``phpunit`` from inside
+    each package.
+
+    A failure in this job often indicates a missing package in the
+    ``composer.json`` of the failing package (e.g.
+    ``src/Symfony/Bundle/FrameworkBundle/composer.json``).
+
+    This job also runs relevant packages using a "flipped" test (indicated
+    by a ``^`` suffix in the package name). These tests checkout the
+    previous major release (e.g. ``4.4`` for a pull requests on ``5.4``)
+    and run the tests with your branch as dependency.
+
+    A failure in these flipped tests indicate a backwards compatibility
+    break in your changes.
+
+``PHPUnit / Tests (low-deps)``
+    This job also checks each package individually, but then uses
+    ``composer update --prefer-lowest`` before running the tests.
+
+    A failure in this job often indicates a wrong version range or a
+    missing package in the ``composer.json`` of the failing package.
+
+``continuous-integration/appveyor/pr``
+    This job runs on Windows using the x86 architecture and the lowest
+    supported PHP version. All tests first run without extra PHP
+    extensions. Then, all skipped tests are run using all required PHP
+    extensions.
+
+    A failure in this job often indicate that your changes do not support
+    Windows, x86 or PHP with minimal extensions.
+
+``Integration / Tests``
+    Integration tests require other services (e.g. Redis or RabbitMQ) to
+    run. This job only runs the tests in the ``integration`` PHPUnit group.
+
+    A failure in this job indicates a bug in the communication with these
+    services.
+
+``PHPUnit / Tests (experimental)``
+    This job always passes (even with failing tests) and is used by the
+    core team to prepare for the upcoming PHP versions.
+
 .. _rework-your-patch:
 
 Rework your Pull Request
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Based on the feedback on the pull request, you might need to rework your
-PR. Before re-submitting the PR, rebase with ``upstream/master`` or
-``upstream/3.4``, don't merge; and force the push to the origin:
+PR. Before re-submitting the PR, rebase with ``upstream/5.x`` or
+``upstream/4.4``, don't merge; and force the push to the origin:
 
 .. code-block:: terminal
 
-    $ git rebase -f upstream/master
+    $ git rebase -f upstream/5.x
     $ git push --force origin BRANCH_NAME
 
 .. note::
 
     When doing a ``push --force``, always specify the branch name explicitly
-    to avoid messing other branches in the repo (``--force`` tells Git that
-    you really want to mess with things so do it carefully).
+    to avoid messing other branches in the repository (``--force`` tells Git
+    that you really want to mess with things so do it carefully).
 
 Moderators earlier asked you to "squash" your commits. This means you will
 convert many commits to one commit. This is no longer necessary today, because
@@ -415,13 +518,14 @@ before merging.
 
 .. _ProGit: https://git-scm.com/book
 .. _GitHub: https://github.com/join
-.. _`GitHub's documentation`: https://help.github.com/articles/ignoring-files
+.. _`GitHub's documentation`: https://help.github.com/github/using-git/ignoring-files
 .. _Symfony repository: https://github.com/symfony/symfony
 .. _`documentation repository`: https://github.com/symfony/symfony-docs
 .. _`fabbot`: https://fabbot.io
+.. _`Psalm`: https://psalm.dev/
 .. _`PSR-1`: https://www.php-fig.org/psr/psr-1/
 .. _`PSR-2`: https://www.php-fig.org/psr/psr-2/
 .. _`searching on GitHub`: https://github.com/symfony/symfony/issues?q=+is%3Aopen+
 .. _`Symfony Slack`: https://symfony.com/slack-invite
-.. _`Travis-CI`: https://travis-ci.org/symfony/symfony
-.. _`draft status`: https://help.github.com/en/articles/about-pull-requests#draft-pull-requests
+.. _`Psalm phar is installed`: https://psalm.dev/docs/running_psalm/installation/
+.. _`Contributing Back To Symfony`: https://symfonycasts.com/screencast/contributing

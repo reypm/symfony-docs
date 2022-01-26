@@ -10,7 +10,7 @@ performance you can use the `hinclude.js`_ JavaScript library to embed
 controllers asynchronously.
 
 First, include the `hinclude.js`_ library in your page
-ref:`linking to it <templates-link-to-assets>` from the template or adding it
+:ref:`linking to it <templates-link-to-assets>` from the template or adding it
 to your application JavaScript :doc:`using Webpack Encore </frontend>`.
 
 As the embedded content comes from another page (or controller for that matter),
@@ -60,12 +60,14 @@ default content rendering some template:
     .. code-block:: php
 
         // config/packages/framework.php
-        $container->loadFromExtension('framework', [
+        use Symfony\Config\FrameworkConfig;
+
+        return static function (FrameworkConfig $framework) {
             // ...
-            'fragments' => [
-                'hinclude_default_template' => 'hinclude.html.twig',
-            ],
-        ]);
+            $framework->fragments()
+                ->hincludeDefaultTemplate('hinclude.html.twig')
+            ;
+        };
 
 You can define default templates per ``render()`` function (which will override
 any global default template that is defined):
@@ -81,5 +83,17 @@ Or you can also specify a string to display as the default content:
 .. code-block:: twig
 
     {{ render_hinclude(controller('...'), {default: 'Loading...'}) }}
+
+Use the ``attributes`` option to define the value of hinclude.js options:
+
+.. code-block:: twig
+
+    {# by default, cross-site requests don't use credentials such as cookies, authorization
+       headers or TLS client certificates; set this option to 'true' to use them #}
+    {{ render_hinclude(controller('...'), {attributes: {'data-with-credentials': 'true'}}) }}
+
+    {# by default, the JavaScript code included in the loaded contents is not run;
+       set this option to 'true' to run that JavaScript code #}
+    {{ render_hinclude(controller('...'), {attributes: {evaljs: 'true'}}) }}
 
 .. _`hinclude.js`: http://mnot.github.io/hinclude/

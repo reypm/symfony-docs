@@ -5,17 +5,6 @@ Validates that a given string length is *between* some minimum and maximum value
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `allowEmptyString`_
-            - `charset`_
-            - `charsetMessage`_
-            - `exactMessage`_
-            - `groups`_
-            - `max`_
-            - `maxMessage`_
-            - `min`_
-            - `minMessage`_
-            - `normalizer`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\Length`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\LengthValidator`
 ==========  ===================================================================
@@ -23,8 +12,8 @@ Validator   :class:`Symfony\\Component\\Validator\\Constraints\\LengthValidator`
 Basic Usage
 -----------
 
-To verify that the ``firstName`` field length of a class is between "2"
-and "50", you might add the following:
+To verify that the ``firstName`` field length of a class is between ``2``
+and ``50``, you might add the following:
 
 .. configuration-block::
 
@@ -47,6 +36,25 @@ and "50", you might add the following:
              */
             protected $firstName;
         }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Participant.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Participant
+        {
+            #[Assert\Length(
+                min: 2,
+                max: 50,
+                minMessage: 'Your first name must be at least {{ limit }} characters long',
+                maxMessage: 'Your first name cannot be longer than {{ limit }} characters',
+            )]
+            protected $firstName;
+        }
+
 
     .. code-block:: yaml
 
@@ -110,17 +118,28 @@ and "50", you might add the following:
 Options
 -------
 
-allowEmptyString
-~~~~~~~~~~~~~~~~
+``allowEmptyString``
+~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``boolean``  **default**: ``false``
+
+.. deprecated:: 5.2
+
+    The ``allowEmptyString`` option is deprecated since Symfony 5.2. If you
+    want to allow empty strings too, combine the ``Length`` constraint with
+    the :doc:`Blank constraint </reference/constraints/Blank>` inside the
+    :doc:`AtLeastOneOf constraint </reference/constraints/AtLeastOneOf>`.
 
 If set to ``true``, empty strings are considered valid (which is the same
 behavior as previous Symfony versions). The default ``false`` value considers
 empty strings not valid.
 
-charset
-~~~~~~~
+.. caution::
+
+    This option does not have any effect when no minimum length is given.
+
+``charset``
+~~~~~~~~~~~
 
 **type**: ``string``  **default**: ``UTF-8``
 
@@ -128,8 +147,8 @@ The charset to be used when computing value's length with the
 :phpfunction:`mb_check_encoding` and :phpfunction:`mb_strlen`
 PHP functions.
 
-charsetMessage
-~~~~~~~~~~~~~~
+``charsetMessage``
+~~~~~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This value does not match the expected {{ charset }} charset.``
 
@@ -163,8 +182,8 @@ Parameter          Description
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-max
-~~~
+``max``
+~~~~~~~
 
 **type**: ``integer``
 
@@ -173,8 +192,8 @@ the given value's length is **greater** than this max value.
 
 This option is required when the ``min`` option is not defined.
 
-maxMessage
-~~~~~~~~~~
+``maxMessage``
+~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This value is too long. It should have {{ limit }} characters or less.``
 
@@ -190,8 +209,8 @@ Parameter          Description
 ``{{ value }}``    The current (invalid) value
 =================  ============================================================
 
-min
-~~~
+``min``
+~~~~~~~
 
 **type**: ``integer``
 
@@ -204,8 +223,8 @@ It is important to notice that NULL values and empty strings are considered
 valid no matter if the constraint required a minimum length. Validators
 are triggered only if the value is not blank.
 
-minMessage
-~~~~~~~~~~
+``minMessage``
+~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This value is too short. It should have {{ limit }} characters or more.``
 

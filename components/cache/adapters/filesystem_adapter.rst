@@ -45,15 +45,29 @@ and cache root path as constructor parameters::
     choices. If throughput is paramount, the in-memory adapters
     (:ref:`Apcu <apcu-adapter>`, :ref:`Memcached <memcached-adapter>`, and
     :ref:`Redis <redis-adapter>`) or the database adapters
-    (:ref:`Doctrine <doctrine-adapter>` and :ref:`PDO <pdo-doctrine-adapter>`)
-    are recommended.
+    (:ref:`PDO <pdo-doctrine-adapter>`) are recommended.
 
 .. note::
 
-    Since Symfony 3.4, this adapter implements
-    :class:`Symfony\\Component\\Cache\\PruneableInterface`, enabling manual
-    :ref:`pruning of expired cache items <component-cache-cache-pool-prune>` by
-    calling its ``prune()`` method.
+    This adapter implements :class:`Symfony\\Component\\Cache\\PruneableInterface`,
+    enabling manual :ref:`pruning of expired cache items <component-cache-cache-pool-prune>`
+    by calling its ``prune()`` method.
+
+.. _filesystem-tag-aware-adapter:
+
+Working with Tags
+-----------------
+
+In order to use tag-based invalidation, you can wrap your adapter in
+:class:`Symfony\\Component\\Cache\\Adapter\\TagAwareAdapter`, but it's often
+more interesting to use the dedicated :class:`Symfony\\Component\\Cache\\Adapter\\FilesystemTagAwareAdapter`.
+Since tag invalidation logic is implemented using links on filesystem, this
+adapter offers better read performance when using tag-based invalidation::
+
+    use Symfony\Component\Cache\Adapter\FilesystemTagAwareAdapter;
+
+    $cache = new FilesystemTagAwareAdapter();
+
 
 .. _`tmpfs`: https://wiki.archlinux.org/index.php/tmpfs
 .. _`RAM disk solutions`: https://en.wikipedia.org/wiki/List_of_RAM_drive_software

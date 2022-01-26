@@ -31,7 +31,7 @@ it::
     The custom listener must be called **before** ``LocaleListener``, which
     initializes the locale based on the current request. To do so, set your
     listener priority to a higher value than ``LocaleListener`` priority (which
-    you can obtain running the ``debug:event kernel.request`` command).
+    you can obtain by running the ``debug:event kernel.request`` command).
 
 Read :doc:`/session/locale_sticky_session` for more information on making
 the user's locale "sticky" to their session.
@@ -63,6 +63,28 @@ A better policy is to include the locale in the URL using the
 :ref:`special _locale parameter <routing-locale-parameter>`:
 
 .. configuration-block::
+
+    .. code-block:: php-annotations
+
+        // src/Controller/ContactController.php
+        namespace App\Controller;
+
+        // ...
+        class ContactController extends AbstractController
+        {
+            /**
+             * @Route(
+             *     "/{_locale}/contact",
+             *     name="contact",
+             *     requirements={
+             *         "_locale": "en|fr|de",
+             *     }
+             * )
+             */
+            public function contact()
+            {
+            }
+        }
 
     .. code-block:: yaml
 
@@ -155,6 +177,8 @@ the framework:
     .. code-block:: php
 
         // config/packages/translation.php
-        $container->loadFromExtension('framework', [
-            'default_locale' => 'en',
-        ]);
+        use Symfony\Config\FrameworkConfig;
+
+        return static function (FrameworkConfig $framework) {
+            $framework->defaultLocale('en');
+        };

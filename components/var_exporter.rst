@@ -28,7 +28,7 @@ PHP code, similar to PHP's :phpfunction:`var_export` function::
 
     $exported = VarExporter::export($someVariable);
     // store the $exported data in some file or cache system for later reuse
-    $data = file_put_contents('exported.php', $exported);
+    $data = file_put_contents('exported.php', '<?php return '.$exported.';');
 
     // later, regenerate the original variable when you need it
     $regeneratedVariable = require 'exported.php';
@@ -118,15 +118,15 @@ any other methods::
 Instances of ``ArrayObject``, ``ArrayIterator`` and ``SplObjectHash`` can be
 created by using the special ``"\0"`` property name to define their internal value::
 
-    // Creates an SplObjectHash where $info1 is associated to $object1, etc.
+    // Creates an SplObjectHash where $info1 is associated with $object1, etc.
     $theObject = Instantiator::instantiate(SplObjectStorage::class, [
-        "\0" => [$object1, $info1, $object2, $info2...]
+        "\0" => [$object1, $info1, $object2, $info2...],
     ]);
 
     // creates an ArrayObject populated with $inputArray
     $theObject = Instantiator::instantiate(ArrayObject::class, [
-        "\0" => [$inputArray]
+        "\0" => [$inputArray],
     ]);
 
-.. _`OPcache`: https://php.net/opcache
+.. _`OPcache`: https://www.php.net/opcache
 .. _`PSR-2`: https://www.php-fig.org/psr/psr-2/

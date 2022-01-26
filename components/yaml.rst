@@ -69,7 +69,7 @@ level configuration for pretty outputs.
 Types Support
 ~~~~~~~~~~~~~
 
-It supports most of the YAML built-in types like dates, integers, octals,
+It supports most of the YAML built-in types like dates, integers, octal numbers,
 booleans, and much more...
 
 Full Merge Key Support
@@ -149,8 +149,10 @@ array to its YAML representation::
 If an error occurs during the dump, the parser throws a
 :class:`Symfony\\Component\\Yaml\\Exception\\DumpException` exception.
 
-Array Expansion and Inlining
-............................
+.. _array-expansion-and-inlining:
+
+Expanded and Inlined Arrays
+...........................
 
 The YAML format supports two kind of representation for arrays, the expanded
 one, and the inline one. By default, the dumper uses the expanded
@@ -431,6 +433,13 @@ Then, execute the script for validating contents:
     # or contents passed to STDIN
     $ cat path/to/file.yaml | php lint.php
 
+    # you can also exclude one or more files from linting
+    $ php lint.php path/to/directory --exclude=path/to/directory/foo.yaml --exclude=path/to/directory/bar.yaml
+
+.. versionadded:: 5.4
+
+    The ``--exclude`` option was introduced in Symfony 5.4.
+
 The result is written to STDOUT and uses a plain text format by default.
 Add the ``--format`` option to get the output in JSON format:
 
@@ -453,6 +462,6 @@ Learn More
 
     yaml/*
 
-.. _`YAML`: http://yaml.org/
-.. _`YAML 1.2 version specification`: http://yaml.org/spec/1.2/spec.html
-.. _`ISO-8601`: http://www.iso.org/iso/iso8601
+.. _`YAML`: https://yaml.org/
+.. _`YAML 1.2 version specification`: https://yaml.org/spec/1.2/spec.html
+.. _`ISO-8601`: https://www.iso.org/iso-8601-date-and-time-format.html

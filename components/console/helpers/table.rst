@@ -72,8 +72,8 @@ You can add a table separator anywhere in the output by passing an instance of
 You can optionally display titles at the top and the bottom of the table::
 
     // ...
-    $table->setHeaderTitle('Books')
-    $table->setFooterTitle('Page 1/2')
+    $table->setHeaderTitle('Books');
+    $table->setFooterTitle('Page 1/2');
     $table->render();
 
 .. code-block:: terminal
@@ -147,7 +147,7 @@ The output of this command will be:
     | 99921 | Divine Com | Dante Alighieri                |
     | -58-1 | edy        |                                |
     | 0-7   |            |                                |
-    |                (the rest of rows...)                |
+    |                (the rest of the rows...)            |
     +-------+------------+--------------------------------+
 
 The table style can be changed to any built-in styles via
@@ -233,7 +233,7 @@ If the built-in styles do not fit your need, define your own::
 
     // customizes the style
     $tableStyle
-        ->setDefaultCrossingChars('<fg=magenta>|</>')
+        ->setHorizontalBorderChars('<fg=magenta>|</>')
         ->setVerticalBorderChars('<fg=magenta>-</>')
         ->setDefaultCrossingChar(' ')
     ;
@@ -244,7 +244,7 @@ If the built-in styles do not fit your need, define your own::
 Here is a full list of things you can customize:
 
 *  :method:`Symfony\\Component\\Console\\Helper\\TableStyle::setPaddingChar`
-*  :method:`Symfony\\Component\\Console\\Helper\\TableStyle::setDefaultCrossingChars`
+*  :method:`Symfony\\Component\\Console\\Helper\\TableStyle::setHorizontalBorderChars`
 *  :method:`Symfony\\Component\\Console\\Helper\\TableStyle::setVerticalBorderChars`
 *  :method:`Symfony\\Component\\Console\\Helper\\TableStyle::setCrossingChars`
 *  :method:`Symfony\\Component\\Console\\Helper\\TableStyle::setDefaultCrossingChar`
@@ -264,6 +264,39 @@ Here is a full list of things you can customize:
         $table->setStyle('colorful');
 
     This method can also be used to override a built-in style.
+
+.. versionadded:: 5.2
+
+    The option to style table cells was introduced in Symfony 5.2.
+
+In addition to the built-in table styles, you can also apply different styles
+to each table cell via :class:`Symfony\\Component\\Console\\Helper\\TableCellStyle`::
+
+    use Symfony\Component\Console\Helper\Table;
+    use Symfony\Component\Console\Helper\TableCellStyle;
+
+    $table = new Table($output);
+
+    $table->setRows([
+        [
+            '978-0804169127',
+            new TableCell(
+                'Divine Comedy',
+                [
+                    'style' => new TableCellStyle([
+                        'align' => 'center',
+                        'fg' => 'red',
+                        'bg' => 'green',
+
+                        // or
+                        'cellFormat' => '<info>%s</info>',
+                    ])
+                ]
+            )
+        ],
+    ]);
+
+    $table->render();
 
 Spanning Multiple Columns and Rows
 ----------------------------------
@@ -305,7 +338,7 @@ This results in:
         $table->setHeaders([
             [new TableCell('Main table title', ['colspan' => 3])],
             ['ISBN', 'Title', 'Author'],
-        ])
+        ]);
         // ...
 
     This generates:
@@ -350,7 +383,7 @@ This outputs:
     | 978-0804169127 | Divine Comedy | spans multiple rows |
     +----------------+---------------+---------------------+
 
-You can use the ``colspan`` and ``rowspan`` options at the same time which allows
+You can use the ``colspan`` and ``rowspan`` options at the same time, which allows
 you to create any table layout you may wish.
 
 .. _console-modify-rendered-tables:

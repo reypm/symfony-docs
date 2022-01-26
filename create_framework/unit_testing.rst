@@ -8,30 +8,35 @@ on it will exhibit the same bugs. The good news is that whenever you fix a
 bug, you are fixing a bunch of applications too.
 
 Today's mission is to write unit tests for the framework we have created by
-using `PHPUnit`_. Create a PHPUnit configuration file in
-``example.com/phpunit.xml.dist``:
+using `PHPUnit`_. At first, install PHPUnit as a development dependency:
+
+.. code-block:: terminal
+
+    $ composer require --dev phpunit/phpunit
+
+Then, create a PHPUnit configuration file in ``example.com/phpunit.xml.dist``:
 
 .. code-block:: xml
 
     <?xml version="1.0" encoding="UTF-8"?>
     <phpunit
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/5.1/phpunit.xsd"
+        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
         backupGlobals="false"
         colors="true"
         bootstrap="vendor/autoload.php"
     >
+        <coverage processUncoveredFiles="true">
+            <include>
+                <directory suffix=".php">./src</directory>
+            </include>
+        </coverage>
+
         <testsuites>
             <testsuite name="Test Suite">
                 <directory>./tests</directory>
             </testsuite>
         </testsuites>
-
-        <filter>
-            <whitelist processUncoveredFilesFromWhitelist="true">
-                <directory suffix=".php">./src</directory>
-            </whitelist>
-        </filter>
     </phpunit>
 
 This configuration defines sensible defaults for most PHPUnit settings; more
@@ -49,7 +54,7 @@ resolver. Modify the framework to make use of them::
     namespace Simplex;
 
     // ...
-    
+
     use Calendar\Controller\LeapYearController;
     use Symfony\Component\HttpKernel\Controller\ArgumentResolverInterface;
     use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
@@ -167,7 +172,7 @@ Response::
             ->will($this->returnValue([
                 '_route' => 'is_leap_year/{year}',
                 'year' => '2000',
-                '_controller' => [new LeapYearController(), 'index']
+                '_controller' => [new LeapYearController(), 'index'],
             ]))
         ;
         $matcher
@@ -183,7 +188,7 @@ Response::
         $response = $framework->handle(new Request());
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertContains('Hello Fabien', $response->getContent());
+        $this->assertStringContainsString('Yep, this is a leap year!', $response->getContent());
     }
 
 In this test, we simulate a route that matches and returns a simple
@@ -215,6 +220,6 @@ Symfony code.
 Now that we are confident (again) about the code we have written, we can
 safely think about the next batch of features we want to add to our framework.
 
-.. _`PHPUnit`: https://phpunit.de/manual/current/en/index.html
-.. _`test doubles`: https://phpunit.de/manual/current/en/test-doubles.html
+.. _`PHPUnit`: https://phpunit.readthedocs.io/en/stable/
+.. _`test doubles`: https://phpunit.readthedocs.io/en/stable/test-doubles.html
 .. _`XDebug`: https://xdebug.org/

@@ -1,4 +1,4 @@
-Iban
+IBAN
 ====
 
 This constraint is used to ensure that a bank account number has the proper
@@ -8,9 +8,6 @@ borders with a reduced risk of propagating transcription errors.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `groups`_
-            - `message`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\Iban`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\IbanValidator`
 ==========  ===================================================================
@@ -18,7 +15,7 @@ Validator   :class:`Symfony\\Component\\Validator\\Constraints\\IbanValidator`
 Basic Usage
 -----------
 
-To use the Iban validator, apply it to a property on an object that
+To use the IBAN validator, apply it to a property on an object that
 will contain an International Bank Account Number.
 
 .. configuration-block::
@@ -37,6 +34,21 @@ will contain an International Bank Account Number.
              *     message="This is not a valid International Bank Account Number (IBAN)."
              * )
              */
+            protected $bankAccountNumber;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Transaction.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Transaction
+        {
+            #[Assert\Iban(
+                message: 'This is not a valid International Bank Account Number (IBAN).',
+            )]
             protected $bankAccountNumber;
         }
 
@@ -90,17 +102,17 @@ will contain an International Bank Account Number.
 
 .. include:: /reference/constraints/_empty-values-are-valid.rst.inc
 
-Available Options
------------------
+Options
+-------
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This is not a valid International Bank Account Number (IBAN).``
 
-The default message supplied when the value does not pass the Iban check.
+The default message supplied when the value does not pass the IBAN check.
 
 You can use the following parameters in this message:
 
@@ -108,7 +120,12 @@ You can use the following parameters in this message:
 Parameter        Description
 ===============  ==============================================================
 ``{{ value }}``  The current (invalid) value
+``{{ label }}``  Corresponding form field label
 ===============  ==============================================================
+
+.. versionadded:: 5.2
+
+    The ``{{ label }}`` parameter was introduced in Symfony 5.2.
 
 .. include:: /reference/constraints/_payload-option.rst.inc
 

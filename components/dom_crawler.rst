@@ -88,8 +88,8 @@ Using XPath expressions, you can select specific nodes within the document::
 
     ``DOMXPath::query`` is used internally to actually perform an XPath query.
 
-If you prefer CSS selectors over XPath, install the CssSelector component.
-It allows you to use jQuery-like selectors to traverse::
+If you prefer CSS selectors over XPath, install :doc:`/components/css_selector`.
+It allows you to use jQuery-like selectors::
 
     $crawler = $crawler->filter('body > p');
 
@@ -105,12 +105,13 @@ An anonymous function can be used to filter with more complex criteria::
             return ($i % 2) == 0;
         });
 
-To remove a node the anonymous function must return false.
+To remove a node, the anonymous function must return ``false``.
 
 .. note::
 
     All filter methods return a new :class:`Symfony\\Component\\DomCrawler\\Crawler`
-    instance with filtered content.
+    instance with the filtered content. To check if the filter actually
+    found something, use ``$crawler->count() > 0`` on this new crawler.
 
 Both the :method:`Symfony\\Component\\DomCrawler\\Crawler::filterXPath` and
 :method:`Symfony\\Component\\DomCrawler\\Crawler::filter` methods work with
@@ -121,7 +122,7 @@ Consider the XML below:
 
 .. code-block:: xml
 
-    <?xml version="1.0" encoding="UTF-8"?>
+    <?xml version="1.0" encoding="UTF-8" ?>
     <entry
         xmlns="http://www.w3.org/2005/Atom"
         xmlns:media="http://search.yahoo.com/mrss/"
@@ -153,7 +154,7 @@ and :method:`Symfony\\Component\\DomCrawler\\Crawler::filter`::
     method.
 
     The default namespace is removed when loading the content if it's the only
-    namespace in the document. It's done to simplify the xpath queries.
+    namespace in the document. It's done to simplify the XPath queries.
 
 Namespaces can be explicitly registered with the
 :method:`Symfony\\Component\\DomCrawler\\Crawler::registerNamespace` method::
@@ -186,10 +187,14 @@ Get the same level nodes after or before the current selection::
     $crawler->filter('body > p')->nextAll();
     $crawler->filter('body > p')->previousAll();
 
-Get all the child or parent nodes::
+Get all the child or ancestor nodes::
 
     $crawler->filter('body')->children();
-    $crawler->filter('body > p')->parents();
+    $crawler->filter('body > p')->ancestors();
+
+.. versionadded:: 5.3
+
+    The ``ancestors()`` method was introduced in Symfony 5.3.
 
 Get all the direct child nodes matching a CSS selector::
 
@@ -207,7 +212,7 @@ Get the first parent (heading toward the document root) of the element that matc
 Accessing Node Values
 ~~~~~~~~~~~~~~~~~~~~~
 
-Access the node name (HTML tag name) of the first node of the current selection (eg. "p" or "div")::
+Access the node name (HTML tag name) of the first node of the current selection (e.g. "p" or "div")::
 
     // returns the node name (HTML tag name) of the first child element under <body>
     $tag = $crawler->filterXPath('//body/*')->nodeName();
@@ -220,9 +225,20 @@ Access the value of the first node of the current selection::
     // avoid the exception passing an argument that text() returns when node does not exist
     $message = $crawler->filterXPath('//body/p')->text('Default text content');
 
-    // pass TRUE as the second argument of text() to remove all extra white spaces, including
-    // the internal ones (e.g. "  foo\n  bar    baz \n " is returned as "foo bar baz")
-    $crawler->filterXPath('//body/p')->text('Default text content', true);
+    // by default, text() trims white spaces, including the internal ones
+    // (e.g. "  foo\n  bar    baz \n " is returned as "foo bar baz")
+    // pass FALSE as the second argument to return the original text unchanged
+    $crawler->filterXPath('//body/p')->text('Default text content', false);
+
+    // innerText() is similar to text() but only returns the text that is
+    // the direct descendant of the current node, excluding any child nodes
+    $text = $crawler->filterXPath('//body/p')->innerText();
+    // if content is <p>Foo <span>Bar</span></p>
+    // innerText() returns 'Foo' and text() returns 'Foo Bar'
+
+.. versionadded:: 5.4
+
+    The ``innerText()`` method was introduced in Symfony 5.4.
 
 Access the attribute value of the first node of the current selection::
 
@@ -267,7 +283,9 @@ context of the crawler::
 Adding the Content
 ~~~~~~~~~~~~~~~~~~
 
-The crawler supports multiple ways of adding the content::
+The crawler supports multiple ways of adding the content, but they are mutually
+exclusive, so you can only use one of them to add content (e.g. if you pass the
+content to the ``Crawler`` constructor, you can't call ``addContent()`` later)::
 
     $crawler = new Crawler('<html><body/></html>');
 
@@ -516,7 +534,9 @@ You can virtually set and get values on the form::
     // where "registration" is its own array
     $values = $form->getPhpValues();
 
-To work with multi-dimensional fields::
+To work with multi-dimensional fields:
+
+.. code-block:: html
 
     <form>
         <input name="multi[]"/>
@@ -582,15 +602,18 @@ of the information you need to create a POST request for the form::
 
     // now use some HTTP client and post using this information
 
-One great example of an integrated system that uses all of this is `Goutte`_.
-Goutte understands the Symfony Crawler object and can use it to submit forms
+One great example of an integrated system that uses all of this is
+the :class:`Symfony\\Component\\BrowserKit\\HttpBrowser` provided by
+the :doc:`BrowserKit component </components/browser_kit>`.
+It understands the Symfony Crawler object and can use it to submit forms
 directly::
 
-    use Goutte\Client;
+    use Symfony\Component\BrowserKit\HttpBrowser;
+    use Symfony\Component\HttpClient\HttpClient;
 
     // makes a real request to an external site
-    $client = new Client();
-    $crawler = $client->request('GET', 'https://github.com/login');
+    $browser = new HttpBrowser(HttpClient::create());
+    $crawler = $browser->request('GET', 'https://github.com/login');
 
     // select the form and fill in some values
     $form = $crawler->selectButton('Sign in')->form();
@@ -598,7 +621,7 @@ directly::
     $form['password'] = 'anypass';
 
     // submits the given form
-    $crawler = $client->submit($form);
+    $crawler = $browser->submit($form);
 
 .. _components-dom-crawler-invalid:
 
@@ -617,11 +640,27 @@ the whole form or specific field(s)::
     $form->disableValidation();
     $form['country']->select('Invalid value');
 
+Resolving a URI
+~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+    The :class:`Symfony\\Component\\DomCrawler\\UriResolver` helper class was added in Symfony 5.1.
+
+The :class:`Symfony\\Component\\DomCrawler\\UriResolver` class takes an URI
+(relative, absolute, fragment, etc.) and turns it into an absolute URI against
+another given base URI::
+
+    use Symfony\Component\DomCrawler\UriResolver;
+
+    UriResolver::resolve('/foo', 'http://localhost/bar/foo/'); // http://localhost/foo
+    UriResolver::resolve('?a=b', 'http://localhost/bar#foo'); // http://localhost/bar?a=b
+    UriResolver::resolve('../../', 'http://localhost/'); // http://localhost/
+
 Learn more
 ----------
 
 * :doc:`/testing`
 * :doc:`/components/css_selector`
 
-.. _`Goutte`: https://github.com/FriendsOfPHP/Goutte
 .. _`html5-php library`: https://github.com/Masterminds/html5-php

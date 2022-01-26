@@ -4,16 +4,10 @@ Bic
 This constraint is used to ensure that a value has the proper format of a
 `Business Identifier Code (BIC)`_. BIC is an internationally agreed means to
 uniquely identify both financial and non-financial institutions. You may also
-check that the BIC is associated with a given IBAN.
+check that the BIC's country code is the same as a given IBAN's one.
 
 ==========  ===================================================================
 Applies to  :ref:`property or method <validation-property-target>`
-Options     - `groups`_
-            - `iban`_
-            - `ibanMessage`_
-            - `ibanPropertyPath`_
-            - `message`_
-            - `payload`_
 Class       :class:`Symfony\\Component\\Validator\\Constraints\\Bic`
 Validator   :class:`Symfony\\Component\\Validator\\Constraints\\BicValidator`
 ==========  ===================================================================
@@ -38,6 +32,19 @@ will contain a Business Identifier Code (BIC).
             /**
              * @Assert\Bic
              */
+            protected $businessIdentifierCode;
+        }
+
+    .. code-block:: php-attributes
+
+        // src/Entity/Transaction.php
+        namespace App\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Transaction
+        {
+            #[Assert\Bic]
             protected $businessIdentifierCode;
         }
 
@@ -87,22 +94,22 @@ Available Options
 
 .. include:: /reference/constraints/_groups-option.rst.inc
 
-iban
-~~~~
+``iban``
+~~~~~~~~
 
 **type**: ``string`` **default**: ``null``
 
-An IBAN value to validate that the BIC is associated with it.
+An IBAN value to validate that its country code is the same as the BIC's one.
 
-ibanMessage
-~~~~~~~~~~~
+``ibanMessage``
+~~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This Business Identifier Code (BIC) is not associated with IBAN {{ iban }}.``
 
 The default message supplied when the value does not pass the combined BIC/IBAN check.
 
-ibanPropertyPath
-~~~~~~~~~~~~~~~~
+``ibanPropertyPath``
+~~~~~~~~~~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``null``
 
@@ -110,10 +117,10 @@ It defines the object property whose value stores the IBAN used to check the BIC
 
 For example, if you want to compare the ``$bic`` property of some object
 with regard to the ``$iban`` property of the same object, use
-``propertyPath="iban"`` in the comparison constraint of ``$bic``.
+``ibanPropertyPath="iban"`` in the comparison constraint of ``$bic``.
 
-message
-~~~~~~~
+``message``
+~~~~~~~~~~~
 
 **type**: ``string`` **default**: ``This is not a valid Business Identifier Code (BIC).``
 
