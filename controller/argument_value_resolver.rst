@@ -49,14 +49,10 @@ In addition, some components and official bundles provide other value resolvers:
 
 :class:`Symfony\\Component\\Security\\Http\\Controller\\UserValueResolver`
     Injects the object that represents the current logged in user if type-hinted
-    with ``UserInterface``. Default value can be set to ``null`` in case
-    the controller can be accessed by anonymous users. It requires installing
-    the :doc:`SecurityBundle </security>`.
-
-``Psr7ServerRequestResolver``
-    Injects a `PSR-7`_ compliant version of the current request if type-hinted
-    with ``RequestInterface``, ``MessageInterface`` or ``ServerRequestInterface``.
-    It requires installing the `SensioFrameworkExtraBundle`_.
+    with ``UserInterface``. You can also type-hint your own ``User`` class but you
+    must then add the ``#[CurrentUser]`` attribute to the argument. Default value
+    can be set to ``null`` in case  the controller can be accessed by anonymous
+    users. It requires installing the :doc:`SecurityBundle </security>`.
 
 Adding a Custom Value Resolver
 ------------------------------
@@ -247,6 +243,13 @@ Otherwise, set a priority lower than ``100`` to make sure the argument resolver
 is not triggered when the ``Request`` attribute is present (for example, when
 passing the user along sub-requests).
 
+To ensure your resolvers are added in the right position you can run the following
+command to see which argument resolvers are present and in which order they run.
+
+.. code-block:: terminal
+    
+    $ php bin/console debug:container debug.argument_resolver.inner --show-arguments
+
 .. tip::
 
     As you can see in the ``UserValueResolver::supports()`` method, the user
@@ -260,5 +263,3 @@ passing the user along sub-requests).
 
 .. _`@ParamConverter`: https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html
 .. _`yield`: https://www.php.net/manual/en/language.generators.syntax.php
-.. _`PSR-7`: https://www.php-fig.org/psr/psr-7/
-.. _`SensioFrameworkExtraBundle`: https://github.com/sensiolabs/SensioFrameworkExtraBundle

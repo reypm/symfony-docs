@@ -15,19 +15,18 @@ Symfony integrates with an independent library called `PHPUnit`_ to give
 you a rich testing framework. This article won't cover PHPUnit itself,
 which has its own excellent `documentation`_.
 
-Before creating your first test, install ``phpunit/phpunit`` and the
-``symfony/test-pack``, which installs some other packages providing useful
-Symfony test utilities:
+Before creating your first test, install ``symfony/test-pack``, which installs
+some other packages needed for testing (such as ``phpunit/phpunit``):
 
 .. code-block:: terminal
 
-    $ composer require --dev phpunit/phpunit symfony/test-pack
+    $ composer require --dev symfony/test-pack
 
 After the library is installed, try running PHPUnit:
 
 .. code-block:: terminal
 
-    $ php ./vendor/bin/phpunit
+    $ php bin/phpunit
 
 This command automatically runs your application tests. Each test is a
 PHP class ending with "Test" (e.g. ``BlogControllerTest``) that lives in
@@ -83,23 +82,23 @@ of your application for unit tests. So, if you're testing a class in the
 Autoloading is automatically enabled via the ``vendor/autoload.php`` file
 (as configured by default in the ``phpunit.xml.dist`` file).
 
-You can run tests using the ``./vendor/bin/phpunit`` command:
+You can run tests using the ``bin/phpunit`` command:
 
 .. code-block:: terminal
 
     # run all tests of the application
-    $ php ./vendor/bin/phpunit
+    $ php bin/phpunit
 
     # run all tests in the Form/ directory
-    $ php ./vendor/bin/phpunit tests/Form
+    $ php bin/phpunit tests/Form
 
     # run tests for the UserType class
-    $ php ./vendor/bin/phpunit tests/Form/UserTypeTest.php
+    $ php bin/phpunit tests/Form/UserTypeTest.php
 
 .. tip::
 
     In large test suites, it can make sense to create subdirectories for
-    each type of tests (e.g. ``tests/Unit/`` and ``test/Functional/``).
+    each type of tests (e.g. ``tests/Unit/`` and ``tests/Functional/``).
 
 .. _integration-tests:
 
@@ -408,7 +407,7 @@ Empty the database and reload *all* the fixture classes with:
 
 .. code-block:: terminal
 
-    $ php bin/console doctrine:fixtures:load
+    $ php bin/console --env=test doctrine:fixtures:load
 
 For more information, read the `DoctrineFixturesBundle documentation`_.
 
